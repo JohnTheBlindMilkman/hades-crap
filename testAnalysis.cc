@@ -28,7 +28,7 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 		//TString inputFolder = "/lustre/nyx/hades/dstsim/mar19/ag1580ag/gen3/bmax14/no_enhancement_gcalor/root";
 		
 		//data
-		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
+		TString inputFolder = "/u/kjedrzej/lustre/hades/dst/apr12/gen9/122/root";
 	
 		std::unique_ptr<TSystemDirectory> inputDir(new TSystemDirectory("inputDir", inputFolder));
 		//TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
