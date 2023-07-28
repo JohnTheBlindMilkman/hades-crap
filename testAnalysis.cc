@@ -30,8 +30,10 @@ int TestAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 		//data
 		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
 	
-		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
-		TList* files = inputDir->GetListOfFiles();
+		std::unique_ptr<TSystemDirectory> inputDir(new TSystemDirectory("inputDir", inputFolder));
+		//TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
+		std::shared_ptr<TList> files = std::make_unique<TList>(inputDir->GetListOfFiles());
+		//TList* files = inputDir->GetListOfFiles();
 
 		for (Int_t i = 0; i <= files->LastIndex() && nFiles < maxFiles; i++) 
 		{
