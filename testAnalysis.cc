@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-int TestAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	//gStyle->SetOptStat(0); // JS. Mozesz wlaczyc jak nie chcesz boxa ze statystykami na wykresie
 	gROOT->SetBatch(kTRUE);
