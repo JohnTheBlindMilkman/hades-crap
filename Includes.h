@@ -30,6 +30,7 @@
 #include "TLine.h"
 #include "TLatex.h"
 #include "RtypesCore.h"
+#include "ROOT/RVec.hxx"
 
 #include "hloop.h"
 #include "hcategorymanager.h"
@@ -50,7 +51,7 @@
 #include "hstart2hit.h"
 #include "hstart2raw.h"
 #include "hstart2cal.h"
-
-
+#include "hparticleevtchara.h"
+#include "hgeantkine.h"
 
 #endif // __INCLUDES_H__

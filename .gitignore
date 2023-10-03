@@ -1,2 +1,9 @@
 RootIncludes
 HydraIncludes
+*.pcm
+*.d
+*.so
+.vscode/
+*.root
+output/
+loopDST.C
