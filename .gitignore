@@ -6,4 +6,6 @@ HydraIncludes
 .vscode/
 *.root
 output/
+build/
 loopDST.C
+anaysis

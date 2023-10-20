@@ -31,15 +31,15 @@ user=$(whoami)
 currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
-day=095
+day="all"
 submmissionbase=/lustre/hades/user/${user}/sub/apr12/
-submissiondir=${submmissionbase}/loopDST
+submissiondir=${submmissionbase}/hades-crap
  nFilesPerJob=10                                # number of files to be analyzed by 1 job (default==1)
     jobscript=${submissiondir}/jobScript_SL.sh     # exec script (full path, call without dot, set it executable!)
-    outputdir=/lustre/hades/user/${user}/apr12/loop # outputdir for files AND logFiles
+    outputdir=/lustre/hades/user/${user}/apr12/ # outputdir for files AND logFiles
 pathoutputlog=${outputdir}/out                  # protocol from batch farm for each file
      filename=apr12ana_${day}                   # filename of log file if nFilesPerJob > 1 (partnumber will be appended)
-par1=/cvmfs/hades.gsi.de/install/5.34.34/hydra2-4.9q/defall.sh  # optional par1 : environment script
+par1=/lustre/hades/user/kjedrzej/defallRoot6.24.02Hydra2-6.4.sh  # optional par1 : environment script
 par2=${submissiondir}/analysis                                 # optional par2 : executable
 par3=""                                                        # optional par3 : input file list
 par4=${outputdir}                                              # optional par4 : outputfile (part number will be appended (_num.root))

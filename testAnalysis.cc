@@ -51,6 +51,8 @@ std::tuple<bool,int> SelectEvent(float xVertex, float yVertex, float zVertex, in
 			return std::make_tuple<bool,int>(true,std::move(plateNo));
 		plateNo++;
 	}
+
+	return std::make_tuple<bool,int>(false,-999);
 }
 
 std::tuple<bool,Detector> SelectProton(Observables obs, TCutG *rpcCut, TCutG *tofCut)
@@ -60,19 +62,21 @@ std::tuple<bool,Detector> SelectProton(Observables obs, TCutG *rpcCut, TCutG *to
 	switch (obs.system)
 	{
 		case 0:
+			det = Detector::RPC;
 			if (rpcCut->IsInside(obs.momentum*obs.charge,obs.beta))
-				return std::make_tuple<bool,Detector>(true,Detector::RPC);
+				isAccepted = true;
 
 			break;
 
 		case 1:
+			det = Detector::ToF;
 			if (tofCut->IsInside(obs.momentum*obs.charge,obs.beta))
-				return std::make_tuple<bool,Detector>(true,Detector::ToF);
+				isAccepted = true;
 
 			break;
 	}
 	
-	return std::make_tuple<bool,Detector>(false,Detector::RPC); // detector is arbitrary
+	return std::make_tuple<bool,Detector>(std::move(isAccepted),std::move(det));
 }
 
 ProtonPair CFKinematics(Proton part1, Proton part2)
@@ -117,19 +121,19 @@ ProtonPair CFKinematics(Proton part1, Proton part2)
 	return pair;
 }
 
-void CalcSignal(std::vector<ProtonPair> &pairVec, const std::vector<Proton> &trackVec)
+void CalcSignal(std::vector<ProtonPair> &pairVec, const std::vector<Proton> &trackVec, float openAngle = 0.0)
 { 
 	for (size_t iter1 = 0; iter1 < trackVec.size(); iter1++)
 		for (size_t iter2 = iter1+1; iter2 < trackVec.size(); iter2++)
-			if (trackVec.at(iter1).momVec.Angle(trackVec.at(iter2).momVec.Vect()) > 0.05)
+			if (trackVec.at(iter1).momVec.Angle(trackVec.at(iter2).momVec.Vect()) > openAngle)
 				pairVec.push_back(CFKinematics(trackVec.at(iter1),trackVec.at(iter2)));
 }
 
-void CalcBackground(std::vector<ProtonPair> &pairVec, const std::vector<Proton> &trackVec, const std::deque<Proton> &bckgVec)
+void CalcBackground(std::vector<ProtonPair> &pairVec, const std::vector<Proton> &trackVec, const std::deque<Proton> &bckgVec, float openAngle = 0.0)
 {
 	for (auto &track : trackVec)
 		for (auto &bckg : bckgVec)
-			if (track.momVec.Angle(bckg.momVec.Vect()) > 0.05)
+			if (track.momVec.Angle(bckg.momVec.Vect()) > openAngle)
 				pairVec.push_back(CFKinematics(track,bckg));
 }
 
@@ -168,7 +172,7 @@ void FillAndClear(std::vector<ProtonPair> &pairVec, std::array<TH1D*,5> hInp1, s
 	pairVec.resize(0);
 }
 
-int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
+int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	const int fTargetPlates = 15; // number of target plates
 	const int fKtBins = 5; // number of kT bins
@@ -283,7 +287,7 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", 
 		hQoslBckg.at(i) = new TH3D(TString::Format("hQoslBckg%d",i),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000);
 	}
 
-	TFile *cutfile_betamom_pionCmom = new TFile("/u/kjedrzej/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
+	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
 	
