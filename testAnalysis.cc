@@ -7,11 +7,17 @@
 
 enum class Detector {RPC, ToF};
 
+struct Observables
+{
+	float charge, momentum, beta, mass2, rapidity, pt;
+	short int system, PID;
+	bool isAtMdcEdge;
+};
+
 struct Proton
 {
 	TLorentzVector momVec;
 	int centrality;
-	float zVertex;
 	Detector sys;
 };
 
@@ -25,6 +31,49 @@ struct ProtonPair
 	float qLong;
 	float kT;
 };
+
+std::tuple<bool,int> SelectEvent(float xVertex, float yVertex, float zVertex, int nSigma = 1)
+{
+	// copied from zVertexPeakAndSigma.txt file
+	static std::vector<std::pair<float,float>> plateVector = {{-54.7598,0.755846},{-51.6971,0.783591},{-47.7996,0.763387},{-44.5473,0.769386},{-40.569,0.781312},{-37.2151,0.762538},{-33.2948,0.76901},{-30.3726,0.742618},{-26.648,0.748409},{-22.5492,0.738462},{-18.9649,0.747727},{-15.5259,0.749724},{-11.8726,0.740386},{-8.45083,0.742672},{-4.58076,0.712394}};
+	static std::pair<float,float> xPosition = {0.1951,0.619};
+	static std::pair<float,float> yPosition = {0.7045,0.6187};
+
+	if ((xVertex < (xPosition.first - nSigma*xPosition.second)) || (xVertex > (xPosition.first + nSigma*xPosition.second)))
+		return std::make_tuple<bool,int>(false,-999);
+	if ((yVertex < (yPosition.first - nSigma*yPosition.second)) || (yVertex > (yPosition.first + nSigma*yPosition.second)))
+		return std::make_tuple<bool,int>(false,-999);
+
+	int plateNo = 0;
+	for(const auto &plate : plateVector)
+	{
+		if ((zVertex < (plate.first - nSigma*plate.second)) || (zVertex > (plate.first + nSigma*plate.second)))
+			return std::make_tuple<bool,int>(true,std::move(plateNo));
+		plateNo++;
+	}
+}
+
+std::tuple<bool,Detector> SelectProton(Observables obs, TCutG *rpcCut, TCutG *tofCut)
+{
+	bool isAccepted = false;
+	Detector det;
+	switch (obs.system)
+	{
+		case 0:
+			if (rpcCut->IsInside(obs.momentum*obs.charge,obs.beta))
+				return std::make_tuple<bool,Detector>(true,Detector::RPC);
+
+			break;
+
+		case 1:
+			if (tofCut->IsInside(obs.momentum*obs.charge,obs.beta))
+				return std::make_tuple<bool,Detector>(true,Detector::ToF);
+
+			break;
+	}
+	
+	return std::make_tuple<bool,Detector>(false,Detector::RPC); // detector is arbitrary
+}
 
 ProtonPair CFKinematics(Proton part1, Proton part2)
 {
@@ -68,50 +117,61 @@ ProtonPair CFKinematics(Proton part1, Proton part2)
 	return pair;
 }
 
-void CalcSignal(ROOT::VecOps::RVec<ProtonPair> &pairVec, const ROOT::VecOps::RVec<Proton> &trackVec)
+void CalcSignal(std::vector<ProtonPair> &pairVec, const std::vector<Proton> &trackVec)
 { 
 	for (size_t iter1 = 0; iter1 < trackVec.size(); iter1++)
 		for (size_t iter2 = iter1+1; iter2 < trackVec.size(); iter2++)
-			pairVec.push_back(CFKinematics(trackVec.at(iter1),trackVec.at(iter2)));
+			if (trackVec.at(iter1).momVec.Angle(trackVec.at(iter2).momVec.Vect()) > 0.05)
+				pairVec.push_back(CFKinematics(trackVec.at(iter1),trackVec.at(iter2)));
 }
 
-void CalcBackground(ROOT::VecOps::RVec<ProtonPair> &pairVec, const ROOT::VecOps::RVec<Proton> &trackVec, const std::deque<Proton> &bckgVec)
+void CalcBackground(std::vector<ProtonPair> &pairVec, const std::vector<Proton> &trackVec, const std::deque<Proton> &bckgVec)
 {
 	for (auto &track : trackVec)
 		for (auto &bckg : bckgVec)
+			if (track.momVec.Angle(bckg.momVec.Vect()) > 0.05)
 				pairVec.push_back(CFKinematics(track,bckg));
 }
 
-bool MixBckg(const ROOT::VecOps::RVec<Proton> &trackVec, std::deque<Proton> &bckgVec, const int &maxSize, std::mt19937 &generator)
+void MixBckg(const std::vector<Proton> &trackVec, std::deque<Proton> &bckgVec, const int &maxSize, std::mt19937 &generator)
 {
-	if (trackVec.size())
-	{
-		std::uniform_int_distribution<int> dist(0,trackVec.size()-1);
-		bckgVec.push_back(trackVec.at(dist(generator)));
-		if (bckgVec.size() > maxSize)
-			bckgVec.pop_front();
-
-		return true;
-	}
-	else
-		return false;
+	std::uniform_int_distribution<int> dist(0,trackVec.size()-1);
+	bckgVec.push_back(trackVec.at(dist(generator)));
+	if (bckgVec.size() > maxSize)
+		bckgVec.pop_front();
 }
 
-void FillAndClear(ROOT::VecOps::RVec<ProtonPair> &pairVec, TH1D *hInp1, TH3D *hInp3)
+int AssignKt(float kt)
 {
+	static std::vector<std::pair<float,float> > ktBinVec = {{150,450},{450,700},{700,1050},{1050,1350},{1350,1650}};
+	for (std::size_t i = 0; i < ktBinVec.size(); i++)
+		if (kt >= ktBinVec.at(i).first && kt <= ktBinVec.at(i).second)
+			return i;
 
+	return -999;
+}
+
+void FillAndClear(std::vector<ProtonPair> &pairVec, std::array<TH1D*,5> hInp1, std::array<TH3D*,5> hInp3)
+{
+	int ktBin = 0;
 	for (auto &pair : pairVec)
 	{
-		hInp1->Fill(pair.qInv);
-		hInp3->Fill(pair.qOut,pair.qSide,pair.qLong);
+		ktBin = AssignKt(pair.kT);
+		if (ktBin == -999)
+			continue;
+
+		hInp1.at(ktBin)->Fill(pair.qInv);
+		hInp3.at(ktBin)->Fill(pair.qOut,pair.qSide,pair.qLong);
 	}
 
 	pairVec.clear();
 	pairVec.resize(0);
 }
 
-int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
+int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
+	const int fTargetPlates = 15; // number of target plates
+	const int fKtBins = 5; // number of kT bins
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	//--------------------------------------------------------------------------------
@@ -196,6 +256,8 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 	int nBinsX = 600, nMinX = -3000, nMaxX = 3000, nBinsY = 200;
 	float nMinY = 0, nMaxY = 1.2;
 
+	TH1D* hXvertex = new TH1D("hXvertex","",401,-20,20);
+	TH1D* hYvertex = new TH1D("hYvertex","",401,-20,20);
 	TH1D* hZvertex = new TH1D("hZvertex","",700,-65,5);
 	TH1D *hAccTracks = new TH1D("hAccTracks","Number of accepted tracks",100,0,100);
 	TH1D *hM2AccTof = new TH1D("hM2AccTof","m^{2} distribution fo accepted protons",1000,5e5,1.5e6);
@@ -206,10 +268,20 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 	TH2D *hBetaMomRpcAll = new TH2D("hBetaMomRpcAll",";p #times c;#beta",nBinsX,-nMaxX,nMaxX,nBinsY,nMinY,nMaxY);
 	TH2D *hBetaMomRpcProt = new TH2D("hBetaMomRpcProt",";p #times c;#beta",nBinsX,-nMaxX,nMaxX,nBinsY,nMinY,nMaxY);
 
-	TH1D *hQinvSign = new TH1D("hQinvSign","Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",250,0,1000);
-	TH3D *hQoslSign = new TH3D("hQoslSign","Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000);
-	TH1D *hQinvBckg = new TH1D("hQinvBckg","Background of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",250,0,1000);
-	TH3D *hQoslBckg = new TH3D("hQoslBckg","Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000);
+	TH2D *hPtYTofProt = new TH2D("hPtYTofProt",";y_{c.m.};p_{T} [MeV/c]",121,-0.4,2,2000,0,2000);
+	TH2D *hPtYRpcProt = new TH2D("hPtYRpcProt",";y_{c.m.};p_{T} [MeV/c]",121,-0.4,2,2000,0,2000);
+
+	TH1D *hKtSign = new TH1D("hKtSign","Distribution of k_{T} in signal;k_{T} [MeV]",1000,0,2500);
+	TH1D *hKtBckg = new TH1D("hKtBckg","Distribution of k_{T} in background;k_{T} [MeV]",1000,0,2500);
+	std::array<TH1D*,fKtBins> hQinvSign,hQinvBckg;
+	std::array<TH3D*,fKtBins> hQoslSign,hQoslBckg;
+	for (int i = 0; i < fKtBins; i++)
+	{
+		hQinvSign.at(i) = new TH1D(TString::Format("hQinvSign%d",i),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",250,0,1000);
+		hQoslSign.at(i) = new TH3D(TString::Format("hQoslSign%d",i),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000);
+		hQinvBckg.at(i) = new TH1D(TString::Format("hQinvBckg%d",i),"Background of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",250,0,1000);
+		hQoslBckg.at(i) = new TH3D(TString::Format("hQoslBckg%d",i),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000);
+	}
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/u/kjedrzej/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
@@ -218,14 +290,17 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 	//create RNG
 	std::random_device rd;
 	std::mt19937 gen(rd());
+
+	// create temporary obj for basic data storage
+	std::tuple<bool,Detector> fIsTrackAccepted;
+	std::tuple<bool,int> fIsEventAccepted;
+	Observables fHADES;
 	
 	// create objects for mixing
 	Proton fProton;
-	Detector fDetector;
-	bool fIsAccepted = false;
-	ROOT::VecOps::RVec<Proton> fTrackVec;
-	std::deque<Proton> fBckgCocktail;
-	ROOT::VecOps::RVec<ProtonPair> fSignVec, fBckgVec;
+	std::vector<Proton> fTrackVec;
+	std::array<std::deque<Proton>,fTargetPlates> fBckgCocktail;
+	std::vector<ProtonPair> fSignVec, fBckgVec;
 	const int partToMix = 50;
 	
     //--------------------------------------------------------------------------------
@@ -319,7 +394,9 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 		particle_info           = HCategoryManager::getObject(particle_info, particle_info_cat, 0);
 		HGeomVector EventVertex  = event_header->getVertexReco().getPos();
 		
-		Float_t vertZ 			= EventVertex.Z();
+		Float_t vertZ = EventVertex.Z();
+		Float_t vertX = EventVertex.X();
+		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
 
 		//--------------------------------------------------------------------------------
@@ -346,7 +423,12 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 		if (centClassIndex != 1) // if centrality is not 0-10% 
 			continue;
 
-		hZvertex->Fill(vertZ);
+		fIsEventAccepted = SelectEvent(vertX,vertY,vertZ);
+		if (!std::get<0>(fIsEventAccepted))
+			continue;
+		//hZvertex->Fill(vertZ);
+		//hXvertex->Fill(vertX);
+		//hYvertex->Fill(vertY);
 
 		// remove comment to see the vertex
 		//hXZ->Fill(EventVertex.Z(), EventVertex.X());
@@ -380,78 +462,71 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			Short_t fCharge   = particle_cand->getCharge();
-			Float_t fMomentum = particle_cand->getMomentum();
-			Float_t fBeta	  = particle_cand->getBeta();
-			Float_t fMass2 = fMomentum*fMomentum*(1-fBeta*fBeta)/(fBeta*fBeta);
-			Short_t fSystem   = particle_cand->getSystemUsed();
-			Bool_t fIsAtMdcEdge = particle_cand->isAtAnyMdcEdge();
-			//Short_t PID	    = particle_cand->getGeantPID();
+			fHADES.charge   = particle_cand->getCharge();
+			fHADES.momentum = particle_cand->getMomentum();
+			fHADES.beta	  = particle_cand->getBeta();
+			fHADES.mass2 = fHADES.momentum*fHADES.momentum*(1-fHADES.beta*fHADES.beta)/(fHADES.beta*fHADES.beta);
+			fHADES.system   = particle_cand->getSystemUsed();
+			fHADES.isAtMdcEdge = particle_cand->isAtAnyMdcEdge();
+			//fPID	    = particle_cand->getGeantPID();
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
 			
-			if (fIsAtMdcEdge || fSystem == -1)
+			if (fHADES.isAtMdcEdge || fHADES.system == -1)
 				continue;
 
-			float fMomCharg = fCharge*fMomentum;
+			fIsTrackAccepted = SelectProton(fHADES,betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom);
 
-			switch (fSystem)
-			{
-				case 0:
-					hBetaMomRpcAll->Fill(fMomCharg,fBeta);
-					if (betamom_2sig_p_rpc_pionCmom->IsInside(fMomCharg,fBeta))
-					{
-						hM2AccRpc->Fill(fMass2);
-						hBetaMomRpcProt->Fill(fMomCharg,fBeta);
-						fIsAccepted = true;
-						fDetector = Detector::RPC;
-					}
-					else
-					{
-						fIsAccepted = false;
-					}
-					break;
+			if (std::get<1>(fIsTrackAccepted) == Detector::RPC)
+				hBetaMomRpcAll->Fill(fHADES.momentum*fHADES.charge,fHADES.beta);
+			else
+				hBetaMomTofAll->Fill(fHADES.momentum*fHADES.charge,fHADES.beta);
 
-				case 1:
-					hBetaMomTofAll->Fill(fMomCharg,fBeta);
-					if (betamom_2sig_p_tof_pionCmom->IsInside(fMomCharg,fBeta))
-					{
-						hM2AccTof->Fill(fMass2);
-						hBetaMomTofProt->Fill(fMomCharg,fBeta);
-						fIsAccepted = true;
-						fDetector = Detector::ToF;
-					}
-					else
-					{
-						fIsAccepted = false;
-					}
-					break;
-				
-				default:
-					fIsAccepted = false;
-					break;
-			}
-
-			if(fIsAccepted)
+			if(std::get<0>(fIsTrackAccepted))
 			{
 				particle_cand->calc4vectorProperties(HPhysicsConstants::mass(14));
 				fProton.momVec = *particle_cand;
 				fProton.centrality = centClassIndex;
-				fProton.zVertex = 0;
-				fProton.sys = fDetector;
+				fProton.sys = std::get<1>(fIsTrackAccepted);
 				fTrackVec.push_back(fProton);
+
+				fHADES.rapidity = fProton.momVec.Rapidity();
+				fHADES.pt = fProton.momVec.Perp();
+
+				if (std::get<1>(fIsTrackAccepted) == Detector::RPC)
+				{
+					hM2AccRpc->Fill(fHADES.mass2);
+					hBetaMomRpcProt->Fill(fHADES.momentum*fHADES.charge,fHADES.beta);
+					hPtYRpcProt->Fill(fHADES.rapidity,fHADES.pt);
+				}
+				else
+				{
+					hM2AccTof->Fill(fHADES.mass2);
+					hBetaMomTofProt->Fill(fHADES.momentum*fHADES.charge,fHADES.beta);
+					hPtYTofProt->Fill(fHADES.rapidity,fHADES.pt);
+				}
 			}
 
 		} // End of track loop
 
-		if (MixBckg(fTrackVec,fBckgCocktail,partToMix,gen)) // if track vector has entries
+		if (fTrackVec.size()) // if track vector has entries
 		{
 			hAccTracks->Fill(fTrackVec.size());
 
-			CalcSignal(fSignVec,fTrackVec);
-			CalcBackground(fBckgVec,fTrackVec,fBckgCocktail);
+			if (fBckgCocktail.at(std::get<1>(fIsEventAccepted)).size())
+			{
+				CalcSignal(fSignVec,fTrackVec);
+				CalcBackground(fBckgVec,fTrackVec,fBckgCocktail.at(std::get<1>(fIsEventAccepted)));
+			}
+			MixBckg(fTrackVec,fBckgCocktail.at(std::get<1>(fIsEventAccepted)),partToMix,gen);
+
+			for (const auto &val : fSignVec)
+				hKtSign->Fill(val.kT);
+			for (const auto &val : fBckgVec)
+				hKtBckg->Fill(val.kT);
+
 			FillAndClear(fSignVec,hQinvSign,hQoslSign);
 			FillAndClear(fBckgVec,hQinvBckg,hQoslBckg);
 
@@ -481,20 +556,26 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile.root", L
     // Remember to write your results to the output file here
     //================================================================================================================================================================
 	
-	hZvertex->Write();
 	hAccTracks->Write();
 	hM2AccRpc->Write();
 	hM2AccTof->Write();
+	hPtYRpcProt->Write();
+	hPtYTofProt->Write();
 
 	hBetaMomRpcAll->Write();
 	hBetaMomRpcProt->Write();
 	hBetaMomTofAll->Write();
 	hBetaMomTofProt->Write();
 
-	hQinvSign->Write();
-	hQoslSign->Write();
-	hQinvBckg->Write();
-	hQoslBckg->Write();
+	hKtSign->Write();
+	hKtBckg->Write();
+	for (int i = 0; i < fKtBins; i++)
+	{
+		hQinvSign.at(i)->Write();
+		hQoslSign.at(i)->Write();
+		hQinvBckg.at(i)->Write();
+		hQoslBckg.at(i)->Write();
+	}
 	
     //--------------------------------------------------------------------------------
     // Closing file and finalization
