@@ -9,7 +9,7 @@ output/
 build/
 loopDST.C
 anaysis
-myCrap/depend/
-myCrap/lib/
-myCrap/obj/
-myCrap/pc/
+myCrap/libBuild/depend/
+myCrap/libBuild/lib/
+myCrap/libBuild/obj/
+myCrap/libBuild/pc/
