@@ -9,3 +9,7 @@ output/
 build/
 loopDST.C
 anaysis
+myCrap/depend/
+myCrap/lib/
+myCrap/obj/
+myCrap/pc/

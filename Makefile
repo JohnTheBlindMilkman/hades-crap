@@ -14,4 +14,3 @@ HYDRA_LIBS    += -lDst
 default: clean build install
 
 include $(HADDIR)/hades.app.mk
-

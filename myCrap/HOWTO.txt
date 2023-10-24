@@ -1,0 +1,239 @@
+
+
+1. create the directory which you will use to compile your lib
+   (example /misc/hadesprojects/analysis_workshop/2022/hydra/own_lib)
+   create the subdirs 
+             lib     (will constain your library      after make build install)
+             include (will contain  your header files after make build install)
+             macros  (hera you will place rootlogon.C with the instruction to load you lib : additional_libs = "MyLib" (no .so!)) 
+             you libdir (here you put your source code)
+
+    create a Makefile :
+   
+    filecontent start-------------------------------
+    ###############################################################################
+    #
+    #  The global Makefile to build all Hydra modules from scratch.
+    #
+    #  Examples and explanations can be found in the file README
+    #
+    ###############################################################################
+
+    # no external dependencies for a total build
+    MYHADDIR        ?= $(shell pwd)
+    INSTALL_DIR      =$(MYHADDIR)/
+
+    export USES_RFIO       ?= no
+    export USES_GFORTRAN   ?= no
+    export USES_ORACLE     ?= yes
+
+    MODULES ?=      mylib
+
+    include $(HADDIR)/hades.def.mk
+    include $(HADDIR)/hades.rules.mk
+    filecontent end---------------------------------
+    
+    
+
+
+
+2. setup your defall.sh : MYHADDIR
+
+             
+   defall.sh :
+
+   filecontent start-------------------------------
+#!/bin/sh
+###############################################################################
+#
+#  Hades Software Environment Setup Script (Bourne shell family version)
+#
+#  Each Software Collection should have it dedicated verion of this script.
+#  They can be distinguished e.g. by the used paths.
+#
+#  Author: Simon Lang, GSI, 30.09.2006
+#
+###############################################################################
+
+. /cvmfs/hadessoft.gsi.de/install/debian10/admin/hsc-functions.sh
+
+hsc_checkContext
+
+# Root, and dependent packages
+export ROOTSYS=/cvmfs/hadessoft.gsi.de/install/debian10/root-6.24.02
+
+# Global Hydra Location
+export HADDIR=/cvmfs/hadessoft.gsi.de/install/debian10/6.24.02/hydra2-6.2
+export ROOT_INCLUDE_PATH=${HADDIR}/include
+
+# Private Hydra Location - not used by default
+#export MYHADDIR=/e.g./somewhere/in/my/home/directory
+#export ROOT_INCLUDE_PATH=${MYHADDIR}/include:${HADDIR}/include
+export MYHADDIR=/misc/hadesprojects/analysis_workshop/2022/hydra/own_lib
+export ROOT_INCLUDE_PATH=${MYHADDIR}/include:${HADDIR}/include
+
+# Oracle
+export ORACLE_HOME=/cvmfs/hadessoft.gsi.de/install/debian10/oracle/client
+export ORA_USER=hades_ana/hades@db-hades
+
+# CERNLIB - for HGeant
+export CERN_ROOT=/cvmfs/hadessoft.gsi.de/install/debian10/cernlib_gfortran/2005
+
+# PLUTO
+export PLUTODIR=
+
+# RFIO support
+export ADSM_BASE_NEW=/misc/hadessoftware/etch32/install/gstore-may07
+
+hsc_setEnvironment
+hsc_shortPrintout
+
+hsc_finalizeScript
+  filecontent end---------------------------------
+    
+   
+   
+   
+   run . ./defall.sh
+    
+   Make sure your .rootrc in you $HOME is setup correctly : 
+    
+   Unix.*.Root.MacroPath:          .:$(MYHADDIR)/macros:$(HADDIR)/macros  (search for rootlogon.C  first local dir, then MYHADDIR last HADDIR
+
+3. Now fill your lib with content:
+   (example /misc/hadesprojects/analysis_workshop/2022/hydra/own_lib/mylib)
+   
+   a. You need a LinkDef.h     which is named  MyLibLinkDef.h  (as your libraryname!)
+      to list all you classes to build the ROOT dictionary
+      
+      filecontent start-------------------------------
+      #ifdef __CINT__
+
+      #pragma link off all globals;
+      #pragma link off all classes;
+      #pragma link off all functions;
+
+      #pragma link C++ class HMyLibDummy;
+      #endif
+      filecontent end---------------------------------
+
+   b. you need  a Makefile listing all your .cc files (headers will be inluded only if they are used by a .cc files) 
+   
+      filecontent start-------------------------------
+      ##############################################################################
+      #
+      #  Makefile for Hydra library libMyLib.so
+      #
+      #  This makefile contains all definitions local to this module. All
+      #  general definitions are included from makefiles in $(HADDIR).
+      #
+      ##############################################################################
+
+      LIB_NAME := MyLib
+
+      SOURCE_FILES := hmylibdummy.cc
+
+      include $(HADDIR)/hades.def.mk
+      include $(HADDIR)/hades.module.mk
+      filecontent end---------------------------------
+
+
+    c. you need a basic class like:
+    
+       hmylibdummy.h :
+       
+       filecontent start-------------------------------
+       #ifndef HMYLIBDUMMY_H
+       #define HMYLIBDUMMY_H
+
+       #include "TObject.h"
+
+       class HMyLibDummy : public TObject {
+       protected:
+
+       public:
+           HMyLibDummy();
+           ~HMyLibDummy();
+           void printHello(Int_t n = 1);
+           ClassDef(HMyLibDummy,1) // Dummy Class
+       };
+       #endif  /*!HMYLIBDUMMY_H*/
+       filecontent end---------------------------------
+
+    
+       
+       hmylibdummy.cc :
+       
+       
+       
+       filecontent start-------------------------------
+       //*-- AUTHOR : YourName
+
+       //_HADES_CLASS_DESCRIPTION 
+       ////////////////////////////////////////////////////////////////////////////
+       // HMyLibDummy
+       // Dummy Class
+       ////////////////////////////////////////////////////////////////////////////
+
+       #include "hmylibdummy.h"
+
+       #include <iostream>
+       using namespace std;
+
+       ClassImp(HMyLibDummy)
+
+       HMyLibDummy::HMyLibDummy() : TObject()
+       {
+         // constructor for HMylibDummy
+       }
+       HMyLibDummy::~HMyLibDummy()
+       {
+         // destructor of HMyLibDummy
+       }
+
+       void HMyLibDummy::printHello(Int_t n)
+       {
+          for(Int_t i = 0; i < n; i ++) {
+             cout<<"Hello!"<<endl;
+          }
+       }
+       filecontent end---------------------------------
+
+
+4. fireing up ROOT session you should see you lib loaded.
+
+   .L myMacro.C++ will compile using your classes (your lib and
+   include files are found automatically)
+
+   
+   You can build an executable using your lib
+   easily by adding your lib to the Makefile:
+   
+   filecontent start-------------------------------
+   APP_NAME     := analysis 
+   SOURCE_FILES := analysis.cc
+
+   # RFIO+ORA flags depend on
+   # how hydra was compiled
+   export USES_ORACLE   = yes
+   export USES_RFIO     = no
+
+   # gFortran or g77
+   export USES_GFORTRAN = no
+
+   # all libs headers rules etc
+   include $(HADDIR)/hades.def.mk
+
+
+
+   .PHONY:  default
+   default: clean build install
+
+   # any special lib needed?
+   # libDst is not in the default
+   HYDRA_LIBS+=  -lMyLib
+
+   # eveyrything needed to build an apllication
+   include $(HADDIR)/hades.app.mk
+   filecontent end---------------------------------
+    
