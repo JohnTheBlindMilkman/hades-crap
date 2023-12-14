@@ -147,15 +147,20 @@ void MixBckg(const std::vector<Proton> &trackVec, std::deque<Proton> &bckgVec, c
 
 int AssignKt(float kt)
 {
-	static std::vector<std::pair<float,float> > ktBinVec = {{150,450},{450,700},{700,1050},{1050,1350},{1350,1650}};
-	for (std::size_t i = 0; i < ktBinVec.size(); i++)
-		if (kt >= ktBinVec.at(i).first && kt <= ktBinVec.at(i).second)
-			return i;
+	//static std::vector<std::pair<float,float> > ktBinVec = {{150,450},{450,700},{700,1050},{1050,1350},{1350,1650}};
+	//for (std::size_t i = 0; i < ktBinVec.size(); i++)
+	if (kt >= 150 && kt <= 1650)
+		return 0;
 
 	return -999;
 }
 
-void FillAndClear(std::vector<ProtonPair> &pairVec, std::array<TH1D*,5> hInp1, std::array<TH3D*,5> hInp3)
+float DegToRad(int &angle)
+{
+	return (TMath::Pi()/180)*angle;
+}
+
+void FillAndClear(std::vector<ProtonPair> &pairVec, TH1D* hInp1, TH3D* hInp3)
 {
 	int ktBin = 0;
 	for (auto &pair : pairVec)
@@ -164,18 +169,19 @@ void FillAndClear(std::vector<ProtonPair> &pairVec, std::array<TH1D*,5> hInp1, s
 		if (ktBin == -999)
 			continue;
 
-		hInp1.at(ktBin)->Fill(pair.qInv);
-		hInp3.at(ktBin)->Fill(pair.qOut,pair.qSide,pair.qLong);
+		hInp1->Fill(pair.qInv);
+		hInp3->Fill(pair.qOut,pair.qSide,pair.qLong);
 	}
 
 	pairVec.clear();
 	pairVec.resize(0);
 }
 
-int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", Long64_t nDesEvents = -1, Int_t maxFiles = 50)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	const int fTargetPlates = 15; // number of target plates
 	const int fKtBins = 5; // number of kT bins
+	const int fAlphas = 6; // number of opening angle cuts
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	//--------------------------------------------------------------------------------
@@ -199,7 +205,7 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", 
 		//TString inputFolder = "/lustre/nyx/hades/dstsim/mar19/ag1580ag/gen3/bmax14/no_enhancement_gcalor/root";
 		
 		//data
-		TString inputFolder = "/u/kjedrzej/lustre/hades/dst/apr12/gen9/122/root";
+		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -277,9 +283,9 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", 
 
 	TH1D *hKtSign = new TH1D("hKtSign","Distribution of k_{T} in signal;k_{T} [MeV]",1000,0,2500);
 	TH1D *hKtBckg = new TH1D("hKtBckg","Distribution of k_{T} in background;k_{T} [MeV]",1000,0,2500);
-	std::array<TH1D*,fKtBins> hQinvSign,hQinvBckg;
-	std::array<TH3D*,fKtBins> hQoslSign,hQoslBckg;
-	for (int i = 0; i < fKtBins; i++)
+	std::array<TH1D*,fAlphas> hQinvSign,hQinvBckg;
+	std::array<TH3D*,fAlphas> hQoslSign,hQoslBckg;
+	for (int i = 0; i < fAlphas; i++)
 	{
 		hQinvSign.at(i) = new TH1D(TString::Format("hQinvSign%d",i),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",250,0,1000);
 		hQoslSign.at(i) = new TH3D(TString::Format("hQoslSign%d",i),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000);
@@ -304,7 +310,7 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", 
 	Proton fProton;
 	std::vector<Proton> fTrackVec;
 	std::array<std::deque<Proton>,fTargetPlates> fBckgCocktail;
-	std::vector<ProtonPair> fSignVec, fBckgVec;
+	std::array<std::vector<ProtonPair>, fAlphas> fSignVec, fBckgVec;
 	const int partToMix = 50;
 	
     //--------------------------------------------------------------------------------
@@ -521,18 +527,24 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", 
 
 			if (fBckgCocktail.at(std::get<1>(fIsEventAccepted)).size())
 			{
-				CalcSignal(fSignVec,fTrackVec);
-				CalcBackground(fBckgVec,fTrackVec,fBckgCocktail.at(std::get<1>(fIsEventAccepted)));
+				for (int alpha = 0; alpha < fAlphas; alpha++)
+				{
+					CalcSignal(fSignVec.at(alpha),fTrackVec,DegToRad(alpha));
+					CalcBackground(fBckgVec.at(alpha),fTrackVec,fBckgCocktail.at(std::get<1>(fIsEventAccepted)),DegToRad(alpha));
+				}
 			}
 			MixBckg(fTrackVec,fBckgCocktail.at(std::get<1>(fIsEventAccepted)),partToMix,gen);
-
-			for (const auto &val : fSignVec)
+			
+			/*for (const auto &val : fSignVec)
 				hKtSign->Fill(val.kT);
 			for (const auto &val : fBckgVec)
-				hKtBckg->Fill(val.kT);
+				hKtBckg->Fill(val.kT);*/
 
-			FillAndClear(fSignVec,hQinvSign,hQoslSign);
-			FillAndClear(fBckgVec,hQinvBckg,hQoslBckg);
+			for (int alpha = 0; alpha < fAlphas; alpha++)
+			{
+				FillAndClear(fSignVec.at(alpha),hQinvSign.at(alpha),hQoslSign.at(alpha));
+				FillAndClear(fBckgVec.at(alpha),hQinvBckg.at(alpha),hQoslBckg.at(alpha));
+			}
 
 			fTrackVec.clear();
 			fTrackVec.resize(0);
@@ -573,7 +585,7 @@ int testAnalysis(TString inputlist = "", TString outfile = "testOutFile2.root", 
 
 	hKtSign->Write();
 	hKtBckg->Write();
-	for (int i = 0; i < fKtBins; i++)
+	for (int i = 0; i < fAlphas; i++)
 	{
 		hQinvSign.at(i)->Write();
 		hQoslSign.at(i)->Write();

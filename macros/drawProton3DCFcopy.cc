@@ -49,13 +49,13 @@ void prepareGraph(TH1D* hist, int col)
 void drawProton3DCFcopy()
 {
     gStyle->SetOptStat(0);
-    const TString filePath = "testOutFile.root";
+    const TString filePath = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all.root";
     const TString sProj[] = {"x","y","z"};
     const TString sProjName[] = {"out","side","long"};
     const int cent = 1;
     const double drawMin = 0, drawMax = 1000;
     const int rebin = 2;
-    const int wbin = 20;
+    const int wbin = 0; 
 
     double norm = 1.;
     int binc = 0, binmn = 0, binmx = 0;
@@ -73,8 +73,13 @@ void drawProton3DCFcopy()
 
     impFile = TFile::Open(filePath);
 
-    hNum3D = (TH3D*) impFile->Get("hQoslSign");
-    hDen3D = (TH3D*) impFile->Get("hQoslBckg");
+    hNum3D = impFile->Get<TH3D>("hQoslSign0");
+    hDen3D = impFile->Get<TH3D>("hQoslBckg0");
+    for (int i : {1,2,3,4}) // loop over remaining kT ranges
+    {
+        hNum3D->Add(impFile->Get<TH3D>(TString::Format("hQoslSign%d",i)));
+        hDen3D->Add(impFile->Get<TH3D>(TString::Format("hQoslBckg%d",i)));
+    }
 
     for(int i : {0,1,2}) // loop over projections: out, side, long
     {
@@ -110,7 +115,7 @@ void drawProton3DCFcopy()
         lline->Draw("same");
     }
     
-    canv->SaveAs("./output/CF3D_cent0_10_kTInt.png");
+    canv->SaveAs("../output/CF3D_cent0_10_kTInt.png");
     //outFile = TFile::Open("./output/ProtonProton1BPLCMS3DCF.root","recreate");
     //canv->Write();
     //for( int i : {0,1,2})

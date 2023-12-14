@@ -49,7 +49,7 @@ void prepareGraph(TH1D* hist, int col)
 void drawProton3DCF()
 {
     gStyle->SetOptStat(0);
-    const TString filePath = "testOutFile.root";
+    const TString filePath = "/u/kjedrzej/hades-crap/testOutFile.root";
     const TString sProj[] = {"x","y","z"};
     const TString sProjName[] = {"out","side","long"};
     const int cent = 1;
@@ -108,7 +108,7 @@ void drawProton3DCF()
         lline->Draw("same");
     }
     
-    canv->SaveAs("./output/CF3D_cent0_10_kTInt.png");
+    canv->SaveAs("../output/CF3D_cent0_10_kTInt.png");
     //outFile = TFile::Open("./output/ProtonProton1BPLCMS3DCF.root","recreate");
     //canv->Write();
     //for( int i : {0,1,2})
