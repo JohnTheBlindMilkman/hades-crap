@@ -1,3 +1,6 @@
+#ifndef PairCandidate_hxx
+    #define PairCandidate_hxx
+
 #include "EventCandidate.hxx"
 
 #include <deque>
@@ -74,6 +77,7 @@ namespace Selection
         PairCandidate pairCand;
         pairCand = CFKinematics(part1,part2);
         pairCand.OpeningAngle = CalcOpeningAngle(part1,part2);
+        pairCand.Rapidity = (part1.Rapidity + part2.Rapidity) / 2.;
         pairCand.AzimuthalAngle = (part1.AzimimuthalAngle + part2.AzimimuthalAngle) / 2.;
         pairCand.DeltaPhi = part1.AzimimuthalAngle - part2.AzimimuthalAngle;
         pairCand.DeltaTheta = part1.PolarAngle - part2.PolarAngle;
@@ -148,3 +152,5 @@ namespace Selection
     }
 
 }
+
+#endif

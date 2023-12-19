@@ -1,5 +1,10 @@
+#ifndef TrackCandidate_hxx
+    #define TrackCandidate_hxx
+
 #include "TLorentzVector.h"
 #include "TCutG.h"
+#include "hparticlecand.h"
+#include "hparticlecandsim.h"
 
 namespace Selection
 {
@@ -68,3 +73,5 @@ namespace Selection
     }
 
 } // namespace Selection
+
+#endif

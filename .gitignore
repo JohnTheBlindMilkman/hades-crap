@@ -1,5 +1,6 @@
 RootIncludes
 HydraIncludes
+HydraInclude
 HalIncludes
 *.pcm
 *.d
@@ -8,6 +9,7 @@ HalIncludes
 *.root
 output/
 build/
+slurmOutput/
 loopDST.C
 anaysis
 myCrap/libBuild/depend/

@@ -33,9 +33,6 @@ SOFTWARE.
 #define INDICATORS_SETTING
 
 #include <cstddef>
-/* #include <indicators/color.hpp>
-#include <indicators/font_style.hpp>
-#include <indicators/progress_type.hpp> */
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -167,10 +164,10 @@ namespace FemtoCorrelation
     namespace option 
     {
         using EventsToMix = details::IntegerSetting<details::MixingOption::events_to_mix>;
-        using KtDifferential = details::Setting<std::vector<float>,details::MixingOption::kT_differential>;
-        using RapidityDifferential = details::Setting<std::vector<float>,details::MixingOption::rapidity_differential>;
-        using AzimuthallyDifferential = details::Setting<std::vector<float>,details::MixingOption::azimuthally_differential>;
-        using CentralityDifferential = details::Setting<std::vector<int>,details::MixingOption::centrality_differential>;
+        using KtDifferential = details::Setting<std::vector<std::pair<float,float> >,details::MixingOption::kT_differential>;
+        using RapidityDifferential = details::Setting<std::vector<std::pair<float,float> >,details::MixingOption::rapidity_differential>;
+        using AzimuthallyDifferential = details::Setting<std::vector<std::pair<float,float> >,details::MixingOption::azimuthally_differential>;
+        using CentralityDifferential = details::Setting<std::vector<std::pair<int,int> >,details::MixingOption::centrality_differential>;
     } // namespace option
 } // namespace indicators
 
