@@ -122,7 +122,7 @@ int femtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root",
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
 	
 	// create objects for particle selection and mixing
-	Selection::EventCandidate fEvent;
+	Selection::EventCandidate fEvent;	
 	Selection::TrackCandidate fTrack;
     FemtoCorrelation::FemtoMixer mixer{
         FemtoCorrelation::option::AzimuthallyDifferential{fPairAzimuthBins},

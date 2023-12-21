@@ -3,6 +3,7 @@
 
 #include "Options.hxx"
 #include "PairCandidate.hxx"
+#include "JJMultiEventMixer.hxx"
 #include "boost/multi_array.hpp"
 #include <iostream>
 #include <queue>
@@ -225,6 +226,7 @@ namespace FemtoCorrelation
             Settings fSettings;
             const std::size_t fTargetPlates,fCentralityBins,fRapidityBins,fKtBins,fAzimuthBins;
             bool fIsCentralityDependent,fIsRapidityDependent,fIsKtDependent,fIsAzimuthallyDependent;
+            Mixing::JJMultiEventMixer<Selection::EventCandidate,Selection::TrackCandidate> fJJMEMixer;
             boost::multi_array<std::vector<Selection::PairCandidate>,5> fSignal,fBackground;
             std::deque<Selection::TrackCandidate> fBckgCocktail;
             std::random_device fRandDevice;
