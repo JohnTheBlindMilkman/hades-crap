@@ -13,43 +13,46 @@
         {
             private:
                 std::size_t fBufferSize;
-                bool fWaitForBuffer;
-                std::vector<std::size_t> fPIDList;
+                bool fWaitForBuffer, fIsEventHashingSet, fIsTrackHashingSet;
+                std::vector<long> fPIDList;
                 std::size_t fDimensions;
                 //map of similar events (of maximal size give by fBufferSize); each event has a map of similar tracks
                 std::unordered_map<std::size_t, std::deque<std::unordered_map<T, std::unordered_map<std::size_t, std::vector<U> > > > > fSimilarityMap;
-                std::function<const std::size_t(const T &)> fEventHashingFunction;
-                std::function<const std::size_t(const U &)> fTrackHashingFunction;
+                std::function<std::size_t(const T &)> fEventHashingFunction;
+                std::function<std::size_t(const U &)> fTrackHashingFunction;
 
                 std::unordered_map<std::size_t, std::vector<U> > SortTracks(const std::vector<U> &tracks);
 
             public:
-                JJMultiEventMixer() : fBufferSize(0), 
+                JJMultiEventMixer() : fBufferSize(10), 
                                     fWaitForBuffer(false), 
+                                    fIsEventHashingSet(false),
+                                    fIsTrackHashingSet(false),
                                     fPIDList({}), 
-                                    fDimensions(fPIDList.size()), 
-                                    fSimilarityMap({}),
+                                    fDimensions(0), 
+                                    /* fSimilarityMap(), */
                                     fEventHashingFunction([](const T &){return 0;}), 
                                     fTrackHashingFunction([](const U &){return 0;}) {}
 
-                void SetEventHashingFunction(std::function<const std::size_t(const T &)> func) {fEventHashingFunction = func;}
-                const std::size_t GetEventHash(const T &obj) const {return fEventHashingFunction(obj);}
+                void SetEventHashingFunction(std::function<std::size_t(const T &)> func) {fIsEventHashingSet = true; fEventHashingFunction = func;}
+                std::size_t GetEventHash(const T &obj) const {return fEventHashingFunction(obj);}
 
-                void SetTrackHashingFunction(std::function<const std::size_t(const U &)> func) {fTrackHashingFunction = func;}
-                const std::size_t GetTrackHash(const U &obj) const {return fTrackHashingFunction(obj);}
+                void SetTrackHashingFunction(std::function<std::size_t(const U &)> func) {fIsTrackHashingSet = true; fTrackHashingFunction = func;}
+                std::size_t GetTrackHash(const U &obj) const {return fTrackHashingFunction(obj);}
 
                 // To-Do: implement PIDs
-                void SetPIDs(const std::vector<std::size_t> &particleList) {fPIDList = particleList;}
-                std::vector<std::size_t> GetPIDList() const {return fPIDList;}
+                void SetPIDs(const std::vector<long> &particleList) {fPIDList = particleList;}
+                std::vector<long> GetPIDList() const {return fPIDList;}
 
                 void SetMaxBufferSize(std::size_t buffer) {fBufferSize = buffer;}
                 std::size_t GetMaxBufferSize() const {return fBufferSize;}
 
                 void SetFixedBuffer(bool isFixed) {fWaitForBuffer = isFixed;}
-                bool GetBufferState() const {return fWaitForBuffer};
+                bool GetBufferState() const {return fWaitForBuffer;};
 
-                void AddEvent(const T &event, const std::vector<U> &tracks);
+                std::unordered_map<std::size_t, std::vector<U> > AddEvent(const T &event, const std::vector<U> &tracks);
                 std::vector<U> GetSimilarTracks(const T &event, const U &track) const;
+                std::unordered_map<std::size_t, std::vector<U> > GetSortedTracks(const T &event);
         };
 
         template<typename T, typename U>
@@ -69,9 +72,9 @@
                 }
                 else
                 {
-                    std::vector<U> tmpVec;
-                    tmpVec.push_back(track);
-                    fSimilarityMap.emplace(currentTrackHash,tmpVec);
+                    std::vector<U> tmpVec{track};
+                    //tmpVec.push_back(track);
+                    trackMap.emplace(currentTrackHash,tmpVec);
                 }
             }
 
@@ -79,27 +82,41 @@
         }
 
         template<typename T, typename U>
-        void JJMultiEventMixer<T,U>::AddEvent(const T &event, const std::vector<U> &tracks)
+        std::unordered_map<std::size_t, std::vector<U> > JJMultiEventMixer<T,U>::AddEvent(const T &event, const std::vector<U> &tracks)
         {
-            std::size_t evtHash = fEventHashingFunction(event);
-            std::unordered_map<T, std::unordered_map<std::size_t,std::vector<U> > > trackMap;
-
-            trackMap.emplace(event,SortTracks(tracks));
-
-            // an entry for given evtHash may already exist so we must check if that's the case
-            if (fSimilarityMap.find(evtHash) != fSimilarityMap.end())
+            if (!fIsEventHashingSet)
             {
-                fSimilarityMap.at(evtHash).push_back(trackMap);
+                throw std::runtime_error("Event hashnig is not set.");
+            }
+            if (!fIsTrackHashingSet)
+            {
+                throw std::runtime_error("Track hashing is not set.");
+            }
+
+            // good idea would be to simplify the complex data structures:
+            // using key = std::size_t;
+            // using  value = std::deque<std::unordered_map<T, std::unordered_map<std::size_t, std::vector<U> > > >;
+            std::size_t evtHash = fEventHashingFunction(event);
+            std::unordered_map<std::size_t, std::vector<U> > tmpTrackMap = SortTracks(tracks);
+            std::unordered_map<T, std::unordered_map<std::size_t, std::vector<U> > > trackMap;
+
+            trackMap.emplace(event,tmpTrackMap);
+
+            // an entry for given evtHash may not exist, so we must check if that's the case
+            if (fSimilarityMap.find(evtHash) == fSimilarityMap.end())
+            {
+                std::deque<std::unordered_map<T, std::unordered_map<std::size_t, std::vector<U> > > > tmpQueue;
+                tmpQueue.push_back(trackMap);
+                fSimilarityMap.emplace(evtHash,tmpQueue);
             }
             else
             {
-                std::deque<std::unordered_map<T, std::unordered_map<std::size_t, std::vector<U> > > > tmpDeque;
-                tmpDeque.push_back(trackMap);
-                fSimilarityMap.emplace(evtHash,tmpDeque);
+                fSimilarityMap.at(evtHash).push_back(trackMap);
+                if (fSimilarityMap.at(evtHash).size() > fBufferSize)
+                    fSimilarityMap.at(evtHash).pop_front(); 
             }
 
-            if (fSimilarityMap[evtHash].size() > fBufferSize)
-                fSimilarityMap[evtHash].pop_front(); 
+            return tmpTrackMap;
         }
 
         template<typename T, typename U>
@@ -112,9 +129,9 @@
             if (fSimilarityMap.at(evtHash).size() == fBufferSize || fWaitForBuffer == false)
             {
                 for (std::size_t evtIter = 0; evtIter < fSimilarityMap.at(evtHash).size(); ++evtIter)
-                    if (fSimilarityMap.at(evtHash).at(evtIter).front() != fSimilarityMap.at(evtHash).at(evtIter).at(event))
-                        if (fSimilarityMap.at(evtHash).at(evtIter).front().find(trackHash) != fSimilarityMap.at(evtHash).at(evtIter).front().end())
-                            outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).front().at(trackHash).front());
+                    if (fSimilarityMap.at(evtHash).at(evtIter).begin()->first != event)
+                        if (fSimilarityMap.at(evtHash).at(evtIter).begin()->second.find(trackHash) != fSimilarityMap.at(evtHash).at(evtIter).begin()->second.end())
+                            outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).begin()->second.at(trackHash).front());
             }
 
             return outputVector;
