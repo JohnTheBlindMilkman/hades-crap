@@ -1,3 +1,13 @@
+/**
+ * @file JJMultiEventMixer.hxx
+ * @author Jędrzej Kołaś (jedrzej.kolas.dokt@pw.edu.pl)
+ * @brief Class responsible for mixing and storing pairs.
+ * @version 1.0
+ * @date 2024-01-15
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #ifndef JJMultiEventMixer_hxx
     #define JJMultiEventMixer_hxx
 
@@ -30,7 +40,6 @@
                                     fIsTrackHashingSet(false),
                                     fPIDList({}), 
                                     fDimensions(0), 
-                                    /* fSimilarityMap(), */
                                     fEventHashingFunction([](const T &){return 0;}), 
                                     fTrackHashingFunction([](const U &){return 0;}) {}
 
