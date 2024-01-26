@@ -37,7 +37,7 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     	return ktCut*1e2 + yCut*1e1 + EpCut;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	const int fTargetPlates = 15; // number of target plates
 

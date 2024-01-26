@@ -23,6 +23,10 @@ namespace Selection
             DeltaPhi = trck1.AzimimuthalAngle - trck2.AzimimuthalAngle;
             DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
         }
+        PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle) : PairCandidate(trck1,trck2)
+        {
+            AzimuthalAngle = ConstrainAngle((trck1.AzimimuthalAngle + trck2.AzimimuthalAngle) / 2. - RadToDeg(reactionPlaneAngle));
+        }
         ~PairCandidate(){};
 
         bool operator==(const PairCandidate &other) const
@@ -81,6 +85,21 @@ namespace Selection
                     if (arg < -1.) return -1.;
                     return acos(arg);
                 }
+            }
+
+            float RadToDeg(const int &angle)
+            {
+                return (180 / TMath::Pi())*angle;
+            }
+
+            // for getting rid of the angle wrap
+            float ConstrainAngle(float angle)
+            {
+                angle = fmod(angle + 180, 360);
+                if (angle < 0)
+                    angle += 360;
+
+                return angle - 180;
             }
     };
 
