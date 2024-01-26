@@ -6,6 +6,8 @@
 #include "hparticlecand.h"
 #include "hparticlecandsim.h"
 
+#include "boost/functional/hash.hpp"
+
 namespace Selection
 {
     enum class Detector {RPC, ToF};
@@ -16,6 +18,25 @@ namespace Selection
         bool IsAtMdcEdge;
         short int PID, Charge;
         float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass2, Beta, PolarAngle, AzimimuthalAngle;
+
+        bool operator==(const TrackCandidate &other) const
+        {
+            return (System == other.System &&
+            IsAtMdcEdge == other.IsAtMdcEdge &&
+            PID == other.PID &&
+            Charge == other.Charge &&
+            abs(Rapidity - other.Rapidity) < std::numeric_limits<float>::epsilon() &&
+            abs(TotalMomentum - other.TotalMomentum) < std::numeric_limits<float>::epsilon() &&
+            abs(TransverseMomentum - other.TransverseMomentum) < std::numeric_limits<float>::epsilon() &&
+            abs(Px - other.Px) < std::numeric_limits<float>::epsilon() &&
+            abs(Py - other.Py) < std::numeric_limits<float>::epsilon() &&
+            abs(Pz - other.Pz) < std::numeric_limits<float>::epsilon() &&
+            abs(Energy - other.Energy) < std::numeric_limits<float>::epsilon() &&
+            abs(Mass2 - other.Mass2) < std::numeric_limits<float>::epsilon() &&
+            abs(Beta - other.Beta) < std::numeric_limits<float>::epsilon() &&
+            abs(PolarAngle - other.PolarAngle) < std::numeric_limits<float>::epsilon() &&
+            abs(AzimimuthalAngle - other.AzimimuthalAngle) < std::numeric_limits<float>::epsilon());
+        }
     };
 
     void CreateTrack(TrackCandidate &trackCand, HParticleCand* particle_cand)
@@ -73,5 +94,31 @@ namespace Selection
     }
 
 } // namespace Selection
+
+    template<>
+    struct std::hash<Selection::TrackCandidate>
+    {
+        std::size_t operator()(const Selection::TrackCandidate &trck) const
+        {
+            std::size_t res = 0;
+            boost::hash_combine(res,trck.System);
+            boost::hash_combine(res,trck.IsAtMdcEdge);
+            boost::hash_combine(res,trck.PID);
+            boost::hash_combine(res,trck.Charge);
+            boost::hash_combine(res,trck.Rapidity);
+            boost::hash_combine(res,trck.TotalMomentum);
+            boost::hash_combine(res,trck.TransverseMomentum);
+            boost::hash_combine(res,trck.Px);
+            boost::hash_combine(res,trck.Py);
+            boost::hash_combine(res,trck.Pz);
+            boost::hash_combine(res,trck.Energy);
+            boost::hash_combine(res,trck.Mass2);
+            boost::hash_combine(res,trck.Beta);
+            boost::hash_combine(res,trck.PolarAngle);
+            boost::hash_combine(res,trck.AzimimuthalAngle);
+
+            return res;
+        }
+    };
 
 #endif

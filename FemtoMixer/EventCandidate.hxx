@@ -14,6 +14,23 @@ namespace Selection
         float ReactionPlaneAngle;
         float X, Y, Z;
         std::vector<TrackCandidate> trackList;
+
+        bool operator==(const EventCandidate &other) const
+        {
+            return (Centrality == other.Centrality && 
+            TargetPlate == other.TargetPlate && 
+            ReactionPlaneAngle == other.ReactionPlaneAngle &&
+            abs(X - other.X) < std::numeric_limits<float>::epsilon() && 
+            abs(Y - other.Y) < std::numeric_limits<float>::epsilon() &&
+            abs(Z - other.Z) < std::numeric_limits<float>::epsilon() &&
+            trackList == other.trackList);
+        }
+
+        bool operator!=(const EventCandidate &other)
+        {
+            return !(*this == other);
+        }
+
     };
 
     void CreateEvent(EventCandidate &eventCand, const float &vertx, const float &verty, const float &vertz, const int &cent, const float &EP)
@@ -57,5 +74,33 @@ namespace Selection
         return false;
     }
 } // namespace Selection
+
+    template<>
+    struct std::hash<Selection::EventCandidate>
+    {
+        std::size_t operator()(const Selection::EventCandidate &evt) const
+        {
+            std::size_t res = 0;
+            boost::hash_combine(res,evt.Centrality);
+            boost::hash_combine(res,evt.ReactionPlaneAngle);
+            boost::hash_combine(res,evt.TargetPlate);
+            boost::hash_combine(res,evt.X);
+            boost::hash_combine(res,evt.Y);
+            boost::hash_combine(res,evt.Z);
+            boost::hash_combine(res,evt.trackList);
+
+            return res;
+        }
+    };
+
+    template<> 
+    std::size_t boost::hash_value(std::vector<Selection::TrackCandidate> const &trckVec)
+    {
+        std::size_t res = 17;
+        for (const auto &track : trckVec)
+            res = res *31 + std::hash<Selection::TrackCandidate>()(track);
+
+        return res;
+    }
 
 #endif
