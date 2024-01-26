@@ -143,7 +143,7 @@
             {
                 for (std::size_t evtIter = 0; evtIter < fSimilarityMap.at(evtHash).size(); ++evtIter)
                     if (fSimilarityMap.at(evtHash).at(evtIter).first != event)
-                        outputVector.push_back(trackPair.second);
+                        outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
             }
 
             return SortPairs(MakePairs(outputVector));
