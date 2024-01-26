@@ -20,11 +20,6 @@ std::size_t EventHashing(const Selection::EventCandidate &evt)
     return evt.Centrality*1e1 + evt.TargetPlate;
 }
 
-std::size_t TrackHashing(const Selection::TrackCandidate &trck)
-{
-    return trck.PID;
-}
-
 std::size_t PairHashing(const Selection::PairCandidate &pair)
 {
     // make sure this is ordered!
@@ -144,7 +139,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
 	mixer.SetMaxBufferSize(50);
 	mixer.SetEventHashingFunction(EventHashing);
-	mixer.SetTrackHashingFunction(TrackHashing);
 	mixer.SetPairHashingFunction(PairHashing);
 	
     //--------------------------------------------------------------------------------
@@ -333,7 +327,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		if (fEvent.trackList.size()) // if track vector has entries
 		{
             fSignMap = mixer.AddEvent(fEvent,fEvent.trackList);
-			fBckgMap = mixer.GetDissimilarPairs(fEvent);
+			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
 			for (const auto &signalEntry : fSignMap)
 			{
