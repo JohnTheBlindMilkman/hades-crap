@@ -15,6 +15,7 @@
     #include <deque>
     #include <unordered_map>
     #include <functional>
+    #include <random>
 
     namespace Mixing
     {
@@ -25,30 +26,26 @@
                 std::size_t fBufferSize;
                 bool fWaitForBuffer;
                 std::size_t fDimensions;
-                //map of similar events (of maximal size give by fBufferSize); each event has a map of similar tracks
-                std::unordered_map<std::size_t, std::deque<std::pair<Event, std::unordered_map<std::size_t, std::vector<Track> > > > > fSimilarityMap;
+                std::random_device fRandomDevice;
+                std::mt19937 fGenerator;
+                //map of similar events (of maximal size give by fBufferSize); each event has a single track (randomly chosen from the collection)
+                std::unordered_map<std::size_t, std::deque<std::pair<Event, Track> > > fSimilarityMap;
                 std::function<std::size_t(const Event &)> fEventHashingFunction;
-                std::function<std::size_t(const Track &)> fTrackHashingFunction;
                 std::function<std::size_t(const Pair &)> fPairHashingFunction;
 
-                void AddMixedPairs(std::unordered_map<std::size_t, std::unordered_map<std::size_t, std::deque<Pair> > > &mixedMap);
                 std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
                 std::unordered_map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
-                std::unordered_map<std::size_t, std::vector<Track> > SortTracks(const std::vector<Track> &tracks);
 
             public:
                 JJFemtoMixer() : fBufferSize(10), 
                                 fWaitForBuffer(false), 
                                 fDimensions(0), 
+                                fGenerator(fRandomDevice()),
                                 fEventHashingFunction([](const Event &){return 0;}),
-                                fTrackHashingFunction([](const Track &){return 0;}), 
                                 fPairHashingFunction([](const Pair &){return 0;}) {}
 
                 void SetEventHashingFunction(std::function<std::size_t(const Event &)> func) {fEventHashingFunction = func;}
                 std::size_t GetEventHash(const Event &obj) const {return fEventHashingFunction(obj);}
-
-                void SetTrackHashingFunction(std::function<std::size_t(const Track &)> func) {fTrackHashingFunction = func;}
-                std::size_t GetTrackHash(const Track &obj) const {return fTrackHashingFunction(obj);}
 
                 void SetPairHashingFunction(std::function<std::size_t(const Pair &)> func) {fPairHashingFunction = func;}
                 std::size_t GetPairHash(const Pair &obj) const {return fPairHashingFunction(obj);}
@@ -60,8 +57,7 @@
                 bool GetBufferState() const {return fWaitForBuffer;};
 
                 std::unordered_map<std::size_t, std::vector<Pair> > AddEvent(const Event &event, const std::vector<Track> &tracks);
-                std::unordered_map<std::size_t, std::vector<Pair> > GetDissimilarPairs(const Event &event);
-                std::vector<Track> GetSimilarTracks(const Event &event, const Track &track) const;
+                std::unordered_map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
         };
 
         template<typename Event, typename Track, typename Pair>
@@ -113,48 +109,23 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Track> > JJFemtoMixer<Event,Track,Pair>::SortTracks(const std::vector<Track> &tracks)
-        {
-            std::size_t currentTrackHash = 0;
-            std::unordered_map<std::size_t, std::vector<Track> > trackMap;
-
-            for (const auto &track : tracks)
-            {
-                currentTrackHash = fTrackHashingFunction(track);
-
-                // an entry for given currentPairHash may already exist so we must check if that's the case
-                if (trackMap.find(currentTrackHash) != trackMap.end())
-                {
-                    trackMap.at(currentTrackHash).push_back(track);
-                }
-                else
-                {
-                    std::vector<Track> tmpVec{track};
-                    trackMap.emplace(currentTrackHash,tmpVec);
-                }
-            }
-
-            return trackMap;
-        }
-
-        template<typename Event, typename Track, typename Pair>
         std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::AddEvent(const Event &event, const std::vector<Track> &tracks)
         {
+            std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
             std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks));
-            std::unordered_map<std::size_t, std::vector<Track> > tmpTrackMap = SortTracks(tracks);
-            std::pair<Event, std::unordered_map<std::size_t, std::vector<Track> > > trackMap{event,tmpTrackMap};
+            std::pair<Event, Track> trackPair{event,tracks.at(dist(fGenerator))};
 
             // an entry for given evtHash may not exist, so we must check if that's the case
             if (fSimilarityMap.find(evtHash) == fSimilarityMap.end())
             {
-                std::deque<std::pair<Event, std::unordered_map<std::size_t, std::vector<Track> > > > tmpQueue;
-                tmpQueue.push_back(trackMap);
+                std::deque<std::pair<Event, Track> > tmpQueue;
+                tmpQueue.push_back(trackPair);
                 fSimilarityMap.emplace(evtHash,tmpQueue);
             }
             else
             {
-                fSimilarityMap.at(evtHash).push_back(trackMap);
+                fSimilarityMap.at(evtHash).push_back(trackPair);
                 if (fSimilarityMap.at(evtHash).size() > fBufferSize)
                     fSimilarityMap.at(evtHash).pop_front(); 
             }
@@ -163,7 +134,7 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetDissimilarPairs(const Event &event)
+        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const Event &event)
         {
             std::vector<Track> outputVector;
             std::size_t evtHash = fEventHashingFunction(event);
@@ -172,31 +143,11 @@
             {
                 for (std::size_t evtIter = 0; evtIter < fSimilarityMap.at(evtHash).size(); ++evtIter)
                     if (fSimilarityMap.at(evtHash).at(evtIter).first != event)
-                        for(const auto &trackMap : fSimilarityMap.at(evtHash).at(evtIter).second)
-                            outputVector.push_back(trackMap.second.front());
+                        outputVector.push_back(trackPair.second);
             }
 
             return SortPairs(MakePairs(outputVector));
         }
-
-        template<typename Event, typename Track, typename Pair>
-        std::vector<Track> JJFemtoMixer<Event,Track,Pair>::GetSimilarTracks(const Event &event, const Track &track) const
-        {
-            std::vector<Track> outputVector = {};
-            std::size_t evtHash = fEventHashingFunction(event);
-            std::size_t trackHash = fTrackHashingFunction(track);
-
-            if (fSimilarityMap.at(evtHash).size() == fBufferSize || fWaitForBuffer == false)
-            {
-                for (std::size_t evtIter = 0; evtIter < fSimilarityMap.at(evtHash).size(); ++evtIter)
-                    if (fSimilarityMap.at(evtHash).at(evtIter).first != event)
-                        if (fSimilarityMap.at(evtHash).at(evtIter).second.find(trackHash) != fSimilarityMap.at(evtHash).at(evtIter).second.end())
-                            outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second.at(trackHash).front());
-            }
-
-            return outputVector;
-        }
-
     } // namespace Mixing
     
 
