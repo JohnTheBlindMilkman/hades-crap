@@ -1,9 +1,11 @@
 #include "TFile.h"
 #include "TCanvas.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TString.h"
 #include "TLegend.h"
 #include "TStyle.h"
+#include "TLine.h"
 
 double getNorm(TH1D *hInp, double xMin, double xMax)
 {
@@ -28,8 +30,8 @@ void drawProton1DJJFM()
 {
     gStyle->SetPalette(kPastel);
 
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/femtoOutFile.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_tmp.root";
+    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12sim_all_24_01_31_dp8dt2.root";
+    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant_dp8dt2.root";
     const int rebin = 2;
 
     float norm;
@@ -37,22 +39,34 @@ void drawProton1DJJFM()
     TH1D *hBckg = new TH1D("hBckg","Background of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000);
     TH1D *hRat = new TH1D("hRat","CF of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000);
 
+    TH2D *hDpDtSign = new TH2D("hDpDtSign","#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90);
+    TH2D *hDpDtBckg = new TH2D("hDpDtBckg","#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90);
+    TH2D *hDpDtRat = new TH2D("hDpDtRat","#Delta#phi vs #Delta#theta distribution of signal/backgound ratio 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90);
+
+    TLine *line = new TLine(0,1,3000,1);
+    line->SetLineStyle(kDashed);
+    line->SetLineColor(kGray);
+
     TFile *inpFile = TFile::Open(fileName);
 
     for(const int i : {1,2,3,4,5})
-        for(const int j : {1})
+        for(const int j : {1,2,3})
             for(const int k : {1,2,3,4})
             {
                 TH1D *hS = inpFile->Get<TH1D>(TString::Format("hQinvSign_%d%d%d",i,j,k));
-                if (hS != nullptr)
+                TH2D *hDpDtS = inpFile->Get<TH2D>(TString::Format("hDphiDthetaSign_%d%d%d",i,j,k));
+                if (hS != nullptr && hDpDtS != nullptr)
                 {
                     hSign->Add(hS);
+                    hDpDtSign->Add(hDpDtS);
                 }
                 
                 TH1D *hB = inpFile->Get<TH1D>(TString::Format("hQinvBckg_%d%d%d",i,j,k));
-                if (hB != nullptr)
+                TH2D *hDpDtB = inpFile->Get<TH2D>(TString::Format("hDphiDthetaBckg_%d%d%d",i,j,k));
+                if (hB != nullptr && hDpDtB != nullptr)
                 {
                     hBckg->Add(hB);
+                    hDpDtBckg->Add(hDpDtB);
                 }
             }
 
@@ -69,12 +83,20 @@ void drawProton1DJJFM()
     hRat->SetName("hQinvRat");
     hRat->SetTitle("CF of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})");
     hRat->SetMarkerStyle(20);
+
+    hDpDtRat = new TH2D(*hDpDtSign);
+    hDpDtRat->Divide(hDpDtBckg);
+    hDpDtRat->SetName("hDphiDthetaRat");
+    hDpDtRat->SetTitle("#Delta#phi vs #Delta#theta distribution of signal/backgound ratio 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]");
     
     TFile *outFile = TFile::Open(outputFile,"RECREATE");
 
     TCanvas *canv = new TCanvas("canv","",1600,900);
     hRat->Write();
+    hDpDtRat->Write();
     hRat->Draw("hist pe pmc plc");
+    line->Draw("same");
     //canv->BuildLegend(0.2,0.2,0.5,0.5,"","p");
     canv->Write();
+
 }

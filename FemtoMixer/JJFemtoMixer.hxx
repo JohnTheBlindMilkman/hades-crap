@@ -138,7 +138,7 @@
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
-            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks));
+            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks,event.ReactionPlaneAngle));
             std::pair<Event, Track> trackPair{event,tracks.at(dist(fGenerator))};
 
             // an entry for given evtHash may not exist, so we must check if that's the case
@@ -171,7 +171,7 @@
                         outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
             }
 
-            return SortPairs(MakePairs(outputVector));
+            return SortPairs(MakePairs(outputVector,event.ReactionPlaneAngle));
         }
 
         template<typename Event, typename Track, typename Pair>

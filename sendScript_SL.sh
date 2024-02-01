@@ -46,11 +46,12 @@ par4=${outputdir}                                              # optional par4 :
 par5=-1                                                        # optional par5 : number of events
 par6="no"                                                      # optional par6
 par7="no"                                                      # optional par7   "single" to run comma separated list as single files in jobscript
-resources="--mem=4000 --time=0-4:00:00"                        # runtime < 10h, mem < 2GB
+resources="--mem=4000 --time=0-1:00:00"                        # runtime < 10h, mem < 2GB
+email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs ave finished
 
-jobarrayFile="loop_day_${day}_jobarray.dat"
+jobarrayFile="loop_sim_${day}_jobarray.dat"
 
-filelist=${currentDir}/lists/day_${day}.list  # file list in local dir! not in submissiondir!!!
+filelist=${currentDir}/lists/sim_${day}.list  # file list in local dir! not in submissiondir!!!
 ######################################################################
 
 
@@ -207,7 +208,7 @@ else
         ((stop=$block))
      fi
      ((arrayoffset=${ctsend} * ${block}))
-     command="--array=1-${stop} ${resources} -D ${submissiondir}  --output=${pathoutputlog}/slurm-%A_%a.out -- ${jobscript} ${submissiondir}/${jobarrayFile} ${pathoutputlog} ${arrayoffset}"
+     command="--array=1-${stop} ${resources} --mail-type=END --mail-user=${email} -D ${submissiondir}  --output=${pathoutputlog}/slurm-%A_%a.out -- ${jobscript} ${submissiondir}/${jobarrayFile} ${pathoutputlog} ${arrayoffset}"
      #echo $command
       sbatch $command
 

@@ -22,16 +22,18 @@ std::size_t EventHashing(const Selection::EventCandidate &evt)
 
 std::size_t PairHashing(const Selection::PairCandidate &pair)
 {
+	// collection of slices: (array[n],array[n+1]>
     // make sure this is ordered!
-    constexpr std::array<float,7> ktArr{150,450,750,1050,1350,1650,1651};
-    constexpr std::array<float,3> yArr{-0.5,0.5,0.6};
-    constexpr std::array<float,6> EpArr{-180,-90,0,90,180,181};
+    constexpr std::array<float,6> ktArr{150,450,750,1050,1350,1650};
+    constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
+    constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
     std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.Kt) - ktArr.begin();
     std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.Rapidity) - yArr.begin();
     std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.AzimuthalAngle) - EpArr.begin();
 
-	if (ktCut == 0 || ktCut == ktArr.size()-1 || yCut == 0 || yCut == yArr.size()-1 || EpCut == 0 || EpCut == EpArr.size()-1)
+	// reject if value is below first slice or above the last
+	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
 		return 0;
 	else
     	return ktCut*1e2 + yCut*1e1 + EpCut;
@@ -39,14 +41,6 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
-	const int fTargetPlates = 15; // number of target plates
-
-	const std::vector<std::pair<float,float> > fPairAzimuthBins = {{-180,-90},{-90,0},{0,90},{90,180}};
-	const std::vector<std::pair<int,int> > fCentralityBins = {{1,2}};
-	const std::vector<std::pair<float,float> > fKtBins = {{150,450},{450,750},{750,1050},{1050,1350},{1350,1650}};
-	const std::vector<std::pair<float,float> > fPairRapidityBins = {{-0.5,0.5}};
-	const int fEventsToMix = 50;
-
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	//--------------------------------------------------------------------------------
@@ -67,10 +61,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Int_t nFiles = 0;
 
 		//simulation
-		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
+		TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
 		
 		//data
-		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
+		//TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -108,7 +102,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -338,14 +332,15 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						HistogramCollection histos{
 						TH1D(TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
 						TH1D(TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH2D(TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90),
-						TH2D(TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90),
-						TH3D(),
-						TH3D()};
+						TH2D(TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH2D(TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH3D(/* TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */),
+						TH3D(/* TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */)};
 						fMapFoHistograms.emplace(signalEntry.first,histos);
 					}
 					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.QInv);
 					fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
+					//fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
 				}
 			}
 
@@ -358,14 +353,15 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						HistogramCollection histos{
 						TH1D(TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
 						TH1D(TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH2D(TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90),
-						TH2D(TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90),
-						TH3D(),
-						TH3D()};
+						TH2D(TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH2D(TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH3D(/* TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */),
+						TH3D(/* TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */)};
 						fMapFoHistograms.emplace(backgroundEntry.first,histos);
 					}
 					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.QInv);
 					fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
+					//fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
 				}
 			}
 			

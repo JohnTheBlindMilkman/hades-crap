@@ -93,13 +93,15 @@ namespace Selection
             }
 
             // for getting rid of the angle wrap
+            // the phi range is (-202.5,157.5] (I need this for asHBT, to have a in-plane and out-of-plane bin)
             float ConstrainAngle(float angle)
             {
-                angle = fmod(angle + 180, 360);
-                if (angle < 0)
-                    angle += 360;
-
-                return angle - 180;
+                if (angle > 157.5)
+                    return angle -360;
+                else if (angle <= -202.5)
+                    return angle + 360;
+                else
+                    return angle;
             }
     };
 
