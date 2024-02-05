@@ -1,25 +1,59 @@
+#include <fstream>
+
 #include "TH1D.h"
+#include "TF1.h"
 #include "TFile.h"
 #include "TString.h"
-#include "TMath.h"
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TLine.h"
 
-void SetErrors(TH1D *hout, TH1D *hNum, TH1D *hDen)
+double TanhFunc(double *x, double *par)
+{
+    return par[0] * tanh(par[1] * pow(x[0],par[2])) + par[3];
+}
+
+//derivative of TanhFunc over a
+double DTanhFuncDa(double x, double b, double c)
+{
+    return tanh(b * pow(x,c));
+}
+
+//derivative of TanhFunc over b
+double DTanhFuncDb(double x, double a, double b, double c)
+{
+    return a * pow(x,c) / (cosh(b * pow(x,c)) * cosh(b * pow(x,c))); //sech(x) = 1/cosh(x); there is no sech function in C++
+}
+
+//derivative of TanhFunc over c
+double DTanhFuncDc(double x, double a, double b, double c)
+{
+    return a * b * pow(x,c) * log(x) / (cosh(b * pow(x,c)) * cosh(b * pow(x,c))); //sech(x) = 1/cosh(x); there is no sech function in C++
+}
+
+// propagation of uncertainty of TanhFunc
+double ErrorPropagation(double x, double a, double sa, double b, double sb, double c, double sc, double d, double sd)
+{
+    return sqrt(DTanhFuncDa(x,b,c)*DTanhFuncDa(x,b,c)*sa*sa + DTanhFuncDb(x,a,b,c)*DTanhFuncDb(x,a,b,c)*sb*sb + DTanhFuncDc(x,a,b,c)*DTanhFuncDc(x,a,b,c)*sc*sc + sd*sd);
+}
+
+void CorrectHisto(TH1D *hout, TF1 *fMod)
 {
     const int iterMax = hout->GetNbinsX();
     double vErr = 0, vNum = 0, vDen = 0, eNum = 0, eDen = 0;
     for (int i = 1; i <= iterMax; i++)
     {
         vErr = 0;
-        vNum = hNum->GetBinContent(i);
-        eNum = hNum->GetBinError(i);
-        vDen = hDen->GetBinContent(i);
-        eDen = hDen->GetBinError(i);
+        vNum = hout->GetBinContent(i);
+        eNum = hout->GetBinError(i);
+        vDen = fMod->Eval(hout->GetBinCenter(i));
+        eDen = ErrorPropagation(hout->GetBinCenter(i),fMod->GetParameter(0),fMod->GetParError(0),fMod->GetParameter(1),fMod->GetParError(1),fMod->GetParameter(2),fMod->GetParError(2),fMod->GetParameter(3),fMod->GetParError(3));
 
-        // propagacja błędów dla funcji num/den z uwzględnieniem korelacji pomiędzy składowymi
-        if (fabs(vDen) > std::numeric_limits<double>::epsilon())
-            vErr = TMath::Sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - (2*vNum*eNum*eDen)/(vDen*vDen*vDen));
+        // propagation of uncertainty for a function num/den with onclusion of the correlation between the constituents
+        if (fabs(vDen) > 0.)
+            vErr = sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - (2*vNum*eNum*eDen)/(vDen*vDen*vDen));
+
+        hout->SetBinContent(i,vNum/vDen);
         hout->SetBinError(i,vErr);
     }
 }
@@ -28,47 +62,84 @@ void drawDRProton1D()
 {
     gStyle->SetPalette(kPastel);
 
-    const TString dataFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent.root";
-    const TString simFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant.root";
+    const TString inpFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent.root";
     const TString otpFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_DR.root";
-    const std::vector<std::pair<TString,TString> > kTbins = {{"150","450"},{"450","750"},{"750","1050"},{"1050","1350"},{"1350","1650"}};
-    const TString histNameBase = "hQinvRat";
-    const std::size_t kTlen = kTbins.size();
+    const std::string parFile = "/home/jedkol/lxpool/hades-crap/macros/DRparams.txt";
+    constexpr std::array<int,5> ktArr{1,2,3,4,5};
+    constexpr std::array<int,3> yArr{1,2,3};
+    constexpr std::array<int,8> psiArr{1,2,3,4,5,6,7,8};
     const int rebin = 1;
 
-    std::array<TH1D*,5> hAna, hSim, hRatio;
-    TFile *fInpData,*fInpSim,*fOtpFile;
+    std::vector<TH1D*> hCFkt(ktArr.size(),nullptr), hCFy(yArr.size(),nullptr), hCFpsi(psiArr.size(),nullptr);
+    TFile *fInpData,*fOtpFile;
+    std::string name;
+    std::array<double,4> parArr,errArr;
+    TLine line(0,1,3000,1);
+    line.SetLineColor(kGray);
+    line.SetLineStyle(kDashed);
 
-    fInpData = TFile::Open(dataFile);
-    fInpSim = TFile::Open(simFile);
+    fInpData = TFile::Open(inpFile);
 
-    for (const auto &iter : {0,1,2,3,4})
+    std::ifstream fParFile(parFile);
+    if (!fParFile.is_open())
+        throw std::runtime_error("Parameter file could not be opened");
+
+    for (const int &i : {0,1,2})
+        fParFile >> name;
+
+    for(const int &kt : ktArr)
     {
-        hAna.at(iter) = fInpData->Get<TH1D>(TString::Format("%s%d",histNameBase.Data(),iter));
-        hSim.at(iter) = fInpSim->Get<TH1D>(TString::Format("%s%d",histNameBase.Data(),iter));
+        fParFile >> name;
+        fParFile >> parArr[0] >> errArr[0];
+        fParFile >> parArr[1] >> errArr[1];
+        fParFile >> parArr[2] >> errArr[2];
+        fParFile >> parArr[3] >> errArr[3];
 
-        hRatio.at(iter) = new TH1D(*hAna.at(iter));
-        hRatio.at(iter)->Divide(hSim.at(iter));
-        hRatio.at(iter)->SetName(TString::Format("hQinvRatDR%d",iter));
-        SetErrors(hRatio.at(iter),hAna.at(iter),hSim.at(iter));
+        TF1 *func = new TF1("func",TanhFunc,0,500,4);
+        func->SetParameters(parArr.data());
+        func->SetParErrors(errArr.data());
 
-        if (rebin > 1)
-        {
-            hRatio.at(iter)->Rebin(rebin);
-            hRatio.at(iter)->Scale(1./rebin);
-        }
-        
-        hRatio.at(iter)->SetTitle(TString::Format("k_{T} #in (%s,%s) [MeV/c];q_{inv} [MeV/c];C(q_{inv})",std::get<0>(kTbins.at(iter)).Data(),std::get<1>(kTbins.at(iter)).Data()));
-        hRatio.at(iter)->SetMarkerStyle(20);
+        hCFkt[kt] = fInpData->Get<TH1D>(name.c_str());
+        CorrectHisto(hCFkt[kt],func);
+    }
+    for(const int &y : yArr)
+    {
+        fParFile >> name;
+        fParFile >> parArr[0] >> errArr[0];
+        fParFile >> parArr[1] >> errArr[1];
+        fParFile >> parArr[2] >> errArr[2];
+        fParFile >> parArr[3] >> errArr[3];
+
+        TF1 *func = new TF1("func",TanhFunc,0,500,4);
+        func->SetParameters(parArr.data());
+        func->SetParErrors(errArr.data());
+
+        hCFy[y] = fInpData->Get<TH1D>(name.c_str());
+        CorrectHisto(hCFy[y],func);
+    }
+    for(const int &psi : psiArr)
+    {
+        fParFile >> name;
+        fParFile >> parArr[0] >> errArr[0];
+        fParFile >> parArr[1] >> errArr[1];
+        fParFile >> parArr[2] >> errArr[2];
+        fParFile >> parArr[3] >> errArr[3];
+
+        TF1 *func = new TF1("func",TanhFunc,0,500,4);
+        func->SetParameters(parArr.data());
+        func->SetParErrors(errArr.data());
+
+        hCFpsi[psi] = fInpData->Get<TH1D>(name.c_str());
+        CorrectHisto(hCFpsi[psi],func);
     }
 
     fOtpFile = TFile::Open(otpFile,"RECREATE");
 
-    TCanvas *canv = new TCanvas("canv","",1600,900);
-    for (auto &hist : hRatio)
+    TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
+    for (auto hist : hCFkt)
     {
         hist->Write();
-        if (hist == hRatio.at(0))
+        if (hist == hCFkt.front())
         {
             hist->GetYaxis()->SetRangeUser(0,2);
             hist->Draw("hist pe pmc plc");
@@ -76,6 +147,39 @@ void drawDRProton1D()
         else
             hist->Draw("hist pe pmc plc same");
     }
-    canv->BuildLegend(0.2,0.2,0.5,0.5,"","p");
-    canv->Write();
+    line.Draw("same");
+    canvKt->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    canvKt->Write();
+
+    TCanvas *canvY = new TCanvas("canvY","",1600,900);
+    for (auto hist : hCFy)
+    {
+        hist->Write();
+        if (hist == hCFy.front())
+        {
+            hist->GetYaxis()->SetRangeUser(0,2);
+            hist->Draw("hist pe pmc plc");
+        }
+        else
+            hist->Draw("hist pe pmc plc same");
+    }
+    line.Draw("same");
+    canvY->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    canvY->Write();
+
+    TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
+    for (auto hist : hCFpsi)
+    {
+        hist->Write();
+        if (hist == hCFpsi.front())
+        {
+            hist->GetYaxis()->SetRangeUser(0,2);
+            hist->Draw("hist pe pmc plc");
+        }
+        else
+            hist->Draw("hist pe pmc plc same");
+    }
+    line.Draw("same");
+    canvPsi->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    canvPsi->Write();
 }
