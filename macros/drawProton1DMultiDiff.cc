@@ -8,6 +8,7 @@
 #include "TLegend.h"
 #include "TStyle.h"
 #include "TLine.h"
+#include "Palettes.hxx"
 
 double getNorm(const TH1D *hInp, double xMin, double xMax)
 {
@@ -30,14 +31,12 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
 
 void drawProton1DMultiDiff()
 {
-    gStyle->SetPalette(kPastel);
-
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_01_29.root";
+    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_02_05.root";
     const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
-    const std::vector<std::pair<int,TString> > psiArr{{1,"(-180,-90)"},{2,"(-90,0)"},{3,"(0,90)"},{4,"(90,180)"}};
-    const int rebin = 2;
+    const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
+    const int rebin = 1;
 
     float norm;
     std::vector<std::vector<std::vector<TH1D*> > > 
@@ -64,6 +63,8 @@ void drawProton1DMultiDiff()
             }
 
     TFile *otpFile = TFile::Open(outputFile,"RECREATE");
+
+    JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
     std::vector<TH1D*> hRatKt(ktArr.size(),nullptr), hBckgKt(ktArr.size(),nullptr);
@@ -94,6 +95,7 @@ void drawProton1DMultiDiff()
             hRatKt[kt.first-1]->SetName(TString::Format("hQinvRatKt%d",kt.first));
             hRatKt[kt.first-1]->SetTitle(TString::Format("k_{T} #in %s",kt.second.Data()));
             hRatKt[kt.first-1]->SetMarkerStyle(20);
+            hRatKt[kt.first-1]->SetMarkerColor(JJColor::fWutAllColors[kt.first-1]);
 
             hRatKt[kt.first-1]->Write();
             if (kt.first -1 == 0)
@@ -106,6 +108,8 @@ void drawProton1DMultiDiff()
     canvKt->BuildLegend(0.2,0.2,0.5,0.5,"","p");
     line->Draw("same");
     canvKt->Write();
+
+    JJColor::CreatePrimaryWutGradient();
 
     TCanvas *canvY = new TCanvas("canvY","",1600,900);
     std::vector<TH1D*> hRatY(yArr.size(),nullptr), hBckgY(yArr.size(),nullptr);
@@ -148,6 +152,8 @@ void drawProton1DMultiDiff()
     canvY->BuildLegend(0.2,0.2,0.5,0.5,"","p");
     line->Draw("same");
     canvY->Write();
+
+    JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
     std::vector<TH1D*> hRatPsi(psiArr.size(),nullptr), hBckgPsi(psiArr.size(),nullptr);

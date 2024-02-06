@@ -85,11 +85,14 @@ void drawDRProton1D()
         throw std::runtime_error("Parameter file could not be opened");
 
     for (const int &i : {0,1,2})
-        fParFile >> name;
+    {
+        fParFile.ignore(1000,'\n');
+    }
 
     for(const int &kt : ktArr)
     {
         fParFile >> name;
+        std::cout << name << "\n";
         fParFile >> parArr[0] >> errArr[0];
         fParFile >> parArr[1] >> errArr[1];
         fParFile >> parArr[2] >> errArr[2];
@@ -99,12 +102,13 @@ void drawDRProton1D()
         func->SetParameters(parArr.data());
         func->SetParErrors(errArr.data());
 
-        hCFkt[kt] = fInpData->Get<TH1D>(name.c_str());
-        CorrectHisto(hCFkt[kt],func);
+        hCFkt[kt-1] = fInpData->Get<TH1D>(name.c_str());
+        CorrectHisto(hCFkt[kt-1],func);
     }
     for(const int &y : yArr)
     {
         fParFile >> name;
+        std::cout << name << "\n";
         fParFile >> parArr[0] >> errArr[0];
         fParFile >> parArr[1] >> errArr[1];
         fParFile >> parArr[2] >> errArr[2];
@@ -114,12 +118,13 @@ void drawDRProton1D()
         func->SetParameters(parArr.data());
         func->SetParErrors(errArr.data());
 
-        hCFy[y] = fInpData->Get<TH1D>(name.c_str());
-        CorrectHisto(hCFy[y],func);
+        hCFy[y-1] = fInpData->Get<TH1D>(name.c_str());
+        CorrectHisto(hCFy[y-1],func);
     }
     for(const int &psi : psiArr)
     {
         fParFile >> name;
+        std::cout << name << "\n";
         fParFile >> parArr[0] >> errArr[0];
         fParFile >> parArr[1] >> errArr[1];
         fParFile >> parArr[2] >> errArr[2];
@@ -129,8 +134,8 @@ void drawDRProton1D()
         func->SetParameters(parArr.data());
         func->SetParErrors(errArr.data());
 
-        hCFpsi[psi] = fInpData->Get<TH1D>(name.c_str());
-        CorrectHisto(hCFpsi[psi],func);
+        hCFpsi[psi-1] = fInpData->Get<TH1D>(name.c_str());
+        CorrectHisto(hCFpsi[psi-1],func);
     }
 
     fOtpFile = TFile::Open(otpFile,"RECREATE");
@@ -138,48 +143,57 @@ void drawDRProton1D()
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
     for (auto hist : hCFkt)
     {
-        hist->Write();
-        if (hist == hCFkt.front())
+        if (hist != nullptr)
         {
-            hist->GetYaxis()->SetRangeUser(0,2);
-            hist->Draw("hist pe pmc plc");
+            hist->Write();
+            if (hist == hCFkt.front())
+            {
+                hist->GetYaxis()->SetRangeUser(0,2);
+                hist->Draw("hist pe pmc plc");
+            }
+            else
+                hist->Draw("hist pe pmc plc same");
         }
-        else
-            hist->Draw("hist pe pmc plc same");
     }
-    line.Draw("same");
     canvKt->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    line.Draw("same");
     canvKt->Write();
 
     TCanvas *canvY = new TCanvas("canvY","",1600,900);
     for (auto hist : hCFy)
     {
-        hist->Write();
-        if (hist == hCFy.front())
+        if (hist != nullptr)
         {
-            hist->GetYaxis()->SetRangeUser(0,2);
-            hist->Draw("hist pe pmc plc");
+            hist->Write();
+            if (hist == hCFy.front())
+            {
+                hist->GetYaxis()->SetRangeUser(0,2);
+                hist->Draw("hist pe pmc plc");
+            }
+            else
+                hist->Draw("hist pe pmc plc same");
         }
-        else
-            hist->Draw("hist pe pmc plc same");
     }
-    line.Draw("same");
     canvY->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    line.Draw("same");
     canvY->Write();
 
     TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
     for (auto hist : hCFpsi)
     {
-        hist->Write();
-        if (hist == hCFpsi.front())
+        if (hist != nullptr)
         {
-            hist->GetYaxis()->SetRangeUser(0,2);
-            hist->Draw("hist pe pmc plc");
+            hist->Write();
+            if (hist == hCFpsi.front())
+            {
+                hist->GetYaxis()->SetRangeUser(0,2);
+                hist->Draw("hist pe pmc plc");
+            }
+            else
+                hist->Draw("hist pe pmc plc same");
         }
-        else
-            hist->Draw("hist pe pmc plc same");
     }
-    line.Draw("same");
     canvPsi->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    line.Draw("same");
     canvPsi->Write();
 }

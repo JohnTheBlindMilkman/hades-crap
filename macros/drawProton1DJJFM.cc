@@ -30,8 +30,8 @@ void drawProton1DJJFM()
 {
     gStyle->SetPalette(kPastel);
 
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12sim_all_24_01_31_dp8dt2.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant_dp8dt2.root";
+    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12sim_all_24_02_02.root";
+    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant_tmp.root";
     const int rebin = 2;
 
     float norm;
@@ -39,9 +39,9 @@ void drawProton1DJJFM()
     TH1D *hBckg = new TH1D("hBckg","Background of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000);
     TH1D *hRat = new TH1D("hRat","CF of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000);
 
-    TH2D *hDpDtSign = new TH2D("hDpDtSign","#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90);
-    TH2D *hDpDtBckg = new TH2D("hDpDtBckg","#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90);
-    TH2D *hDpDtRat = new TH2D("hDpDtRat","#Delta#phi vs #Delta#theta distribution of signal/backgound ratio 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",360,-360,360,90,-90,90);
+    TH2D *hDpDtSign = new TH2D("hDpDtSign","#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45);
+    TH2D *hDpDtBckg = new TH2D("hDpDtBckg","#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45);
+    TH2D *hDpDtRat = new TH2D("hDpDtRat","#Delta#phi vs #Delta#theta distribution of signal/backgound ratio 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45);
 
     TLine *line = new TLine(0,1,3000,1);
     line->SetLineStyle(kDashed);

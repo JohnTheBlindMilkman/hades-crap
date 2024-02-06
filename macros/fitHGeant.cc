@@ -8,24 +8,46 @@
 #include "TStyle.h"
 #include "TDatime.h"
 
-double LogFunc(double *x,double *par)
-{
-    return par[0] * log(par[1]*x[0] + par[2]) + par[3];
-}
-
-double InvFunc(double *x, double *par)
-{
-    return par[0]/(par[1] * pow(x[0],par[2])) + par[3];
-}
-
-double TanhFunc(double *x, double *par) // this one works best
+double TanhFunc(double *x, double *par)
 {
     return par[0] * tanh(par[1] * pow(x[0],par[2])) + par[3];
 }
 
-double ExpFunc(double *x, double *par)
+//derivative of TanhFunc over a
+double DTanhFuncDa(double x, double b, double c)
 {
-    return par[0] * exp(par[1] * pow(x[0],par[2])) + par[3];
+    return tanh(b * pow(x,c));
+}
+
+//derivative of TanhFunc over b
+double DTanhFuncDb(double x, double a, double b, double c)
+{
+    return a * pow(x,c) / (cosh(b * pow(x,c)) * cosh(b * pow(x,c))); //sech(x) = 1/cosh(x); there is no sech function in C++
+}
+
+//derivative of TanhFunc over c
+double DTanhFuncDc(double x, double a, double b, double c)
+{
+    return a * b * pow(x,c) * log(x) / (cosh(b * pow(x,c)) * cosh(b * pow(x,c))); //sech(x) = 1/cosh(x); there is no sech function in C++
+}
+
+// propagation of uncertainty of TanhFunc
+double ErrorPropagation(double x, double a, double sa, double b, double sb, double c, double sc, double d, double sd)
+{
+    return sqrt(DTanhFuncDa(x,b,c)*DTanhFuncDa(x,b,c)*sa*sa + DTanhFuncDb(x,a,b,c)*DTanhFuncDb(x,a,b,c)*sb*sb + DTanhFuncDc(x,a,b,c)*DTanhFuncDc(x,a,b,c)*sc*sc + sd*sd);
+}
+
+void SetErrors(TH1D *hout, TF1 *func)
+{
+    const int bins = hout->GetNbinsX();
+    const double *param = func->GetParameters();
+    const double *errs = func->GetParErrors();
+
+    for (int i = 1; i <= bins; ++i)
+    {
+        hout->SetBinContent(i,func->Eval(hout->GetBinCenter(i)));
+        hout->SetBinError(i,ErrorPropagation(hout->GetBinCenter(i),param[0],errs[0],param[1],errs[1],param[2],errs[2],param[3],errs[3]));
+    }
 }
 
 void fitHGeant()
@@ -34,9 +56,9 @@ void fitHGeant()
     constexpr std::array<int,3> yArr{1,2,3};
     constexpr std::array<int,8> psiArr{1,2,3,4,5,6,7,8};
 
-    std::ofstream outFile("DRparams.txt");
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    outFile << "Fit result file, created on " << std::ctime(&currentTime) << "\n\n";
+    std::vector<TH1D*> hSimKt(ktArr.size(),nullptr), hSimY(yArr.size(),nullptr), hSimPsi(psiArr.size(),nullptr);
+    std::vector<TH1D*> hErrKt(ktArr.size(),nullptr), hErrY(yArr.size(),nullptr), hErrPsi(psiArr.size(),nullptr);
+    std::vector<TF1*> fFitKt(ktArr.size(),nullptr), fFitY(yArr.size(),nullptr), fFitPsi(psiArr.size(),nullptr);
 
     TF1 *fitFunc = new TF1("fitFunc",TanhFunc,0,500,4);
     fitFunc->SetLineColor(EColor::kRed);
@@ -51,46 +73,60 @@ void fitHGeant()
     for (const int &kt : ktArr)
     {
         TString histName = TString::Format("hQinvRatKt%d",kt);
-        TH1D *hSim = inpFile->Get<TH1D>(histName);
-        hSim->GetYaxis()->SetRangeUser(0,1.2);
-        hSim->GetXaxis()->SetRangeUser(0,500);
+        hSimKt[kt-1] = inpFile->Get<TH1D>(histName);
+        hErrKt[kt-1] = new TH1D(*hSimKt[kt-1]); // set new name
 
-        hSim->Fit(fitFunc,"EMR");
+        hSimKt[kt-1]->GetYaxis()->SetRangeUser(0,1.2);
+        hSimKt[kt-1]->GetXaxis()->SetRangeUser(0,500);
 
-        outFile <<  histName << "\n";
-        outFile << fitFunc->GetParameter(0) << "\t" << fitFunc->GetParError(0) << "\n";
-        outFile << fitFunc->GetParameter(1) << "\t" << fitFunc->GetParError(1) << "\n";
-        outFile << fitFunc->GetParameter(2) << "\t" << fitFunc->GetParError(2) << "\n";
-        outFile << fitFunc->GetParameter(3) << "\t" << fitFunc->GetParError(3) << "\n";
+        hSimKt[kt-1]->Fit(fitFunc,"EMR");
+        fFitKt[kt-1] = new TF1(*fitFunc); // set new name
+        SetErrors(hErrKt[kt-1],fFitKt[kt-1]);
     }
     for (const int &y : yArr)
     {
         TString histName = TString::Format("hQinvRatY%d",y);
-        TH1D *hSim = inpFile->Get<TH1D>(histName);
-        hSim->GetYaxis()->SetRangeUser(0,1.2);
-        hSim->GetXaxis()->SetRangeUser(0,500);
+        hSimY[y-1] = inpFile->Get<TH1D>(histName);
+        hErrY[y-1] = new TH1D(*hSimY[y-1]);
 
-        hSim->Fit(fitFunc,"EMR");
+        hSimY[y-1]->GetYaxis()->SetRangeUser(0,1.2);
+        hSimY[y-1]->GetXaxis()->SetRangeUser(0,500);
 
-        outFile <<  histName << "\n";
-        outFile << fitFunc->GetParameter(0) << "\t" << fitFunc->GetParError(0) << "\n";
-        outFile << fitFunc->GetParameter(1) << "\t" << fitFunc->GetParError(1) << "\n";
-        outFile << fitFunc->GetParameter(2) << "\t" << fitFunc->GetParError(2) << "\n";
-        outFile << fitFunc->GetParameter(3) << "\t" << fitFunc->GetParError(3) << "\n";
+        hSimY[y-1]->Fit(fitFunc,"EMR");
+        fFitY[y-1] = new TF1(*fitFunc);
+        SetErrors(hErrY[y-1],fFitY[y-1]);
     }
     for (const int &psi : psiArr)
     {
         TString histName = TString::Format("hQinvRatPsi%d",psi);
-        TH1D *hSim = inpFile->Get<TH1D>(histName);
-        hSim->GetYaxis()->SetRangeUser(0,1.2);
-        hSim->GetXaxis()->SetRangeUser(0,500);
+        hSimPsi[psi-1] = inpFile->Get<TH1D>(histName);
+        hErrPsi[psi-1] = new TH1D(*hSimPsi[psi-1]);
 
-        hSim->Fit(fitFunc,"EMR");
+        hSimPsi[psi-1]->GetYaxis()->SetRangeUser(0,1.2);
+        hSimPsi[psi-1]->GetXaxis()->SetRangeUser(0,500);
 
-        outFile <<  histName << "\n";
-        outFile << fitFunc->GetParameter(0) << "\t" << fitFunc->GetParError(0) << "\n";
-        outFile << fitFunc->GetParameter(1) << "\t" << fitFunc->GetParError(1) << "\n";
-        outFile << fitFunc->GetParameter(2) << "\t" << fitFunc->GetParError(2) << "\n";
-        outFile << fitFunc->GetParameter(3) << "\t" << fitFunc->GetParError(3) << "\n";
+        hSimPsi[psi-1]->Fit(fitFunc,"EMR");
+        fFitPsi[psi-1] = new TF1(*fitFunc);
+        SetErrors(hErrPsi[psi-1],fFitPsi[psi-1]);
+    }
+
+    TFile *outFile = TFile::Open("/home/jedkol/Downloads/HADES/HADES-CrAP/output/1Dcorr_0_10_cent_HGeant_fit.root","RECREATE");
+    for (const int &kt : ktArr)
+    {
+        hSimKt[kt-1]->Write();
+        hErrKt[kt-1]->Write();
+        fFitKt[kt-1]->Write();
+    }
+    for (const int &y : yArr)
+    {
+        hSimY[y-1]->Write();
+        hErrY[y-1]->Write();
+        fFitY[y-1]->Write();
+    }
+    for (const int &psi : psiArr)
+    {
+        hSimPsi[psi-1]->Write();
+        hErrPsi[psi-1]->Write();
+        fFitPsi[psi-1]->Write();
     }
 }
