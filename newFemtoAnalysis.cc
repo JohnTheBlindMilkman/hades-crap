@@ -84,7 +84,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo"))
+    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit"))
 		exit(1);
 
 	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
@@ -231,6 +231,13 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
 		Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
+		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
+		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
+
+		if (EventPlane < 0)
+			continue;
+		if (EventPlaneA < 0 || EventPlaneB < 0)
+			continue;
 
 		Selection::CreateEvent(fEvent,vertX,vertY,vertZ,centClassIndex,EventPlane);
 
@@ -332,16 +339,16 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						HistogramCollection histos{
 						TH1D(TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
 						TH1D(TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH2D(/* TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000),
-						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000)
+						TH2D(TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH2D(TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH3D(/* TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */),
+						TH3D(/* TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */)
 						};
 						fMapFoHistograms.emplace(signalEntry.first,histos);
 					}
 					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.QInv);
-					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
+					fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
+					//fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
 				}
 			}
 
@@ -354,16 +361,16 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						HistogramCollection histos{
 						TH1D(TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
 						TH1D(TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH2D(/* TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000),
-						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000)
+						TH2D(TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH2D(TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
+						TH3D(/* TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */),
+						TH3D(/* TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */)
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,histos);
 					}
 					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.QInv);
-					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
+					fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
+					//fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
 				}
 			}
 			

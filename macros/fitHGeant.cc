@@ -68,49 +68,58 @@ void fitHGeant()
     fitFunc->SetParLimits(2,-1.5,-0.7);
     fitFunc->SetParLimits(3,0.9,1.1);
 
-    TFile *inpFile = TFile::Open("/home/jedkol/Downloads/HADES/HADES-CrAP/output/1Dcorr_0_10_cent_HGeant.root");
+    TFile *inpFile = TFile::Open("/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant.root");
 
     for (const int &kt : ktArr)
     {
         TString histName = TString::Format("hQinvRatKt%d",kt);
+        TString errName = TString::Format("hQinvErrKt%d",kt);
+        TString fitName = TString::Format("fQinvFitKt%d",kt);
         hSimKt[kt-1] = inpFile->Get<TH1D>(histName);
-        hErrKt[kt-1] = new TH1D(*hSimKt[kt-1]); // set new name
+        hErrKt[kt-1] = new TH1D(errName,hSimKt[kt-1]->GetTitle(),10*hSimKt[kt-1]->GetNbinsX(),hSimKt[kt-1]->GetXaxis()->GetXmin(),hSimKt[kt-1]->GetXaxis()->GetXmax());
 
         hSimKt[kt-1]->GetYaxis()->SetRangeUser(0,1.2);
         hSimKt[kt-1]->GetXaxis()->SetRangeUser(0,500);
 
-        hSimKt[kt-1]->Fit(fitFunc,"EMR");
-        fFitKt[kt-1] = new TF1(*fitFunc); // set new name
+        hSimKt[kt-1]->Fit(fitFunc,"EMR0");
+        fFitKt[kt-1] = new TF1(*fitFunc);
+        fFitKt[kt-1]->SetName(fitName);
         SetErrors(hErrKt[kt-1],fFitKt[kt-1]);
     }
     for (const int &y : yArr)
     {
         TString histName = TString::Format("hQinvRatY%d",y);
+        TString errName = TString::Format("hQinvErrY%d",y);
+        TString fitName = TString::Format("fQinvFitY%d",y);
         hSimY[y-1] = inpFile->Get<TH1D>(histName);
-        hErrY[y-1] = new TH1D(*hSimY[y-1]);
+        hErrY[y-1] = new TH1D(errName,hSimY[y-1]->GetTitle(),10*hSimY[y-1]->GetNbinsX(),hSimY[y-1]->GetXaxis()->GetXmin(),hSimY[y-1]->GetXaxis()->GetXmax());
 
         hSimY[y-1]->GetYaxis()->SetRangeUser(0,1.2);
         hSimY[y-1]->GetXaxis()->SetRangeUser(0,500);
 
-        hSimY[y-1]->Fit(fitFunc,"EMR");
+        hSimY[y-1]->Fit(fitFunc,"EMR0");
         fFitY[y-1] = new TF1(*fitFunc);
+        fFitY[y-1]->SetName(fitName);
         SetErrors(hErrY[y-1],fFitY[y-1]);
     }
     for (const int &psi : psiArr)
     {
         TString histName = TString::Format("hQinvRatPsi%d",psi);
+        TString errName = TString::Format("hQinvErrPsi%d",psi);
+        TString fitName = TString::Format("fQinvFitPsi%d",psi);
         hSimPsi[psi-1] = inpFile->Get<TH1D>(histName);
-        hErrPsi[psi-1] = new TH1D(*hSimPsi[psi-1]);
+        hErrPsi[psi-1] = new TH1D(errName,hSimPsi[psi-1]->GetTitle(),10*hSimPsi[psi-1]->GetNbinsX(),hSimPsi[psi-1]->GetXaxis()->GetXmin(),hSimPsi[psi-1]->GetXaxis()->GetXmax());
 
         hSimPsi[psi-1]->GetYaxis()->SetRangeUser(0,1.2);
         hSimPsi[psi-1]->GetXaxis()->SetRangeUser(0,500);
 
-        hSimPsi[psi-1]->Fit(fitFunc,"EMR");
+        hSimPsi[psi-1]->Fit(fitFunc,"EMR0");
         fFitPsi[psi-1] = new TF1(*fitFunc);
+        fFitPsi[psi-1]->SetName(fitName);
         SetErrors(hErrPsi[psi-1],fFitPsi[psi-1]);
     }
 
-    TFile *outFile = TFile::Open("/home/jedkol/Downloads/HADES/HADES-CrAP/output/1Dcorr_0_10_cent_HGeant_fit.root","RECREATE");
+    TFile *outFile = TFile::Open("/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant_fit.root","RECREATE");
     for (const int &kt : ktArr)
     {
         hSimKt[kt-1]->Write();

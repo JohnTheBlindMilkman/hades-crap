@@ -31,11 +31,12 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_02_05.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent.root";
+    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_02_13.root";
+    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_90deg.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
-    const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
+    //const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
+    const std::vector<std::pair<int,TString> > psiArr{{1,"(-125,-115)"},{2,"(-115,-105)"},{3,"(-105,-95)"},{4,"(-95,-85)"},{5,"(-85,-75)"},{6,"(-75,-65)"},{7,"(-65,-55)"}};
     const int rebin = 1;
 
     float norm;
@@ -177,7 +178,7 @@ void drawProton1DMultiDiff()
         if (hRatPsi[psi.first-1] != nullptr && hBckgPsi[psi.first-1] != nullptr)
         {
             hRatPsi[psi.first-1]->Divide(hBckgPsi[psi.first-1]);
-            norm = getNorm(hRatPsi[psi.first-1],300,900);
+            norm = getNorm(hRatPsi[psi.first-1],100,300);
             hRatPsi[psi.first-1]->Rebin(rebin);
             norm *= rebin;
             hRatPsi[psi.first-1]->Scale(1./norm);
