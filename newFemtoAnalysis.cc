@@ -159,7 +159,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	HParticleEvtChara evtChara;
 
 	std::cout << "HParticleEvtChara: reading input for energy 1.23A GeV... " << std::endl;
-	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
+	// Data
+	//TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
+	// Simulation
+	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
 
 	if (!evtChara.setParameterFile(ParameterfileCVMFS))
 	{
