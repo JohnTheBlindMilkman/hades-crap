@@ -61,10 +61,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Int_t nFiles = 0;
 
 		//simulation
-		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
+		TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
 		
 		//data
-		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
+		//TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -102,7 +102,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 

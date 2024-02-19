@@ -31,12 +31,12 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_02_13.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_90deg.root";
+    const TString fileName = "/home/jedkol/Downloads/HADES/HADES-CrAP/slurmOutput/apr12ana_all_24_02_19.root";
+    const TString outputFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/1Dcorr_0_10_cent_forceEP.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
-    //const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
-    const std::vector<std::pair<int,TString> > psiArr{{1,"(-125,-115)"},{2,"(-115,-105)"},{3,"(-105,-95)"},{4,"(-95,-85)"},{5,"(-85,-75)"},{6,"(-75,-65)"},{7,"(-65,-55)"}};
+    const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
+    //const std::vector<std::pair<int,TString> > psiArr{{1,"(-125,-115)"},{2,"(-115,-105)"},{3,"(-105,-95)"},{4,"(-95,-85)"},{5,"(-85,-75)"},{6,"(-75,-65)"},{7,"(-65,-55)"}};
     const int rebin = 1;
 
     float norm;
@@ -68,26 +68,29 @@ void drawProton1DMultiDiff()
     JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
-    std::vector<TH1D*> hRatKt(ktArr.size(),nullptr), hBckgKt(ktArr.size(),nullptr);
+    std::vector<TH1D*> hRatKt(ktArr.size(),nullptr), hSignKt(ktArr.size(),nullptr), hBckgKt(ktArr.size(),nullptr);
     for (const auto &kt : ktArr)
     {
         for (const auto &y : yArr)
             for (const auto &psi : psiArr)
             {
-                if (hRatKt[kt.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgKt[kt.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
+                if (hSignKt[kt.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgKt[kt.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
                 {
-                    hRatKt[kt.first-1] = new TH1D(*hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignKt[kt.first-1] = new TH1D(*hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignKt[kt.first-1]->SetName(TString::Format("hQinvSignKt%d",kt.first));
                     hBckgKt[kt.first-1] = new TH1D(*hBckg[kt.first-1][y.first-1][psi.first-1]);
+                    hBckgKt[kt.first-1]->SetName(TString::Format("hQinvBckgKt%d",kt.first));
                 }
                 else if(hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
                 {
-                    hRatKt[kt.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignKt[kt.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
                     hBckgKt[kt.first-1]->Add(hBckg[kt.first-1][y.first-1][psi.first-1]);
                 }
             }
 
-        if (hRatKt[kt.first-1] != nullptr && hBckgKt[kt.first-1] != nullptr)
+        if (hSignKt[kt.first-1] != nullptr && hBckgKt[kt.first-1] != nullptr)
         {
+            hRatKt[kt.first-1] = new TH1D(*hSignKt[kt.first-1]);
             hRatKt[kt.first-1]->Divide(hBckgKt[kt.first-1]);
             norm = getNorm(hRatKt[kt.first-1],300,900);
             hRatKt[kt.first-1]->Rebin(rebin);
@@ -99,6 +102,8 @@ void drawProton1DMultiDiff()
             hRatKt[kt.first-1]->SetMarkerColor(JJColor::fWutAllColors[kt.first-1]);
 
             hRatKt[kt.first-1]->Write();
+            hSignKt[kt.first-1]->Write();
+            hBckgKt[kt.first-1]->Write();
             if (kt.first -1 == 0)
                 hRatKt[kt.first-1]->Draw("hist pe pmc plc");
             else
@@ -113,26 +118,29 @@ void drawProton1DMultiDiff()
     JJColor::CreatePrimaryWutGradient();
 
     TCanvas *canvY = new TCanvas("canvY","",1600,900);
-    std::vector<TH1D*> hRatY(yArr.size(),nullptr), hBckgY(yArr.size(),nullptr);
+    std::vector<TH1D*> hRatY(yArr.size(),nullptr), hSignY(yArr.size(),nullptr), hBckgY(yArr.size(),nullptr);
     for (const auto &y : yArr)
     {
         for (const auto &kt : ktArr)
             for (const auto &psi : psiArr)
             {
-                if (hRatY[y.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgY[y.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
+                if (hSignY[y.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgY[y.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
                 {
-                    hRatY[y.first-1] = new TH1D(*hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignY[y.first-1] = new TH1D(*hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignY[y.first-1]->SetName(TString::Format("hQinvSignY%d",y.first));
                     hBckgY[y.first-1] = new TH1D(*hBckg[kt.first-1][y.first-1][psi.first-1]);
+                    hBckgY[y.first-1]->SetName(TString::Format("hQinvBckgY%d",y.first));
                 }
                 else if(hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
                 {
-                    hRatY[y.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignY[y.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
                     hBckgY[y.first-1]->Add(hBckg[kt.first-1][y.first-1][psi.first-1]);
                 }
             }
 
-        if (hRatY[y.first-1] != nullptr && hBckgY[y.first-1] != nullptr)
+        if (hSignY[y.first-1] != nullptr && hBckgY[y.first-1] != nullptr)
         {
+            hRatY[y.first-1] = new TH1D(*hSignY[y.first-1]);
             hRatY[y.first-1]->Divide(hBckgY[y.first-1]);
             norm = getNorm(hRatY[y.first-1],300,900);
             hRatY[y.first-1]->Rebin(rebin);
@@ -143,6 +151,8 @@ void drawProton1DMultiDiff()
             hRatY[y.first-1]->SetMarkerStyle(20);
 
             hRatY[y.first-1]->Write();
+            hSignY[y.first-1]->Write();
+            hBckgY[y.first-1]->Write();
             if (y.first -1 == 0)
                 hRatY[y.first-1]->Draw("hist pe pmc plc");
             else
@@ -157,26 +167,29 @@ void drawProton1DMultiDiff()
     JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
-    std::vector<TH1D*> hRatPsi(psiArr.size(),nullptr), hBckgPsi(psiArr.size(),nullptr);
+    std::vector<TH1D*> hRatPsi(psiArr.size(),nullptr), hSignPsi(psiArr.size(),nullptr), hBckgPsi(psiArr.size(),nullptr);
     for (const auto &psi : psiArr)
     {
         for (const auto &kt : ktArr)
             for (const auto &y : yArr)
             {
-                if (hRatPsi[psi.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgPsi[psi.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
+                if (hSignPsi[psi.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgPsi[psi.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
                 {
-                    hRatPsi[psi.first-1] = new TH1D(*hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignPsi[psi.first-1] = new TH1D(*hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignPsi[psi.first-1]->SetName(TString::Format("hQinvSignPsi%d",psi.first));
                     hBckgPsi[psi.first-1] = new TH1D(*hBckg[kt.first-1][y.first-1][psi.first-1]);
+                    hBckgPsi[psi.first-1]->SetName(TString::Format("hQinvBckgPsi%d",psi.first));
                 }
                 else if(hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
                 {
-                    hRatPsi[psi.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
+                    hSignPsi[psi.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
                     hBckgPsi[psi.first-1]->Add(hBckg[kt.first-1][y.first-1][psi.first-1]);
                 }
             }
 
-        if (hRatPsi[psi.first-1] != nullptr && hBckgPsi[psi.first-1] != nullptr)
+        if (hSignPsi[psi.first-1] != nullptr && hBckgPsi[psi.first-1] != nullptr)
         {
+            hRatPsi[psi.first-1] = new TH1D(*hSignPsi[psi.first-1]);
             hRatPsi[psi.first-1]->Divide(hBckgPsi[psi.first-1]);
             norm = getNorm(hRatPsi[psi.first-1],100,300);
             hRatPsi[psi.first-1]->Rebin(rebin);
@@ -187,6 +200,8 @@ void drawProton1DMultiDiff()
             hRatPsi[psi.first-1]->SetMarkerStyle(20);
 
             hRatPsi[psi.first-1]->Write();
+            hSignPsi[psi.first-1]->Write();
+            hBckgPsi[psi.first-1]->Write();
             if (psi.first -1 == 0)
                 hRatPsi[psi.first-1]->Draw("hist pe pmc plc");
             else

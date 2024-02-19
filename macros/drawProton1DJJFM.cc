@@ -30,8 +30,8 @@ void drawProton1DJJFM()
 {
     gStyle->SetPalette(kPastel);
 
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12sim_all_24_02_02.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant_tmp.root";
+    const TString fileName = "/home/jedkol/Downloads/HADES/HADES-CrAP/slurmOutput/apr12ana_all_24_02_19.root";
+    const TString outputFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/1Dcorr_0_10_cent_forceEP_tmp.root";
     const int rebin = 2;
 
     float norm;
@@ -51,7 +51,7 @@ void drawProton1DJJFM()
 
     for(const int i : {1,2,3,4,5})
         for(const int j : {1,2,3})
-            for(const int k : {1,2,3,4})
+            for(const int k : {1,2,3,4,5,6,7,8})
             {
                 TH1D *hS = inpFile->Get<TH1D>(TString::Format("hQinvSign_%d%d%d",i,j,k));
                 TH2D *hDpDtS = inpFile->Get<TH2D>(TString::Format("hDphiDthetaSign_%d%d%d",i,j,k));
@@ -93,6 +93,8 @@ void drawProton1DJJFM()
 
     TCanvas *canv = new TCanvas("canv","",1600,900);
     hRat->Write();
+    hSign->Write();
+    hBckg->Write();
     hDpDtRat->Write();
     hRat->Draw("hist pe pmc plc");
     line->Draw("same");
