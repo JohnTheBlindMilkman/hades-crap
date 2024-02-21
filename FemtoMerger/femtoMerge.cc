@@ -69,7 +69,7 @@ int main(int argc, char **argv)
                 {
                     bar.set_option(indicators::option::ForegroundColor{indicators::Color::green});
                     bar.set_option(indicators::option::PrefixText{"✔"});
-                    bar.set_option(indicators::option::HideBarWhenComplete{true});
+                    /*bar.set_option(indicators::option::HideBarWhenComplete{true});*/
                     bar.set_option(indicators::option::ShowPercentage{false});
                     bar.set_option(indicators::option::PostfixText{"Finished!"});
                     bar.mark_as_completed();
@@ -114,7 +114,9 @@ int main(int argc, char **argv)
         std::thread thread2(job2);
 
         std::this_thread::sleep_for(std::chrono::seconds(5));
+	spinner.mark_as_completed();
 
+	std::cout << "Waiting for helper threads to finish...\n";
         thread1.join();
         thread2.join();
     }
