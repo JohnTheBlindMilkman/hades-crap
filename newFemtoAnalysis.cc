@@ -61,10 +61,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Int_t nFiles = 0;
 
 		//simulation
-		TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
+		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
 		
 		//data
-		//TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
+		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -102,7 +102,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -160,9 +160,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 	std::cout << "HParticleEvtChara: reading input for energy 1.23A GeV... " << std::endl;
 	// Data
-	//TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
+	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
 	// Simulation
-	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
+	//TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
 
 	if (!evtChara.setParameterFile(ParameterfileCVMFS))
 	{
@@ -340,18 +340,18 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					if (fMapFoHistograms.find(signalEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
-						TH1D(TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH1D(TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH2D(TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
-						TH2D(TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
-						TH3D(/* TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */),
-						TH3D(/* TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */)
+						TH1D(/* TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
+						TH1D(/* TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
+						TH2D(/* TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
+						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
+						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,-250,250,125,-250,250,125,-250,250),
+						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,-250,250,125,-250,250,125,-250,250)
 						};
 						fMapFoHistograms.emplace(signalEntry.first,histos);
 					}
-					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.QInv);
-					fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					//fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
+					//fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.QInv);
+					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
+					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
 				}
 			}
 
@@ -362,24 +362,31 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					if (fMapFoHistograms.find(backgroundEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
-						TH1D(TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH1D(TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})",750,0,3000),
-						TH2D(TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
-						TH2D(TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45),
-						TH3D(/* TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */),
-						TH3D(/* TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV];q_{side} [MeV];q_{long} [MeV];CF(q_{inv})",250,0,1000,250,0,1000,250,0,1000 */)
+						TH1D(/* TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
+						TH1D(/* TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
+						TH2D(/* TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
+						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
+						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,-250,250,125,-250,250,125,-250,250),
+						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,-250,250,125,-250,250,125,-250,250)
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,histos);
 					}
-					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.QInv);
-					fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					//fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
+					//fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.QInv);
+					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
+					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
 				}
 			}
 			
 		} // End of femto mixing
 	} // End of event loop
 	
+	static ProcInfo_t info;
+	constexpr float toGB = 1.f/1024.f/1024.f;
+
+	gSystem->GetProcInfo(&info);
+	std::cout << "\n---=== Memory Usage ===---\n";
+	std::cout << "resident memory used: " << info.fMemResident*toGB << " GB\t virtual memory used: " << info.fMemVirtual*toGB << " GB\n\n";
+
     //--------------------------------------------------------------------------------
     // Doing some cleanup and finalization work
     //--------------------------------------------------------------------------------

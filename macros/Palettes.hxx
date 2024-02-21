@@ -55,12 +55,12 @@ namespace JJColor
     void CreateSecondaryWutGradient()
     {
         int MyPalette[100];
-        double Red[]    = {192./255,52./255,231./255,230./255,154./255,94./255};
-        double Green[]  = {209./255,102./255,162./255,51./255,15./255,49./255};
-        double Blue[]   = {200./255,175./255,23./255,18./255,6./255,86./255};
-        double Length[] = {0.,0.2,0.4,0.6,0.8,1.};
-        // mintWut -> blueWut -> goldWut -> fireRedWut -> wineRedWut -> violetWut
-        int fi = TColor::CreateGradientColorTable(6,Length,Red,Green,Blue,100);
+        double Red[]    = {192./255,122./255,52./255,142./255,231./255,231./255,230./255,192./255,154./255,124./255,94./255};
+        double Green[]  = {209./255,156./255,102./255,132/255,162./255,107./255,51./255,33./255,15./255,32./255,49./255};
+        double Blue[]   = {200./255,188./255,175./255,99./255,23./255,21./255,18./255,6./255,6./255,46./255,86./255};
+        double Length[] = {0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.};
+        // mintWut -> intermidiate -> blueWut -> intermidiate -> goldWut -> intermidiate -> fireRedWut -> intermidiate -> wineRedWut -> intermidiate -> violetWut
+        int fi = TColor::CreateGradientColorTable(11,Length,Red,Green,Blue,100);
         for (int i = 0; i < 100; ++i) MyPalette[i] = fi + i;
     }
 
