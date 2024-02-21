@@ -2,7 +2,7 @@
 #include "HelperFunctions.hxx"
 #include "TFile.h"
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
     // verify if input is valid
     // create the main object
@@ -15,14 +15,14 @@ int main(int argc, char *argv[])
     if (argc < 7)
     {
         helper.PrintHelp();
-        return 0;
+        return 1;
     }
     
     TFile *inpFile = TFile::Open(argv[1]);
     if (!inpFile->IsOpen() || inpFile->IsZombie())
     {
         helper.PrintHelp();
-        return 0;
+        return 1;
     }
 
     TString signName(argv[2]);
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     if (ktMax < 2 || yMax < 2 || psiMax < 2)
     {
         helper.PrintHelp();
-        return 0;
+        return 1;
     }
 
     indicators::ProgressBar bar{indicators::option::BarWidth{50},
