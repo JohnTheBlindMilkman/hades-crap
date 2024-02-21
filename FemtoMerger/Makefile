@@ -1,6 +1,6 @@
 APP_NAME      := femtoMerge
 
-SOURCE_FILES  := femtoMerge.cxx
+SOURCE_FILES  := femtoMerge.cc
 USES_RFIO     := no
 USES_ORACLE   := yes
 USES_GFORTRAN := yes

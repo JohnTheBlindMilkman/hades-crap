@@ -10,10 +10,10 @@
             private:
                 /* data */
             public:
-                HelperFunctions(/* args */);
-                ~HelperFunctions();
+                HelperFunctions() = default;
+                ~HelperFunctions() = default;
 
-                constexpr void PrintHelp() const
+                static void PrintHelp()
                 {
                     std::cout << "Usage:\n";
                     std::cout << "./femtoMerge INPUTFILE SIGNATURE1 SIGNATURE2 KTMAX YMAX PSIMAX\n\n";
