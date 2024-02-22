@@ -16,3 +16,7 @@ myCrap/libBuild/depend/
 myCrap/libBuild/lib/
 myCrap/libBuild/obj/
 myCrap/libBuild/pc/
+FemtoMerger/cmake_install.cmake
+FemtoMerger/CMakeCache.txt
+FemtoMerger/CMakeFiles/
+FemtoMerger/Makefile
