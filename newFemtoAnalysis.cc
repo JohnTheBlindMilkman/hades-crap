@@ -33,7 +33,7 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.AzimuthalAngle) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
+	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 || (pair.DeltaPhi < 8 && pair.DeltaTheta < 2))
 		return 0;
 	else
     	return ktCut*1e2 + yCut*1e1 + EpCut;
@@ -61,10 +61,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Int_t nFiles = 0;
 
 		//simulation
-		TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
+		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
 		
 		//data
-		//TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
+		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -102,7 +102,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -160,9 +160,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 	std::cout << "HParticleEvtChara: reading input for energy 1.23A GeV... " << std::endl;
 	// Data
-	//TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
+	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
 	// Simulation
-	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
+	//TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
 
 	if (!evtChara.setParameterFile(ParameterfileCVMFS))
 	{
@@ -237,10 +237,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
 		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
 
-		/* if (EventPlane < 0)
+		if (EventPlane < 0)
 			continue;
 		if (EventPlaneA < 0 || EventPlaneB < 0)
-			continue; */
+			continue;
 
 		Selection::CreateEvent(fEvent,vertX,vertY,vertZ,centClassIndex,EventPlane);
 
