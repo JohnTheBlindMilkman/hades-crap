@@ -28,6 +28,21 @@ void SetErrors(TH1D *hout, TH1D *hNum, TH1D *hDen)
     }
 }
 
+void AnalyticalDivide(TH1D *hNum, TF1 *fDen)
+{
+    const int iterMax = hNum->GetNbinsX();
+    double min,max;
+    fDen->GetRange(min,max);
+
+    for (int i = 1; i <= iterMax; i++)
+    {
+        if (hNum->GetBinCenter(i) < max)
+            hNum->SetBinContent(i,hNum->GetBinContent(i) / fDen->Eval(hNum->GetBinCenter(i)));
+        else
+            hNum->SetBinContent(i,0.);
+    }
+}
+
 void drawDRProton1D()
 {
     gStyle->SetPalette(kPastel);
@@ -40,6 +55,7 @@ void drawDRProton1D()
     constexpr std::array<int,8> psiArr{1,2,3,4,5,6,7,8};
     const int rebin = 1;
 
+    std::vector<TH1D*> hDRkt(ktArr.size(),nullptr), hDRy(yArr.size(),nullptr), hDRpsi(psiArr.size(),nullptr);
     std::vector<TH1D*> hCFkt(ktArr.size(),nullptr), hCFy(yArr.size(),nullptr), hCFpsi(psiArr.size(),nullptr);
     std::vector<TH1D*> hSimkt(ktArr.size(),nullptr), hSimy(yArr.size(),nullptr), hSimpsi(psiArr.size(),nullptr);
     std::vector<TH1D*> hErrkt(ktArr.size(),nullptr), hErry(yArr.size(),nullptr), hErrpsi(psiArr.size(),nullptr);
@@ -77,13 +93,14 @@ void drawDRProton1D()
         hCFkt[kt-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
         hCFkt[kt-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
 
-        hCFkt[kt-1]->Divide(hSimkt[kt-1]);
-        SetErrors(hCFkt[kt-1],hCFkt[kt-1],hErrkt[kt-1]);
+        hDRkt[kt-1] = static_cast<TH1D*>(hCFkt[kt-1]->Clone(TString::Format("hQinvDRKt%d",kt)));
+        AnalyticalDivide(hDRkt[kt-1],fFitkt[kt-1]);
+        SetErrors(hDRkt[kt-1],hCFkt[kt-1],hErrkt[kt-1]);
 
         canvkt[kt-1] = new TCanvas(TString::Format("cQinvRatKt%d",kt),"",1600,900);
-        hCFkt[kt-1]->Draw("hist pe");
+        hDRkt[kt-1]->Draw("hist pe");
         hSimkt[kt-1]->Draw("same hist pe");
-        hErrkt[kt-1]->Draw("same e3");
+        hErrkt[kt-1]->Draw("same e4");
         fFitkt[kt-1]->Draw("same c");
 
         canvkt[kt-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
@@ -113,7 +130,7 @@ void drawDRProton1D()
         hCFy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
         hCFy[y-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
 
-        hCFy[y-1]->Divide(hSimy[y-1]);
+        AnalyticalDivide(hCFy[y-1],fFity[y-1]);
         SetErrors(hCFy[y-1],hCFy[y-1],hErry[y-1]);
 
         canvy[y-1] = new TCanvas(TString::Format("cQinvRatY%d",y),"",1600,900);
@@ -149,7 +166,7 @@ void drawDRProton1D()
         hCFpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
         hCFpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
 
-        hCFpsi[psi-1]->Divide(hSimpsi[psi-1]);
+        AnalyticalDivide(hCFpsi[psi-1],fFitpsi[psi-1]);
         SetErrors(hCFpsi[psi-1],hCFpsi[psi-1],hErrpsi[psi-1]);
 
         canvpsi[psi-1] = new TCanvas(TString::Format("cQinvRatPsi%d",psi),"",1600,900);
@@ -165,12 +182,12 @@ void drawDRProton1D()
     fOtpFile = TFile::Open(otpFile,"RECREATE");
 
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
-    for (auto hist : hCFkt)
+    for (auto hist : hDRkt)
     {
         if (hist != nullptr)
         {
             hist->Write();
-            if (hist == hCFkt.front())
+            if (hist == hDRkt.front())
             {
                 hist->GetYaxis()->SetRangeUser(0,2);
                 hist->Draw("hist pe pmc plc");

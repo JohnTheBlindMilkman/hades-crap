@@ -48,117 +48,189 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton3DMultiDiff()
 {
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_02_20_dp8dt2.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/3Dcorr_0_10_cent_dp8dp2.root";
+    gStyle->SetOptStat(0);
+
+    const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12sim_all_24_02_23_processed.root";
+    const TString outputFile = "/u/kjedrzej/hades-crap/output/3Dcorr_0_10_cent_HGeant.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
     const int rebin = 1;
-    const int wbin = 0; 
+    const int wbin = 1; 
 
     float norm;
     int binc, binmn, binmx;
-    std::vector<std::vector<std::vector<TH3D*> > > 
-    hSign(ktArr.size(),std::vector<std::vector<TH3D*> >(yArr.size(),std::vector<TH3D*>(psiArr.size(),nullptr))), 
-    hBckg(ktArr.size(),std::vector<std::vector<TH3D*> >(yArr.size(),std::vector<TH3D*>(psiArr.size(),nullptr)));
 
-    TLine *line = new TLine(0,1,3000,1);
+    TLine *line = new TLine(-250,1,250,1);
     line->SetLineStyle(kDashed);
     line->SetLineColor(kGray);
 
     TFile *inpFile = TFile::Open(fileName);
-
-    for (const auto &kt : ktArr)
-        for (const auto &y : yArr)
-            for (const auto &psi : psiArr)
-            {
-                hSign[kt.first-1][y.first-1][psi.first-1] = inpFile->Get<TH3D>(TString::Format("hQoslSign_%d%d%d",kt.first,y.first,psi.first));
-                if (hSign[kt.first-1][y.first-1][psi.first-1] != nullptr)
-                    hSign[kt.first-1][y.first-1][psi.first-1]->Sumw2();
-
-                hBckg[kt.first-1][y.first-1][psi.first-1] = inpFile->Get<TH3D>(TString::Format("hQoslBckg_%d%d%d",kt.first,y.first,psi.first));
-                if (hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
-                    hBckg[kt.first-1][y.first-1][psi.first-1]->Sumw2();
-            }
-
     TFile *otpFile = TFile::Open(outputFile,"RECREATE");
 
     JJColor::CreateSecondaryWutGradient();
 
-    TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
+    TCanvas *canvKt = new TCanvas("canvKt","",1800,600);
     canvKt->Divide(3,1);
-    std::vector<TH3D*> hSignKt(ktArr.size(),nullptr), hBckgKt(ktArr.size(),nullptr);
-    std::vector<std::vector<TH1D*> > hRatPPKt(ktArr.size(),std::vector<TH1D*>(sProj.size(),nullptr)),
-                                     hNumPPKt(ktArr.size(),std::vector<TH1D*>(sProj.size(),nullptr)), 
-                                     hDenPPKt(ktArr.size(),std::vector<TH1D*>(sProj.size(),nullptr));
     for (const auto &kt : ktArr)
     {
-        for (const auto &y : yArr)
-            for (const auto &psi : psiArr)
-            {
-                if (hSignKt[kt.first-1] == nullptr && hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckgKt[kt.first-1] == nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
-                {
-                    hSignKt[kt.first-1] = new TH3D(*hSign[kt.first-1][y.first-1][psi.first-1]);
-                    hSignKt[kt.first-1]->SetName(TString::Format("hQoslSignKt%d",kt.first));
-                    hBckgKt[kt.first-1] = new TH3D(*hBckg[kt.first-1][y.first-1][psi.first-1]);
-                    hBckgKt[kt.first-1]->SetName(TString::Format("hQoslBckgKt%d",kt.first));
-                }
-                else if(hSign[kt.first-1][y.first-1][psi.first-1] != nullptr && hBckg[kt.first-1][y.first-1][psi.first-1] != nullptr)
-                {
-                    hSignKt[kt.first-1]->Add(hSign[kt.first-1][y.first-1][psi.first-1]);
-                    hBckgKt[kt.first-1]->Add(hBckg[kt.first-1][y.first-1][psi.first-1]);
-                }
-            }
+        TH3D *hSign = inpFile->Get<TH3D>(TString::Format("hQoslSignKt%d",kt.first));
+        TH3D *hBckg = inpFile->Get<TH3D>(TString::Format("hQoslBckgKt%d",kt.first));
+        TH3D *hRat3D = new TH3D(*hSign);
+        hRat3D->Divide(hBckg);
+        hRat3D->SetName(TString::Format("hQoslRatKt%d",kt.first));
+        hRat3D->Write();
 
-        if (hSignKt[kt.first-1] != nullptr && hBckgKt[kt.first-1] != nullptr)
+        if (hRat3D != nullptr)
         {
             for (const int &i : {0,1,2})
             {
-                binc = hSignKt[kt.first-1]->GetXaxis()->FindFixBin(0.0);
+                binc = hRat3D->GetXaxis()->FindFixBin(0.0);
                 binmx = binc + wbin;
                 binmn = binc - wbin;
 
-                hSignKt[kt.first-1]->GetXaxis()->SetRange(1, (i == 0) ? hSignKt[kt.first-1]->GetNbinsX() : binmx);
-                hSignKt[kt.first-1]->GetYaxis()->SetRange(1, (i == 1) ? hSignKt[kt.first-1]->GetNbinsY() : binmx);
-                hSignKt[kt.first-1]->GetZaxis()->SetRange(1, (i == 2) ? hSignKt[kt.first-1]->GetNbinsZ() : binmx);
-                hBckgKt[kt.first-1]->GetXaxis()->SetRange(1, (i == 0) ? hBckgKt[kt.first-1]->GetNbinsX() : binmx);
-                hBckgKt[kt.first-1]->GetYaxis()->SetRange(1, (i == 1) ? hBckgKt[kt.first-1]->GetNbinsY() : binmx);
-                hBckgKt[kt.first-1]->GetZaxis()->SetRange(1, (i == 2) ? hBckgKt[kt.first-1]->GetNbinsZ() : binmx);
+                hRat3D->GetXaxis()->SetRange((i == 0) ? 1 : binmn, (i == 0) ? hSign->GetNbinsX() : binmx);
+                hRat3D->GetYaxis()->SetRange((i == 1) ? 1 : binmn, (i == 1) ? hSign->GetNbinsY() : binmx);
+                hRat3D->GetZaxis()->SetRange((i == 2) ? 1 : binmn, (i == 2) ? hSign->GetNbinsZ() : binmx);
 
-                hNumPPKt[kt.first-1][i] = static_cast<TH1D*>(hSignKt[kt.first-1]->Project3D(sProj[i].Data()));
-                hDenPPKt[kt.first-1][i] = static_cast<TH1D*>(hBckgKt[kt.first-1]->Project3D(sProj[i].Data()));
-
-                hRatPPKt[kt.first-1][i] = new TH1D(*hNumPPKt[kt.first-1][i]);
-                hRatPPKt[kt.first-1][i]->Divide(hDenPPKt[kt.first-1][i]);
-                norm = getNorm(hRatPPKt[kt.first-1][i],300,900);
-                hRatPPKt[kt.first-1][i]->Rebin(rebin);
+                TH1D *hRat = static_cast<TH1D*>(hRat3D->Project3D(sProj[i].Data()));
+                norm = getNorm(hRat,150,250);
+                hRat->Rebin(rebin);
                 norm *= rebin;
-                hRatPPKt[kt.first-1][i]->Scale(1./norm);
-            }
-            hRatKt[kt.first-1] = new TH1D(*hSignKt[kt.first-1]);
-            hRatKt[kt.first-1]->Divide(hBckgKt[kt.first-1]);
-            norm = getNorm(hRatKt[kt.first-1],300,900);
-            hRatKt[kt.first-1]->Rebin(rebin);
-            norm *= rebin;
-            hRatKt[kt.first-1]->Scale(1./norm);
-            hRatKt[kt.first-1]->SetName(TString::Format("hQinvRatKt%d",kt.first));
-            hRatKt[kt.first-1]->SetTitle(TString::Format("k_{T} #in %s",kt.second.Data()));
-            hRatKt[kt.first-1]->SetMarkerStyle(20);
-            hRatKt[kt.first-1]->SetMarkerColor(JJColor::fWutAllColors[kt.first-1]);
+                hRat->Scale(1./norm);
+                hRat->GetYaxis()->SetRangeUser(0.,2.);
+                hRat->SetName(TString::Format("hQ%sRatKt%d",sProjName[i].Data(),kt.first));
+                hRat->SetTitle(TString::Format("k_{T} #in %s;q_{%s} [MeV/c];CF(q_{%s})",kt.second.Data(),sProjName[i].Data(),sProjName[i].Data()));
+                hRat->SetMarkerStyle(20);
+                hRat->SetMarkerColor(JJColor::fWutAllColors[kt.first-1]);
 
-            hRatKt[kt.first-1]->Write();
-            hSignKt[kt.first-1]->Write();
-            hBckgKt[kt.first-1]->Write();
-            if (kt.first -1 == 0)
-                hRatKt[kt.first-1]->Draw("hist pe pmc plc");
-            else
-                hRatKt[kt.first-1]->Draw("same hist pe pmc plc");
+                hRat->Write();
+
+                canvKt->cd(i+1);
+                if (kt.first -1 == 0)
+                    hRat->Draw("hist pe pmc plc");
+                else
+                    hRat->Draw("same hist pe pmc plc");
+            }
         }
     }
     
-    canvKt->BuildLegend(0.2,0.2,0.5,0.5,"","p");
-    line->Draw("same");
+    for (const int &i : {0,1,2})
+    {
+        TVirtualPad *tvp = canvKt->cd(i+1);
+        if (i == 1)
+            tvp->BuildLegend(.3,.21,.3,.21,"","p");
+        line->Draw("same");
+    } 
     canvKt->Write();
+
+    TCanvas *canvY = new TCanvas("canvY","",1800,600);
+    canvY->Divide(3,1);
+    for (const auto &y : yArr)
+    {
+        TH3D *hSign = inpFile->Get<TH3D>(TString::Format("hQoslSignY%d",y.first));
+        TH3D *hBckg = inpFile->Get<TH3D>(TString::Format("hQoslBckgY%d",y.first));
+        TH3D *hRat3D = new TH3D(*hSign);
+        hRat3D->Divide(hBckg);
+        hRat3D->SetName(TString::Format("hQoslRatY%d",y.first));
+        hRat3D->Write();
+
+        if (hRat3D != nullptr)
+        {
+            for (const int &i : {0,1,2})
+            {
+                binc = hRat3D->GetXaxis()->FindFixBin(0.0);
+                binmx = binc + wbin;
+                binmn = binc - wbin;
+
+                hRat3D->GetXaxis()->SetRange((i == 0) ? 1 : binmn, (i == 0) ? hSign->GetNbinsX() : binmx);
+                hRat3D->GetYaxis()->SetRange((i == 1) ? 1 : binmn, (i == 1) ? hSign->GetNbinsY() : binmx);
+                hRat3D->GetZaxis()->SetRange((i == 2) ? 1 : binmn, (i == 2) ? hSign->GetNbinsZ() : binmx);
+
+                TH1D *hRat = static_cast<TH1D*>(hRat3D->Project3D(sProj[i].Data()));
+                norm = getNorm(hRat,150,250);
+                hRat->Rebin(rebin);
+                norm *= rebin;
+                hRat->Scale(1./norm);
+                hRat->GetYaxis()->SetRangeUser(0.,2.);
+                hRat->SetName(TString::Format("hQ%sRatY%d",sProjName[i].Data(),y.first));
+                hRat->SetTitle(TString::Format("y #in %s;q_{%s} [MeV/c];CF(q_{%s})",y.second.Data(),sProjName[i].Data(),sProjName[i].Data()));
+                hRat->SetMarkerStyle(20);
+                hRat->SetMarkerColor(JJColor::fWutAllColors[y.first-1]);
+
+                hRat->Write();
+
+                canvY->cd(i+1);
+                if (y.first -1 == 0)
+                    hRat->Draw("hist pe pmc plc");
+                else
+                    hRat->Draw("same hist pe pmc plc");
+            }
+        }
+    }
+    
+    for (const int &i : {0,1,2})
+    {
+        TVirtualPad *tvp = canvY->cd(i+1);
+        if (i == 1)
+            tvp->BuildLegend(.3,.21,.3,.21,"","p");
+        line->Draw("same");
+    } 
+    canvY->Write();
+
+    TCanvas *canvPsi = new TCanvas("canvPsi","",1800,600);
+    canvPsi->Divide(3,1);
+    for (const auto &psi : psiArr)
+    {
+        TH3D *hSign = inpFile->Get<TH3D>(TString::Format("hQoslSignPsi%d",psi.first));
+        TH3D *hBckg = inpFile->Get<TH3D>(TString::Format("hQoslBckgPsi%d",psi.first));
+        TH3D *hRat3D = new TH3D(*hSign);
+        hRat3D->Divide(hBckg);
+        hRat3D->SetName(TString::Format("hQoslRatPsi%d",psi.first));
+        hRat3D->Write();
+
+        if (hRat3D != nullptr)
+        {
+            for (const int &i : {0,1,2})
+            {
+                binc = hRat3D->GetXaxis()->FindFixBin(0.0);
+                binmx = binc + wbin;
+                binmn = binc - wbin;
+
+                hRat3D->GetXaxis()->SetRange((i == 0) ? 1 : binmn, (i == 0) ? hSign->GetNbinsX() : binmx);
+                hRat3D->GetYaxis()->SetRange((i == 1) ? 1 : binmn, (i == 1) ? hSign->GetNbinsY() : binmx);
+                hRat3D->GetZaxis()->SetRange((i == 2) ? 1 : binmn, (i == 2) ? hSign->GetNbinsZ() : binmx);
+
+                TH1D *hRat = static_cast<TH1D*>(hRat3D->Project3D(sProj[i].Data()));
+                norm = getNorm(hRat,150,250);
+                hRat->Rebin(rebin);
+                norm *= rebin;
+                hRat->Scale(1./norm);
+                hRat->GetYaxis()->SetRangeUser(0.,2.);
+                hRat->SetName(TString::Format("hQ%sRatPsi%d",sProjName[i].Data(),psi.first));
+                hRat->SetTitle(TString::Format("#phi - #Psi_{E.P.} #in %s;q_{%s} [MeV/c];CF(q_{%s})",psi.second.Data(),sProjName[i].Data(),sProjName[i].Data()));
+                hRat->SetMarkerStyle(20);
+                hRat->SetMarkerColor(JJColor::fWutAllColors[psi.first-1]);
+
+                hRat->Write();
+
+                canvPsi->cd(i+1);
+                if (psi.first -1 == 0)
+                    hRat->Draw("hist pe pmc plc");
+                else
+                    hRat->Draw("same hist pe pmc plc");
+            }
+        }
+    }
+    
+    for (const int &i : {0,1,2})
+    {
+        TVirtualPad *tvp = canvPsi->cd(i+1);
+        if (i == 1)
+            tvp->BuildLegend(.3,.21,.3,.21,"","p");
+        line->Draw("same");
+    } 
+    canvPsi->Write();
 }
