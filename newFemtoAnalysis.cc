@@ -33,7 +33,7 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.AzimuthalAngle) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 || (pair.DeltaPhi < 8 && pair.DeltaTheta < 2))
+	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 || (abs(pair.DeltaPhi) < 8 && abs(pair.DeltaTheta) < 2))
 		return 0;
 	else
     	return ktCut*1e2 + yCut*1e1 + EpCut;

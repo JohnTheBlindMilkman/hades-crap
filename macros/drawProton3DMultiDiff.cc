@@ -50,8 +50,8 @@ void drawProton3DMultiDiff()
 {
     gStyle->SetOptStat(0);
 
-    const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12sim_all_24_02_23_processed.root";
-    const TString outputFile = "/u/kjedrzej/hades-crap/output/3Dcorr_0_10_cent_HGeant.root";
+    const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_03_11_dp8dt2_processed.root";
+    const TString outputFile = "/u/kjedrzej/hades-crap/output/3Dcorr_0_10_cent_dp8dt2.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
