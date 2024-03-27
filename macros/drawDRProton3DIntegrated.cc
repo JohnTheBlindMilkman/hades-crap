@@ -2,6 +2,7 @@
 #include "TLine.h"
 #include "TF3.h"
 #include "TH3D.h"
+#include "TH2D.h"
 #include "TFile.h"
 #include "TCanvas.h"
 #include "Palettes.hxx"
@@ -10,7 +11,7 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
 {
     int nBins = 0;
     double val = 0., xVal;
-    for (int i = 1; i < hInp->GetNbinsX(); i++)
+    for (int i = 1; i <= hInp->GetNbinsX(); i++)
     {
         xVal = hInp->GetBinCenter(i);
         if (xVal >= xMin && xVal <= xMax)
@@ -21,6 +22,29 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
     }
     if(nBins > 0)
         return val/nBins;
+    else    
+        return 0.;
+}
+
+double getNorm(const TH2D *hInp, double xMin, double xMax, double yMin, double yMax)
+{
+    const int binsX = hInp->GetNbinsX();
+    const int binxY = hInp->GetNbinsY();
+    int div = 0;
+    double sum = 0., xVal, yVal;
+    for (int i = 1; i <= binsX; ++i)
+        for (int j = 1; j < binxY; ++j)
+        {
+            xVal = hInp->GetXaxis()->GetBinCenter(i);
+            yVal = hInp->GetYaxis()->GetBinCenter(j);
+            if (xVal >= xMin && xVal <= xMax && yVal >= yMin && yVal <= yMax)
+            {
+                sum += hInp->GetBinContent(i,j);
+                ++div;
+            } 
+        }
+    if(div > 0)
+        return sum/div;
     else    
         return 0.;
 }
@@ -73,9 +97,9 @@ void drawDRProton3DIntegrated()
 {
     // /home/jedkol/lxpool/hades-crap/output/
     // /home/jedkol/Downloads/HADES/HADES-CrAP/output/
-    const TString inpFile = "/home/jedkol/lxpool/hades-crap/output/3Dcorr_0_10_cent_Integ.root";
-    const TString simFile = "/home/jedkol/lxpool/hades-crap/output/3Dcorr_0_10_cent_HGeant_Integ_fit.root";
-    const TString otpFile = "/home/jedkol/lxpool/hades-crap/output/3Dcorr_0_10_cent_DR_Integ.root";
+    const TString inpFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_Integ.root";
+    const TString simFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_HGeant_Integ_fit.root";
+    const TString otpFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_DR_Integ.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
     const int rebin = 1;
@@ -132,4 +156,36 @@ void drawDRProton3DIntegrated()
     }
 
     canvInteg->Write();
+
+    TCanvas *canv2DInteg = new TCanvas("canv2DInteg","",1800,600);
+    canv2DInteg->Divide(3,1);
+    JJColor::CreatePrimaryWutGradient();
+    for (const int &i : {0,1,2})
+    {
+        binc = hRat3D->GetXaxis()->FindFixBin(0.0);
+        binmx = binc + wbin;
+        binmn = binc - wbin;
+
+        hRat3D->GetXaxis()->SetRange((i == 0 || (i+1)%3 == 0) ? 1 : binmn, (i == 0 || (i+1)%3 == 0) ? hExp3D->GetNbinsX() : binmx);
+        hRat3D->GetYaxis()->SetRange((i == 1 || (i+1)%3 == 1) ? 1 : binmn, (i == 1 || (i+1)%3 == 1) ? hExp3D->GetNbinsY() : binmx);
+        hRat3D->GetZaxis()->SetRange((i == 2 || (i+1)%3 == 2) ? 1 : binmn, (i == 2 || (i+1)%3 == 2) ? hExp3D->GetNbinsZ() : binmx);
+
+        TH2D *hRat = static_cast<TH2D*>(hRat3D->Project3D((sProj[i%3]+sProj[(i+1)%3]).Data()));
+        norm = getNorm(hRat,150,250,150,250);
+        hRat->Rebin2D(rebin,rebin);
+        norm *= rebin;
+        hRat->Scale(1./norm);
+        hRat->GetYaxis()->SetRangeUser(0.,2.);
+        hRat->SetName(TString::Format("hQ%s%sRatInteg",sProjName[i%3].Data(),sProjName[(i+1)%3].Data()));
+        hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];q_{%s} [MeV/c];CF(q_{%s},q_{%s})",sProjName[i].Data(),sProjName[(i+1)%3].Data(),sProjName[i].Data(),sProjName[(i+1)%3].Data()));
+        //hRat->SetMarkerStyle(20);
+        //hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
+
+        hRat->Write();
+
+        canv2DInteg->cd(i+1);
+        hRat->Draw("colz");
+    }
+
+    canv2DInteg->Write();
 }
