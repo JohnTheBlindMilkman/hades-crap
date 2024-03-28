@@ -97,6 +97,7 @@ void drawDRProton3DIntegrated()
 {
     // /home/jedkol/lxpool/hades-crap/output/
     // /home/jedkol/Downloads/HADES/HADES-CrAP/output/
+    gStyle->SetOptStat(0);
     const TString inpFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_Integ.root";
     const TString simFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_HGeant_Integ_fit.root";
     const TString otpFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_DR_Integ.root";
@@ -142,15 +143,23 @@ void drawDRProton3DIntegrated()
         hRat->Rebin(rebin);
         norm *= rebin;
         hRat->Scale(1./norm);
-        hRat->GetYaxis()->SetRangeUser(0.,2.);
+        hRat->GetYaxis()->SetRangeUser(0.,1.9);
+        hRat->GetXaxis()->SetRangeUser(-245,245);
         hRat->SetName(TString::Format("hQ%sRatInteg",sProjName[i].Data()));
         hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];CF(q_{%s})",sProjName[i].Data(),sProjName[i].Data()));
+        hRat->GetXaxis()->SetTitleOffset(); // invoking this functione becasue the side direction title got wonky
+        hRat->GetXaxis()->SetTitleSize(0.06);
+        hRat->GetXaxis()->SetLabelSize(0.06);
+        hRat->GetXaxis()->SetNdivisions(506);
+        hRat->GetYaxis()->SetTitleSize(0.06);
+        hRat->GetYaxis()->SetLabelSize(0.06);
+        hRat->GetYaxis()->SetNdivisions(506);
         hRat->SetMarkerStyle(20);
         hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
 
         hRat->Write();
 
-        canvInteg->cd(i+1);
+        canvInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
         hRat->Draw("hist pe pmc plc");
         line.Draw("same");
     }
@@ -175,15 +184,24 @@ void drawDRProton3DIntegrated()
         hRat->Rebin2D(rebin,rebin);
         norm *= rebin;
         hRat->Scale(1./norm);
-        hRat->GetYaxis()->SetRangeUser(0.,2.);
+        hRat->GetYaxis()->SetRangeUser(-245,245);
+        hRat->GetXaxis()->SetRangeUser(-245,245);
         hRat->SetName(TString::Format("hQ%s%sRatInteg",sProjName[i%3].Data(),sProjName[(i+1)%3].Data()));
-        hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];q_{%s} [MeV/c];CF(q_{%s},q_{%s})",sProjName[i].Data(),sProjName[(i+1)%3].Data(),sProjName[i].Data(),sProjName[(i+1)%3].Data()));
+        hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];q_{%s} [MeV/c];",sProjName[i].Data(),sProjName[(i+1)%3].Data()));
+        hRat->GetXaxis()->SetTitleOffset();
+        hRat->GetYaxis()->SetTitleOffset(1.8);
+        hRat->GetXaxis()->SetTitleSize(0.06);
+        hRat->GetXaxis()->SetLabelSize(0.06);
+        hRat->GetXaxis()->SetNdivisions(506);
+        hRat->GetYaxis()->SetTitleSize(0.06);
+        hRat->GetYaxis()->SetLabelSize(0.06);
+        hRat->GetYaxis()->SetNdivisions(506);
         //hRat->SetMarkerStyle(20);
         //hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
 
         hRat->Write();
 
-        canv2DInteg->cd(i+1);
+        canv2DInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);;
         hRat->Draw("colz");
     }
 

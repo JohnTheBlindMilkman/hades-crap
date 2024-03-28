@@ -47,9 +47,9 @@ void drawDRProton1D()
 {
     gStyle->SetPalette(kPastel);
 
-    const TString inpFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent.root";
-    const TString simFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_HGeant_fit.root";
-    const TString otpFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_DR.root";
+    const TString inpFile = "../output/1Dcorr_0_10_cent.root";
+    const TString simFile = "../output/1Dcorr_0_10_cent_HGeant_fit.root";
+    const TString otpFile = "../output/1Dcorr_0_10_cent_DR.root";
     constexpr std::array<int,5> ktArr{1,2,3,4,5};
     constexpr std::array<int,3> yArr{1,2,3};
     constexpr std::array<int,8> psiArr{1,2,3,4,5,6,7,8};
@@ -96,6 +96,13 @@ void drawDRProton1D()
         hDRkt[kt-1] = static_cast<TH1D*>(hCFkt[kt-1]->Clone(TString::Format("hQinvDRKt%d",kt)));
         AnalyticalDivide(hDRkt[kt-1],fFitkt[kt-1]);
         SetErrors(hDRkt[kt-1],hCFkt[kt-1],hErrkt[kt-1]);
+        /* hDRkt[kt-1]->GetXaxis()->SetTitleOffset();
+        hDRkt[kt-1]->GetXaxis()->SetTitleSize(0.06);
+        hDRkt[kt-1]->GetXaxis()->SetLabelSize(0.06);
+        hDRkt[kt-1]->GetXaxis()->SetNdivisions(506);
+        hDRkt[kt-1]->GetYaxis()->SetTitleSize(0.06);
+        hDRkt[kt-1]->GetYaxis()->SetLabelSize(0.06);
+        hDRkt[kt-1]->GetYaxis()->SetNdivisions(506); */
 
         canvkt[kt-1] = new TCanvas(TString::Format("cQinvRatKt%d",kt),"",1600,900);
         hDRkt[kt-1]->Draw("hist pe");

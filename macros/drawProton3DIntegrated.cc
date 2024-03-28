@@ -29,9 +29,10 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
 void drawProton3DIntegrated()
 {
     gStyle->SetOptStat(0);
+    JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_03_11_dp8dt2_processed.root";
-    const TString outputFile = "/u/kjedrzej/hades-crap/output/3Dcorr_0_10_cent_dp8dt2_Integ.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_03_11_dp8dt2_processed.root";
+    const TString outputFile = "../output/3Dcorr_0_10_cent_dp8dt2_Integ.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
     const int rebin = 1;
@@ -74,15 +75,22 @@ void drawProton3DIntegrated()
             hRat->Rebin(rebin);
             norm *= rebin;
             hRat->Scale(1./norm);
-            hRat->GetYaxis()->SetRangeUser(0.,2.);
+            hRat->GetYaxis()->SetRangeUser(0.,1.9);
             hRat->SetName(TString::Format("hQ%sRatInteg",sProjName[i].Data()));
             hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];CF(q_{%s})",sProjName[i].Data(),sProjName[i].Data()));
+            hRat->GetXaxis()->SetTitleOffset(); // invoking this functione becasue the side direction title got wonky
+            hRat->GetXaxis()->SetTitleSize(0.06);
+            hRat->GetXaxis()->SetLabelSize(0.06);
+            hRat->GetXaxis()->SetNdivisions(506);
+            hRat->GetYaxis()->SetTitleSize(0.06);
+            hRat->GetYaxis()->SetLabelSize(0.06);
+            hRat->GetYaxis()->SetNdivisions(506);
             hRat->SetMarkerStyle(20);
             hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
 
             hRat->Write();
 
-            canvInteg->cd(i+1);
+            canvInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
             hRat->Draw("hist pe pmc plc");
             line->Draw("same");
         }

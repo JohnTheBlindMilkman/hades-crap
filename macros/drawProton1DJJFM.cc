@@ -30,8 +30,8 @@ void drawProton1DJJFM()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_24_02_19_processed.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent_forceEP_tmp.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_02_19_processed.root";
+    const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
     const int rebin = 2;
 
     float norm;
@@ -56,7 +56,7 @@ void drawProton1DJJFM()
     norm *= rebin;
     hRat->Scale(1./norm);
     hRat->SetName("hQinvRat");
-    hRat->SetTitle("CF of Protons 0-10%% centrality;q_{inv} [MeV];CF(q_{inv})");
+    hRat->SetTitle("CF of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})");
     hRat->SetMarkerStyle(20);
     hRat->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
 
