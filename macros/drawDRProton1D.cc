@@ -7,6 +7,7 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TLine.h"
+#include "TLegend.h"
 #include "Palettes.hxx"
 
 void SetErrors(TH1D *hout, TH1D *hNum, TH1D *hDen)
@@ -45,7 +46,8 @@ void AnalyticalDivide(TH1D *hNum, TF1 *fDen)
 
 void drawDRProton1D()
 {
-    gStyle->SetPalette(kPastel);
+    //gStyle->SetPalette(kPastel);
+    //JJColor::CreateSecondaryWutGradient();
 
     const TString inpFile = "../output/1Dcorr_0_10_cent.root";
     const TString simFile = "../output/1Dcorr_0_10_cent_HGeant_fit.root";
@@ -61,6 +63,7 @@ void drawDRProton1D()
     std::vector<TH1D*> hErrkt(ktArr.size(),nullptr), hErry(yArr.size(),nullptr), hErrpsi(psiArr.size(),nullptr);
     std::vector<TF1*> fFitkt(ktArr.size(),nullptr), fFity(yArr.size(),nullptr), fFitpsi(psiArr.size(),nullptr);
     std::vector<TCanvas*> canvkt(ktArr.size(),nullptr), canvy(yArr.size(),nullptr), canvpsi(psiArr.size(),nullptr);
+    std::vector<TLegend*> legkt(ktArr.size(),nullptr), legy(yArr.size(),nullptr), legpsi(psiArr.size(),nullptr);
     TFile *fInpData,*fInpSim,*fOtpFile;
     TLine line(0,1,3000,1);
     line.SetLineColor(kGray);
@@ -96,21 +99,28 @@ void drawDRProton1D()
         hDRkt[kt-1] = static_cast<TH1D*>(hCFkt[kt-1]->Clone(TString::Format("hQinvDRKt%d",kt)));
         AnalyticalDivide(hDRkt[kt-1],fFitkt[kt-1]);
         SetErrors(hDRkt[kt-1],hCFkt[kt-1],hErrkt[kt-1]);
-        /* hDRkt[kt-1]->GetXaxis()->SetTitleOffset();
+        hDRkt[kt-1]->GetXaxis()->SetTitleOffset();
         hDRkt[kt-1]->GetXaxis()->SetTitleSize(0.06);
         hDRkt[kt-1]->GetXaxis()->SetLabelSize(0.06);
         hDRkt[kt-1]->GetXaxis()->SetNdivisions(506);
         hDRkt[kt-1]->GetYaxis()->SetTitleSize(0.06);
         hDRkt[kt-1]->GetYaxis()->SetLabelSize(0.06);
-        hDRkt[kt-1]->GetYaxis()->SetNdivisions(506); */
+        hDRkt[kt-1]->GetYaxis()->SetNdivisions(506);
 
         canvkt[kt-1] = new TCanvas(TString::Format("cQinvRatKt%d",kt),"",1600,900);
+        canvkt[kt-1]->SetMargin(0.15,0.01,0.15,0.01);
         hDRkt[kt-1]->Draw("hist pe");
         hSimkt[kt-1]->Draw("same hist pe");
         hErrkt[kt-1]->Draw("same e4");
         fFitkt[kt-1]->Draw("same c");
 
-        canvkt[kt-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
+        legkt[kt-1] = new TLegend(0.3,0.21,0.3,0.21,"","NB");
+        legkt[kt-1]->AddEntry(hDRkt[kt-1],"Corrected result","p");
+        legkt[kt-1]->AddEntry(hSimkt[kt-1],"Simulation","p");
+        legkt[kt-1]->AddEntry(hErrkt[kt-1],"Fit to simulation","l");
+        legkt[kt-1]->Draw("same");
+
+        //canvkt[kt-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
         line.Draw("same");
     }
     for(const int &y : yArr)
@@ -137,16 +147,31 @@ void drawDRProton1D()
         hCFy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
         hCFy[y-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
 
-        AnalyticalDivide(hCFy[y-1],fFity[y-1]);
-        SetErrors(hCFy[y-1],hCFy[y-1],hErry[y-1]);
+        hDRy[y-1] = static_cast<TH1D*>(hCFy[y-1]->Clone(TString::Format("hQinvDRy%d",y)));
+        AnalyticalDivide(hDRy[y-1],fFity[y-1]);
+        SetErrors(hDRy[y-1],hCFy[y-1],hErry[y-1]);
+        hDRy[y-1]->GetXaxis()->SetTitleOffset();
+        hDRy[y-1]->GetXaxis()->SetTitleSize(0.06);
+        hDRy[y-1]->GetXaxis()->SetLabelSize(0.06);
+        hDRy[y-1]->GetXaxis()->SetNdivisions(506);
+        hDRy[y-1]->GetYaxis()->SetTitleSize(0.06);
+        hDRy[y-1]->GetYaxis()->SetLabelSize(0.06);
+        hDRy[y-1]->GetYaxis()->SetNdivisions(506);
 
         canvy[y-1] = new TCanvas(TString::Format("cQinvRatY%d",y),"",1600,900);
-        hCFy[y-1]->Draw("hist pe");
+        canvy[y-1]->SetMargin(0.15,0.01,0.15,0.01);
+        hDRy[y-1]->Draw("hist pe");
         hSimy[y-1]->Draw("same hist pe");
         hErry[y-1]->Draw("same e3");
         fFity[y-1]->Draw("same c");
 
-        canvy[y-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
+        legy[y-1] = new TLegend(0.3,0.21,0.3,0.21,"","NB");
+        legy[y-1]->AddEntry(hDRy[y-1],"Corrected result","p");
+        legy[y-1]->AddEntry(hSimy[y-1],"Simulation","p");
+        legy[y-1]->AddEntry(hErry[y-1],"Fit to simulation","l");
+        legy[y-1]->Draw("same");
+
+        //canvy[y-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
         line.Draw("same");
     }
     for(const int &psi : psiArr)
@@ -173,53 +198,82 @@ void drawDRProton1D()
         hCFpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
         hCFpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
 
-        AnalyticalDivide(hCFpsi[psi-1],fFitpsi[psi-1]);
-        SetErrors(hCFpsi[psi-1],hCFpsi[psi-1],hErrpsi[psi-1]);
+        hDRpsi[psi-1] = static_cast<TH1D*>(hCFpsi[psi-1]->Clone(TString::Format("hQinvDRpsi%d",psi)));
+        AnalyticalDivide(hDRpsi[psi-1],fFitpsi[psi-1]);
+        SetErrors(hDRpsi[psi-1],hCFpsi[psi-1],hErrpsi[psi-1]);
+        hDRpsi[psi-1]->GetXaxis()->SetTitleOffset();
+        hDRpsi[psi-1]->GetXaxis()->SetTitleSize(0.06);
+        hDRpsi[psi-1]->GetXaxis()->SetLabelSize(0.06);
+        hDRpsi[psi-1]->GetXaxis()->SetNdivisions(506);
+        hDRpsi[psi-1]->GetYaxis()->SetTitleSize(0.06);
+        hDRpsi[psi-1]->GetYaxis()->SetLabelSize(0.06);
+        hDRpsi[psi-1]->GetYaxis()->SetNdivisions(506);
 
         canvpsi[psi-1] = new TCanvas(TString::Format("cQinvRatPsi%d",psi),"",1600,900);
+        canvpsi[psi-1]->SetMargin(0.15,0.01,0.15,0.01);
         hCFpsi[psi-1]->Draw("hist pe");
         hSimpsi[psi-1]->Draw("same hist pe");
         hErrpsi[psi-1]->Draw("same e3");
         fFitpsi[psi-1]->Draw("same c");
 
-        canvpsi[psi-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
+        legpsi[psi-1] = new TLegend(0.3,0.21,0.3,0.21,"","NB");
+        legpsi[psi-1]->AddEntry(hDRpsi[psi-1],"Corrected result","p");
+        legpsi[psi-1]->AddEntry(hSimpsi[psi-1],"Simulation","p");
+        legpsi[psi-1]->AddEntry(hErrpsi[psi-1],"Fit to simulation","l");
+        legpsi[psi-1]->Draw("same");
+
+        //canvpsi[psi-1]->BuildLegend(0.3,0.21,0.3,0.21,"","p");
         line.Draw("same");
     }
 
     fOtpFile = TFile::Open(otpFile,"RECREATE");
 
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
-    for (auto hist : hDRkt)
+    //TLegend *legendKt = new TLegend(.3,.21,.3,.21,"","nb");
+    for (const int &kt : ktArr)
     {
-        if (hist != nullptr)
+        if (hDRkt[kt-1] != nullptr)
         {
-            hist->Write();
-            if (hist == hDRkt.front())
+            hDRkt[kt-1]->Write();
+            hDRkt[kt-1]->SetMarkerColor(JJColor::fWutSecondaryColors[kt-1]);
+            hDRkt[kt-1]->SetLineColor(JJColor::fWutSecondaryColors[kt-1]);
+            //legendKt->AddEntry(hist,hist->GetTitle(),"p");
+            //hist->SetTitle("");
+
+            if (kt == 1)
             {
-                hist->GetYaxis()->SetRangeUser(0,2);
-                hist->Draw("hist pe pmc plc");
+                hDRkt[kt-1]->GetYaxis()->SetRangeUser(0,1.95);
+                hDRkt[kt-1]->GetXaxis()->SetRangeUser(0,495);
+                hDRkt[kt-1]->Draw("hist pe");
             }
             else
-                hist->Draw("hist pe pmc plc same");
+                hDRkt[kt-1]->Draw("hist pe same");
         }
     }
     canvKt->BuildLegend(0.2,0.2,0.5,0.5,"","p");
+    canvKt->SetMargin(0.15,0.01,0.15,0.01);
+    //legendKt->Draw("same");
     line.Draw("same");
     canvKt->Write();
 
     TCanvas *canvY = new TCanvas("canvY","",1600,900);
-    for (auto hist : hCFy)
+    canvY->SetMargin(0.15,0.01,0.15,0.01);
+    for (const int &y : yArr)
     {
-        if (hist != nullptr)
+        if (hDRy[y-1] != nullptr)
         {
-            hist->Write();
-            if (hist == hCFy.front())
+            hDRy[y-1]->Write();
+            hDRy[y-1]->SetMarkerColor(JJColor::fWutSecondaryColors[y-1]);
+            hDRy[y-1]->SetLineColor(JJColor::fWutSecondaryColors[y-1]);
+            
+            if (y == 1)
             {
-                hist->GetYaxis()->SetRangeUser(0,2);
-                hist->Draw("hist pe pmc plc");
+                hDRy[y-1]->GetYaxis()->SetRangeUser(0,1.95);
+                hDRy[y-1]->GetXaxis()->SetRangeUser(0,495);
+                hDRy[y-1]->Draw("hist pe");
             }
             else
-                hist->Draw("hist pe pmc plc same");
+                hDRy[y-1]->Draw("hist pe same");
         }
     }
     canvY->BuildLegend(0.2,0.2,0.5,0.5,"","p");
@@ -227,14 +281,16 @@ void drawDRProton1D()
     canvY->Write();
 
     TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
-    for (auto hist : hCFpsi)
+    canvPsi->SetMargin(0.15,0.01,0.15,0.01);
+    for (auto hist : hDRpsi)
     {
         if (hist != nullptr)
         {
             hist->Write();
             if (hist == hCFpsi.front())
             {
-                hist->GetYaxis()->SetRangeUser(0,2);
+                hist->GetYaxis()->SetRangeUser(0,1.95);
+                hist->GetXaxis()->SetRangeUser(0,495);
                 hist->Draw("hist pe pmc plc");
             }
             else

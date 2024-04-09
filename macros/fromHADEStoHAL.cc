@@ -25,20 +25,24 @@ TH1D* ConvertXaxisUnits(TH1D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/1Dcorr_0_10_cent.root";
-    const TString inpHistBase = "hQinvRat";
-    const std::vector<int> ktBins = {0,1,2,3,4};
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent_DR.root";
+    const TString inpHistBaseKt = "hQinvDRKt";
+    const TString inpHistBaseRap = "hQinvDRy";
+    const std::vector<int> ktBins = {1,2,3,4,5};
+    const std::vector<int> rapBins = {1,2,3};
 
     std::vector<TH1D*> histArray;
     TFile *inpFile,*otpFile;
 
     inpFile = TFile::Open(inpFilePath);
     for (const int &ktval : ktBins)
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBase.Data(),ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseKt.Data(),ktval))));
+    for (const int &rapval : rapBins)
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseRap.Data(),rapval))));
 
     // create output file which has "_forHAL" added to its name
     TString otpFilePath = inpFilePath;
-    otpFilePath.Insert(otpFilePath.First('.'),"_forHAL");
+    otpFilePath.Insert(otpFilePath.Last('.'),"_forHAL");
 
     otpFile = TFile::Open(otpFilePath,"RECREATE");
 

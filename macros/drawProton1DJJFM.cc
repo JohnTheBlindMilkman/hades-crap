@@ -7,6 +7,8 @@
 #include "Palettes.hxx"
 #include "TLine.h"
 
+#include "hadesifyPlot.cc"
+
 double getNorm(TH1D *hInp, double xMin, double xMax)
 {
     int nBins = 0;
@@ -56,13 +58,22 @@ void drawProton1DJJFM()
     norm *= rebin;
     hRat->Scale(1./norm);
     hRat->SetName("hQinvRat");
-    hRat->SetTitle("CF of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})");
+    hRat->SetTitle(";q_{inv} [MeV/c];CF(q_{inv})");
     hRat->SetMarkerStyle(20);
     hRat->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
+
+    hRat->GetYaxis()->SetTitleSize(0.06);
+    hRat->GetYaxis()->SetLabelSize(0.06);
+    hRat->GetYaxis()->SetNdivisions(506);
+
+    hRat->GetXaxis()->SetTitleSize(0.06);
+    hRat->GetXaxis()->SetLabelSize(0.06);
+    hRat->GetXaxis()->SetNdivisions(506);
 
     TFile *outFile = TFile::Open(outputFile,"RECREATE");
 
     TCanvas *canv = new TCanvas("canv","",1600,900);
+    canv->SetMargin(0.15,0.01,0.15,0.01);
     hRat->Write();
     hSign->Write();
     hBckg->Write();
@@ -71,5 +82,4 @@ void drawProton1DJJFM()
     line->Draw("same");
     //canv->BuildLegend(0.2,0.2,0.5,0.5,"","p");
     canv->Write();
-
 }
