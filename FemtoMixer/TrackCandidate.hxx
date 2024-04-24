@@ -50,7 +50,7 @@ namespace Selection
         trackCand.Energy = vecTmp.E();
         trackCand.IsAtMdcEdge =particle_cand->isAtAnyMdcEdge();
         trackCand.Mass2 = particle_cand->getMass2();
-        ///trackCand.PID = particle_cand->getGeantPID(); // only for simulations
+        //trackCand.PID = particle_cand->getGeantPID(); // only for simulations
         trackCand.PolarAngle = particle_cand->getTheta();
         trackCand.Px = vecTmp.Px();
         trackCand.Py = vecTmp.Py();
@@ -66,8 +66,8 @@ namespace Selection
 
     bool SelectTrack(TrackCandidate &trackCand, TCutG *rpcCut, TCutG *tofCut)
     {
-        //if (trackCand.PID != 14)
-            //return false;
+        /* if (trackCand.PID != 14)
+            return false; */
         if (trackCand.IsAtMdcEdge)
             return false;
         if (trackCand.TotalMomentum > 2000.)

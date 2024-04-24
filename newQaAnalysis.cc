@@ -8,6 +8,12 @@
 #include <deque>
 #include <random>
 
+// defining a helper function
+template <typename T>
+bool isSim(T *t) {return false;}
+template <>
+bool isSim(HParticleCandSim *t) {return true;}
+
 struct HistogramCollection
 {
 	TH1D hQinvSign,hQinvBckg;
@@ -33,16 +39,19 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.AzimuthalAngle) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 || (abs(pair.DeltaPhi) < 8 && abs(pair.DeltaTheta) < 2))
+	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 /* || (abs(pair.DeltaPhi) < 8 && abs(pair.DeltaTheta) < 2) */)
 		return 0;
 	else
     	return ktCut*1e2 + yCut*1e1 + EpCut;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
+
+	constexpr bool isSimulation = false; // for now this could be easly just const
+
 	//--------------------------------------------------------------------------------
     // Initialization of the global ROOT object and the Hades Loop
     // The Hades Loop used as an interface to the DST data (Basically a container of a TChain).
@@ -60,11 +69,18 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     {
 		Int_t nFiles = 0;
 
-		//simulation
-		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root";
-		
-		//data
-		TString inputFolder = "/lustre/hades/dst/apr12/gen9/122/root";
+
+		TString inputFolder;
+		if (isSimulation) // simulation
+		{
+			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
+			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+		}
+		else // data
+		{
+			inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
+			//inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+		}
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -87,7 +103,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit"))
 		exit(1);
 
-	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
+	gHades->setBeamTimeID(HADES::kFeb24); // this is needed when using the ParticleEvtChara
 	
     //--------------------------------------------------------------------------------
     // Setting the cache size of the HLoop internal TChain to read data from the DSTs
@@ -102,12 +118,21 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCand*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
+
+	if (isSimulation && !isSim(particle_cand)) // verification if you changed particle_cand class for running simulations
+	{
+		throw std::runtime_error("particle candidate must be of type HParticleCandSim"); // in C++17 this can be evaluated at compile-time, c++14 doesnt support if constexpr (condition)...
+	}
+	else if (!isSimulation && isSim(particle_cand))
+	{
+		throw std::runtime_error("particle candidate must be of type HParticleCand");
+	}
     
     if (!particle_cand_cat) // If the category for the reconstructed trackes does not exist the macro makes no sense
 		exit(1);
@@ -116,25 +141,23 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     // Put your object declarations here
     //================================================================================================================================================================
 
-	TH2D *hPhiTheta = new TH2D("hPhiTheta","#phi vs #theta distribution of tracks;#phi [deg];#theta [deg]",361,0,360,91,0,90);
+	constexpr float fBeamRapidity = 0.74; // God I hope this is correct
+	constexpr float fMeVtoGeV = 1.f/1000.f;
 
-	std::unordered_map<std::size_t, HistogramCollection> fMapFoHistograms;
+	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
+	TH2D *hBetaMomRpc = new TH2D("hBetaMomRpc","#beta vs p of accepted protons (RPC);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
+	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",2000,0,2000,121,-1.15,1.25);
+	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0,1.2,1250,0,2.5);
+	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0,1.2,1250,0,2.5);
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
 	
-	// create objects for particle selection and mixing
+	// create objects for particle selection
 	Selection::EventCandidate fEvent;	
 	Selection::TrackCandidate fTrack;
 
-	std::unordered_map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
-
-    Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
-	mixer.SetMaxBufferSize(50);
-	mixer.SetEventHashingFunction(EventHashing);
-	mixer.SetPairHashingFunction(PairHashing);
-	
     //--------------------------------------------------------------------------------
     // The following counter histogram is used to gather some basic information on the analysis
     //--------------------------------------------------------------------------------
@@ -159,11 +182,17 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	HParticleEvtChara evtChara;
 
 	std::cout << "HParticleEvtChara: reading input for energy 1.23A GeV... " << std::endl;
-	// Data
-	TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root";
-	// Simulation
-	//TString ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
-
+	TString ParameterfileCVMFS;
+	if (isSimulation) // Simulation
+	{
+		ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_sim_au1230au_gen9vertex_UrQMD_minbias_2019_04_pass0.root";
+	}
+	else // Data
+	{
+		ParameterfileCVMFS = "/lustre/hades/user/bkardan/param/development/centrality_epcorr_feb24_au800au_1850A_gen0c_2024_04_pass10.root";  // Au+Au 800 MeV
+		//ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root"; // Au+Au 2.4 GeV
+	}
+	
 	if (!evtChara.setParameterFile(ParameterfileCVMFS))
 	{
 		std::cout << "Parameterfile not found !!! " << std::endl;
@@ -233,14 +262,18 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Float_t vertX = EventVertex.X();
 		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
-		Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
+		Float_t EventPlane = 0;
+		/* Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
 		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
-		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
+		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2); */
 
-		if (EventPlane < 0)
-			continue;
-		if (EventPlaneA < 0 || EventPlaneB < 0)
-			continue;
+		/* if (!isSimulation) // EP is reconstructed only for real data
+		{
+			if (EventPlane < 0)
+				continue;
+			if (EventPlaneA < 0 || EventPlaneB < 0)
+				continue;
+		} */
 
 		Selection::CreateEvent(fEvent,vertX,vertY,vertZ,centClassIndex,EventPlane);
 
@@ -259,8 +292,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			|| !particle_info->isGoodEvent(Particle::kGoodSTARTMETA))
 			continue;
 	
-		hCounter->Fill(cNumSelectedEvents);
-	
 		//================================================================================================================================================================
 		// Put your analyses on event level here
 		//================================================================================================================================================================
@@ -268,6 +299,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		if (!Selection::SelectEvent(fEvent)) 
 			continue;
 		
+		hCounter->Fill(cNumSelectedEvents);
+
 		//--------------------------------------------------------------------------------
 		// Resetting the track sorter and selecting hadrons ranked by Chi2 Runge Kutta
 		//--------------------------------------------------------------------------------
@@ -291,8 +324,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			if (!particle_cand->isFlagBit(Particle::kIsUsed))
 				continue;
 	
-			hCounter->Fill(cNumSelectedTracks);
-	
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
@@ -314,72 +345,26 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			if (!Selection::SelectTrack(fTrack,betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
+			hCounter->Fill(cNumSelectedTracks);
+			hPtRap->Fill(fTrack.TransverseMomentum, fTrack.Rapidity - fBeamRapidity);
+
 			fEvent.trackList.push_back(fTrack);
-			hPhiTheta->Fill(fTrack.AzimimuthalAngle,fTrack.PolarAngle);
 
 			if (fTrack.System == Selection::Detector::RPC)
 			{
-				// fill RPC monitors for accepted tracks
+				hBetaMomRpc->Fill(fTrack.TotalMomentum*fTrack.Charge,fTrack.Beta);
+				hM2momRpc->Fill(fTrack.Mass2*fMeVtoGeV*fMeVtoGeV,abs(fTrack.TotalMomentum)*fMeVtoGeV);
 			}
 			else
 			{
-				// fill ToF monitors for accepted tracks
+				hBetaMomTof->Fill(fTrack.TotalMomentum*fTrack.Charge,fTrack.Beta);
+				hM2momTof->Fill(fTrack.Mass2*fMeVtoGeV*fMeVtoGeV,abs(fTrack.TotalMomentum)*fMeVtoGeV);
 			}
 
 		} // End of track loop
-
-		if (fEvent.trackList.size()) // if track vector has entries
-		{
-            fSignMap = mixer.AddEvent(fEvent,fEvent.trackList);
-			fBckgMap = mixer.GetSimilarPairs(fEvent);
-
-			for (const auto &signalEntry : fSignMap)
-			{
-				for (const auto &entry : signalEntry.second)
-				{
-					if (fMapFoHistograms.find(signalEntry.first) == fMapFoHistograms.end())
-					{
-						HistogramCollection histos{
-						TH1D(/* TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-						TH1D(/* TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-						TH2D(/* TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
-						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
-						};
-						fMapFoHistograms.emplace(signalEntry.first,histos);
-					}
-					//fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.QInv);
-					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
-				}
-			}
-
-			for (const auto &backgroundEntry : fBckgMap)
-			{
-				for (const auto &entry : backgroundEntry.second)
-				{
-					if (fMapFoHistograms.find(backgroundEntry.first) == fMapFoHistograms.end())
-					{
-						HistogramCollection histos{
-						TH1D(/* TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-						TH1D(/* TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-						TH2D(/* TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
-						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
-						};
-						fMapFoHistograms.emplace(backgroundEntry.first,histos);
-					}
-					//fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.QInv);
-					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
-				}
-			}
-			
-		} // End of femto mixing
 	} // End of event loop
 	
+	// printing some info about the RAM I'm using to know how much memory each job should be given
 	static ProcInfo_t info;
 	constexpr float toGB = 1.f/1024.f/1024.f;
 
@@ -406,18 +391,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     // Remember to write your results to the output file here
     //================================================================================================================================================================
 
-	for (auto &histos : fMapFoHistograms)
-	{
-		histos.second.hQinvSign.Write();
-		histos.second.hQinvBckg.Write();
-		histos.second.hDphiDthetaSign.Write();
-		histos.second.hDphiDthetaBckg.Write();
-		histos.second.hQoslSign.Write();
-		histos.second.hQoslBckg.Write();
-	}
+	hPtRap->Write();
+	hBetaMomRpc->Write();
+	hBetaMomTof->Write();
+	hM2momRpc->Write();
+	hM2momTof->Write();
 
-	hPhiTheta->Write();
-	
     //--------------------------------------------------------------------------------
     // Closing file and finalization
     //--------------------------------------------------------------------------------
