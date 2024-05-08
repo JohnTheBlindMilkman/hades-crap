@@ -23,7 +23,7 @@ struct HistogramCollection
 
 std::size_t EventHashing(const Selection::EventCandidate &evt)
 {
-    return evt.Centrality*1e1 + evt.TargetPlate;
+    return evt.GetCentrality()*1e1 + evt.GetPlate();
 }
 
 std::size_t PairHashing(const Selection::PairCandidate &pair)
@@ -34,12 +34,12 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.Kt) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.Rapidity) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.AzimuthalAngle) - EpArr.begin();
+    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
+    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.GetRapidity()) - yArr.begin();
+    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.GetPhi()) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 /* || (abs(pair.DeltaPhi) < 8 && abs(pair.DeltaTheta) < 2) */)
+	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
 		return 0;
 	else
     	return ktCut*1e2 + yCut*1e1 + EpCut;
@@ -78,7 +78,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		}
 		else // data
 		{
-			inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
+			inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
+			//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
 			//inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
 		}
 	
@@ -100,10 +101,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit"))
+    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit,+HMdcSeg"))
 		exit(1);
 
-	gHades->setBeamTimeID(HADES::kFeb24); // this is needed when using the ParticleEvtChara
+	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
 	
     //--------------------------------------------------------------------------------
     // Setting the cache size of the HLoop internal TChain to read data from the DSTs
@@ -124,6 +125,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
+	HCategory* mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // initialise MDC segment category
 
 	if (isSimulation && !isSim(particle_cand)) // verification if you changed particle_cand class for running simulations
 	{
@@ -134,14 +136,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		throw std::runtime_error("particle candidate must be of type HParticleCand");
 	}
     
-    if (!particle_cand_cat) // If the category for the reconstructed trackes does not exist the macro makes no sense
+    if (!particle_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
 		exit(1);
 	
     //================================================================================================================================================================
     // Put your object declarations here
     //================================================================================================================================================================
 
-	constexpr float fBeamRapidity = 0.74; // God I hope this is correct
+	constexpr float fBeamRapidity = 0.74f; // God I hope this is correct
 	constexpr float fMeVtoGeV = 1.f/1000.f;
 
 	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
@@ -149,6 +151,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",2000,0,2000,121,-1.15,1.25);
 	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0,1.2,1250,0,2.5);
 	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0,1.2,1250,0,2.5);
+	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,-0.5,23.5,10,-0.5,9.5);
+	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
@@ -157,6 +161,9 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	// create objects for particle selection
 	Selection::EventCandidate fEvent;	
 	Selection::TrackCandidate fTrack;
+
+	// create pointers for MDC wire cuts
+	HMdcSeg *inner_seg = nullptr,*outer_seg = nullptr;
 
     //--------------------------------------------------------------------------------
     // The following counter histogram is used to gather some basic information on the analysis
@@ -189,8 +196,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	}
 	else // Data
 	{
-		ParameterfileCVMFS = "/lustre/hades/user/bkardan/param/development/centrality_epcorr_feb24_au800au_1850A_gen0c_2024_04_pass10.root";  // Au+Au 800 MeV
-		//ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root"; // Au+Au 2.4 GeV
+		//ParameterfileCVMFS = "/lustre/hades/user/bkardan/param/development/centrality_epcorr_feb24_au800au_1850A_gen0c_2024_04_pass10.root";  // Au+Au 800 MeV
+		ParameterfileCVMFS = "/cvmfs/hadessoft.gsi.de/param/eventchara/centrality_epcorr_apr12_gen8_2019_02_pass30.root"; // Au+Au 2.4 GeV
 	}
 	
 	if (!evtChara.setParameterFile(ParameterfileCVMFS))
@@ -262,20 +269,19 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		Float_t vertX = EventVertex.X();
 		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
-		Float_t EventPlane = 0;
-		/* Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
+		Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
 		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
-		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2); */
+		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
 
-		/* if (!isSimulation) // EP is reconstructed only for real data
+		if (!isSimulation) // EP is reconstructed only for real data
 		{
 			if (EventPlane < 0)
 				continue;
 			if (EventPlaneA < 0 || EventPlaneB < 0)
 				continue;
-		} */
+		}
 
-		Selection::CreateEvent(fEvent,vertX,vertY,vertZ,centClassIndex,EventPlane);
+		fEvent = Selection::EventCandidate(event_header->getId(),vertX,vertY,vertZ,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
@@ -296,7 +302,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (!Selection::SelectEvent(fEvent)) 
+		if (!fEvent.SelectEvent()) 
 			continue;
 		
 		hCounter->Fill(cNumSelectedEvents);
@@ -315,6 +321,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		for (Int_t track = 0; track < nTracks; track++) 
 		{
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
+			inner_seg = HCategoryManager::getObject(inner_seg,mdc_seg_cat,particle_cand->getInnerSegInd());
+			outer_seg = HCategoryManager::getObject(outer_seg,mdc_seg_cat,particle_cand->getOuterSegInd());
 			
 			//--------------------------------------------------------------------------------
 			// Discarding all tracks that have been discarded by the track sorter and counting all / good tracks
@@ -327,13 +335,13 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			Selection::CreateTrack(fTrack,particle_cand);
+			fTrack = Selection::TrackCandidate(particle_cand,inner_seg,outer_seg,fEvent.GetID(),track,14);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
 			
-			if (fTrack.System == Selection::Detector::RPC)
+			if (fTrack.GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for all tracks
 			}
@@ -342,25 +350,29 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 				// fill ToF monitors for all tracks
 			}
 
-			if (!Selection::SelectTrack(fTrack,betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
+			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
 			hCounter->Fill(cNumSelectedTracks);
-			hPtRap->Fill(fTrack.TransverseMomentum, fTrack.Rapidity - fBeamRapidity);
+			hPtRap->Fill(fTrack.GetPt(), fTrack.GetRapidity() - fBeamRapidity);
+			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
 
-			fEvent.trackList.push_back(fTrack);
+			auto wireList = fTrack.GetWireList();
+			for (int i = 1; i <= 24; ++i)
+				hSegNcells->Fill(i,wireList.at(i-1).size());
 
-			if (fTrack.System == Selection::Detector::RPC)
+			fEvent.AddTrack(fTrack);
+
+			if (fTrack.GetSystem() == Selection::Detector::RPC)
 			{
-				hBetaMomRpc->Fill(fTrack.TotalMomentum*fTrack.Charge,fTrack.Beta);
-				hM2momRpc->Fill(fTrack.Mass2*fMeVtoGeV*fMeVtoGeV,abs(fTrack.TotalMomentum)*fMeVtoGeV);
+				hBetaMomRpc->Fill(fTrack.GetP()*fTrack.GetCharge(),fTrack.GetBeta());
+				hM2momRpc->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
 			}
 			else
 			{
-				hBetaMomTof->Fill(fTrack.TotalMomentum*fTrack.Charge,fTrack.Beta);
-				hM2momTof->Fill(fTrack.Mass2*fMeVtoGeV*fMeVtoGeV,abs(fTrack.TotalMomentum)*fMeVtoGeV);
+				hBetaMomTof->Fill(fTrack.GetP()*fTrack.GetCharge(),fTrack.GetBeta());
+				hM2momTof->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
 			}
-
 		} // End of track loop
 	} // End of event loop
 	
@@ -396,6 +408,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hBetaMomTof->Write();
 	hM2momRpc->Write();
 	hM2momTof->Write();
+	hSegNcells->Write();
+	hPhiTheta->Write();
 
     //--------------------------------------------------------------------------------
     // Closing file and finalization

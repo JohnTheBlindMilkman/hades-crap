@@ -17,7 +17,7 @@ struct HistogramCollection
 
 std::size_t EventHashing(const Selection::EventCandidate &evt)
 {
-    return evt.Centrality*1e1 + evt.TargetPlate;
+    return evt.GetCentrality()*1e1 + evt.GetPlate();
 }
 
 std::size_t PairHashing(const Selection::PairCandidate &pair)
@@ -28,12 +28,12 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.Kt) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.Rapidity) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.AzimuthalAngle) - EpArr.begin();
+    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
+    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.GetRapidity()) - yArr.begin();
+    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.GetPhi()) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 || (abs(pair.DeltaPhi) < 8 && abs(pair.DeltaTheta) < 2))
+	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1 || (abs(pair.GetDPhi()) < 8 && abs(pair.GetDTheta()) < 2))
 		return 0;
 	else
     	return ktCut*1e2 + yCut*1e1 + EpCut;
@@ -242,7 +242,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		if (EventPlaneA < 0 || EventPlaneB < 0)
 			continue;
 
-		Selection::CreateEvent(fEvent,vertX,vertY,vertZ,centClassIndex,EventPlane);
+		fEvent = Selection::EventCandidate(event_header->getId(),vertX,vertY,vertZ,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
@@ -265,7 +265,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (!Selection::SelectEvent(fEvent)) 
+		if (! fEvent.SelectEvent()) 
 			continue;
 		
 		//--------------------------------------------------------------------------------
@@ -296,13 +296,13 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			Selection::CreateTrack(fTrack,particle_cand);
+			fTrack = Selection::TrackCandidate(particle_cand,nullptr,nullptr,fEvent.GetID(),track,14);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
 			
-			if (fTrack.System == Selection::Detector::RPC)
+			if (fTrack.GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for all tracks
 			}
@@ -311,13 +311,13 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				// fill ToF monitors for all tracks
 			}
 
-			if (!Selection::SelectTrack(fTrack,betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
+			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
-			fEvent.trackList.push_back(fTrack);
-			hPhiTheta->Fill(fTrack.AzimimuthalAngle,fTrack.PolarAngle);
+			fEvent.AddTrack(fTrack);
+			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
 
-			if (fTrack.System == Selection::Detector::RPC)
+			if (fTrack.GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for accepted tracks
 			}
@@ -328,9 +328,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		} // End of track loop
 
-		if (fEvent.trackList.size()) // if track vector has entries
+		if (fEvent.GetTrackListSize()) // if track vector has entries
 		{
-            fSignMap = mixer.AddEvent(fEvent,fEvent.trackList);
+            fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
 			for (const auto &signalEntry : fSignMap)
@@ -351,7 +351,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					}
 					//fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.QInv);
 					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(entry.QOut,entry.QSide,entry.QLong);
+					auto qOSL = entry.GetOSL();
+					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(std::get<0>(qOSL),std::get<1>(qOSL),std::get<2>(qOSL));
 				}
 			}
 
@@ -373,7 +374,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					}
 					//fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.QInv);
 					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
-					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(entry.QOut,entry.QSide,entry.QLong);
+					auto qOSL = entry.GetOSL();
+					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(std::get<0>(qOSL),std::get<1>(qOSL),std::get<2>(qOSL));
 				}
 			}
 			

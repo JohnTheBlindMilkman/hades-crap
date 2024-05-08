@@ -54,4 +54,18 @@
 #include "hparticleevtchara.h"
 #include "hgeantkine.h"
 
+#include "hmdclookupgeom.h"
+#include "hmdccalparraw.h"
+#include "hmdcdef.h"
+#include "hmdctrackddef.h"
+
+#include "hmdcseg.h"
+#include "hmdcsegsim.h"
+#include "hmdccellgroup.h"
+#include "hmdccal1.h"
+#include "hmdcraw.h"
+#include "hmdcsizescells.h"
+#include "hmdccal1sim.h"
+#include "hmdcgetcontainers.h"
+
 #endif // __INCLUDES_H__

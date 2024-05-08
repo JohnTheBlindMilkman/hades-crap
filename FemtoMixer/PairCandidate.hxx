@@ -8,33 +8,19 @@
 
 namespace Selection
 {
-    struct PairCandidate
+    class PairCandidate
     {
-        TrackCandidate Particle1,Particle2;
-        float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta;
-
-        PairCandidate(){}
-        PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2) : Particle1(trck1), Particle2(trck2)
-        {
-            CFKinematics(trck1,trck2);
-            OpeningAngle = CalcOpeningAngle(trck1,trck2);
-            Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;
-            AzimuthalAngle = (trck1.AzimimuthalAngle + trck2.AzimimuthalAngle) / 2.;
-            DeltaPhi = trck1.AzimimuthalAngle - trck2.AzimimuthalAngle;
-            DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
-        }
-        PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle) : PairCandidate(trck1,trck2)
-        {
-            AzimuthalAngle = ConstrainAngle((trck1.AzimimuthalAngle + trck2.AzimimuthalAngle) / 2. - RadToDeg(reactionPlaneAngle));
-        }
-        ~PairCandidate(){};
-
-        bool operator==(const PairCandidate &other) const
-        {
-            return ((Particle1 == other.Particle1 && Particle2 == other.Particle2) || (Particle1 == other.Particle2 && Particle2 == other.Particle1));
-        }
-
         private:
+            std::string pairId;
+            TrackCandidate Particle1,Particle2;
+            float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta;
+            
+            /**
+             * @brief Calculates the pair variables in the centre of mass system (here: LCMS)
+             * 
+             * @param part1 
+             * @param part2 
+             */
             void CFKinematics(const TrackCandidate &part1, const TrackCandidate &part2)
             {
                 // adapted from https://github.com/DanielWielanek/HAL/blob/main/analysis/femto/base/FemtoPairKinematics.cxx
@@ -70,7 +56,13 @@ namespace Selection
                 Double_t mDE = particle1lcms_e - particle2lcms_e;
                 QInv = TMath::Sqrt(TMath::Abs(QOut * QOut + QSide * QSide + QLong * QLong - mDE * mDE));
             }
-
+            /**
+             * @brief Calculates the opening angle in deg between the two tracks (reimplemented from TLorenzVector)
+             * 
+             * @param part1 
+             * @param part2 
+             * @return float 
+             */
             float CalcOpeningAngle(const TrackCandidate &part1, const TrackCandidate &part2)
             {
                 float ptot = sqrt((part1.Px*part1.Px + part1.Py*part1.Py + part1.Pz*part1.Pz) * (part2.Px*part2.Px + part2.Py*part2.Py + part2.Pz*part2.Pz));
@@ -86,91 +78,148 @@ namespace Selection
                     return acos(arg);
                 }
             }
-
-            float RadToDeg(const int &angle)
-            {
-                return (180 / TMath::Pi())*angle;
-            }
-
-            // for getting rid of the angle wrap
-            // the phi range is (-202.5,157.5] (I need this for asHBT, to have a in-plane and out-of-plane bin)
-            float ConstrainAngle(float angle)
+            /**
+             * @brief Gets rid of the angle wrap when calculating pair azimuthal angle. Used phi range is (-202.5,157.5] (I need this for asHBT, to have a in-plane and out-of-plane bin)
+             * 
+             * @param angle 
+             * @return float 
+             */
+            float ConstrainAngle(const float &angle)
             {
                 if (angle > 157.5)
-                    return angle -360;
+                    return angle -360.;
                 else if (angle <= -202.5)
-                    return angle + 360;
+                    return angle + 360.;
                 else
                     return angle;
             }
-    };
 
-    bool SelectPair(PairCandidate &pairCand, const float openAngle = 0.0)
-    {
-        std::vector<PairCandidate> acceptedPairs;
-
-        if (pairCand.OpeningAngle <= openAngle)
-            return false;
-
-        return true;
-    }
-
-    void CalcSignal(std::vector<PairCandidate> &pairVec, const EventCandidate &eventCand, bool reorder, float openAngle = 0.0)
-    {
-        PairCandidate pairCand;
-        for (size_t iter1 = 0; iter1 < eventCand.trackList.size(); iter1++)
-            for (size_t iter2 = iter1+1; iter2 < eventCand.trackList.size(); iter2++)
+        public:
+            /**
+             * @brief Construct a new Pair Candidate object
+             * 
+             * @param trck1 
+             * @param trck2 
+             */
+            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2) : Particle1(trck1), Particle2(trck2)
             {
-                if (reorder)
-                    pairCand = PairCandidate(eventCand.trackList.at(iter2),eventCand.trackList.at(iter1));
-                else
-                    pairCand = PairCandidate(eventCand.trackList.at(iter1),eventCand.trackList.at(iter2));
-                if (SelectPair(pairCand,openAngle))
-                    pairVec.push_back(pairCand);
-            }		
-    }
-
-    void CalcBackground(std::vector<PairCandidate> &pairVec, const EventCandidate &eventCand, const std::deque<TrackCandidate> &bckgVec, float openAngle = 0.0)
-    {
-        PairCandidate pairCand;
-        for (auto &track : eventCand.trackList)
-            for (auto &bckg : bckgVec)
-            {
-                pairCand = PairCandidate(track,bckg);
-                if (SelectPair(pairCand,openAngle))
-                    pairVec.push_back(pairCand);
+                CFKinematics(trck1,trck2);
+                OpeningAngle = CalcOpeningAngle(trck1,trck2);
+                Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;
+                AzimuthalAngle = (trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2.;
+                DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;
+                DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
+                pairId = trck1.GetID() + trck2.GetID();
             }
-                    
-    }
-
-    void MixBckg(const EventCandidate &eventCand, std::deque<TrackCandidate> &bckgVec, const int &maxSize, std::mt19937 &generator)
-    {
-        std::uniform_int_distribution<int> dist(0,eventCand.trackList.size()-1);
-        bckgVec.push_back(eventCand.trackList.at(dist(generator)));
-        if (bckgVec.size() > maxSize)
-            bckgVec.pop_front();
-    }
-
-    int AssignKt(float kt)
-    {
-        static std::vector<std::pair<float,float> > ktBinVec = {{150,450},{450,750},{750,1050},{1050,1350},{1350,1650}};
-        for (std::size_t i = 0; i < ktBinVec.size(); i++)
-            if (kt >= ktBinVec.at(i).first && kt <= ktBinVec.at(i).second)
-                return i;
-
-        return -999;
-    }
-
-    float DegToRad(const int &angle)
-    {
-        return (TMath::Pi()/180)*angle;
-    }
-
-    bool IntToBool(const int &integ)
-    {
-        return integ;
-    }
-
+            /**
+             * @brief Construct a new Pair Candidate object with given reaction plane
+             * 
+             * @param trck1 
+             * @param trck2 
+             * @param reactionPlaneAngle 
+             */
+            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle) : PairCandidate(trck1,trck2)
+            {
+                AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*reactionPlaneAngle);
+            }
+            /**
+             * @brief Destroy the Pair Candidate object
+             * 
+             */
+            ~PairCandidate(){}
+            /**
+             * @brief Check if two tracks are equal
+             * 
+             * @param other 
+             * @return true 
+             * @return false 
+             */
+            bool operator==(const PairCandidate &other) const
+            {
+                return (pairId == other.pairId);
+            }
+            /**
+             * @brief Returns combined hash for this pair. Required when used inside an std::map 
+             * 
+             * @return std::size_t 
+             */
+            std::size_t GetHash() const
+            {
+                return std::hash<std::string>{}(Particle1.GetID()+Particle2.GetID());
+            }
+            /**
+             * @brief Returns unique ID of the pair
+             * 
+             * @return std::string 
+             */
+            std::string GetID() const
+            {
+                return pairId;
+            }
+            /**
+             * @brief Get the transverse component of the average pair momentum
+             * 
+             * @return float 
+             */
+            float GetKt() const
+            {
+                return Kt;
+            }
+            /**
+             * @brief Get the pair average rapidity
+             * 
+             * @return float 
+             */
+            float GetRapidity() const
+            {
+                return Rapidity;
+            }
+            /**
+             * @brief Get the pair average azimuthal angle w.r.t. the EP (if specified in the constructor)
+             * 
+             * @return float 
+             */
+            float GetPhi() const
+            {
+                return AzimuthalAngle;
+            }
+            /**
+             * @brief Get difference of the azimuthal angles between the two pair components
+             * 
+             * @return float 
+             */
+            float GetDPhi() const
+            {
+                return DeltaPhi;
+            }
+            /**
+             * @brief Get difference of the polar angles between the two pair components
+             * 
+             * @return float 
+             */
+            float GetDTheta() const
+            {
+                return DeltaTheta;
+            }
+            /**
+             * @brief Get the Qinv
+             * 
+             * @return float 
+             */
+            float GetQinv() const
+            {
+                return QInv;
+            }
+            /**
+             * @brief Get the Qout, Qside, and Qlong components
+             * 
+             * @return std::tuple<float,float,float> 
+             */
+            std::tuple<float,float,float> GetOSL() const
+            {
+                return std::make_tuple(QOut,QSide,QLong);
+            }
+    };
 }
 
     template<>
@@ -178,19 +227,7 @@ namespace Selection
     {
         std::size_t operator()(const Selection::PairCandidate &pair) const
         {
-            std::size_t res = 0;
-            boost::hash_combine(res,pair.QInv);
-            boost::hash_combine(res,pair.QOut);
-            boost::hash_combine(res,pair.QSide);
-            boost::hash_combine(res,pair.QLong);
-            boost::hash_combine(res,pair.Kt);
-            boost::hash_combine(res,pair.Rapidity);
-            boost::hash_combine(res,pair.AzimuthalAngle);
-            boost::hash_combine(res,pair.OpeningAngle);
-            boost::hash_combine(res,pair.DeltaPhi);
-            boost::hash_combine(res,pair.DeltaTheta);
-
-            return res;
+            return pair.GetHash();
         }
     };
 
