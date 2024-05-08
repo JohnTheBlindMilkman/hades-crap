@@ -47,7 +47,7 @@ void AnalyticalDivide(TH1D *hNum, TF1 *fDen)
 void drawDRProton1D()
 {
     //gStyle->SetPalette(kPastel);
-    //JJColor::CreateSecondaryWutGradient();
+    JJColor::CreateSecondaryWutGradient();
 
     const TString inpFile = "../output/1Dcorr_0_10_cent.root";
     const TString simFile = "../output/1Dcorr_0_10_cent_HGeant_fit.root";
@@ -80,8 +80,8 @@ void drawDRProton1D()
 
         fInpSim->cd();
         hSimkt[kt-1] = fInpSim->Get<TH1D>(histName);
-        hSimkt[kt-1]->SetMarkerColor(TColor::GetColor(JJColor::greenWut.AsHexString()));
-        hSimkt[kt-1]->SetLineColor(TColor::GetColor(JJColor::greenWut.AsHexString()));
+        hSimkt[kt-1]->SetMarkerColor(TColor::GetColor(JJColor::violetWut.AsHexString()));
+        hSimkt[kt-1]->SetLineColor(TColor::GetColor(JJColor::violetWut.AsHexString()));
 
         hErrkt[kt-1] = fInpSim->Get<TH1D>(errName);
         hErrkt[kt-1]->SetFillColorAlpha(TColor::GetColor(JJColor::fireRedWut.AsHexString()),.75);
@@ -93,10 +93,12 @@ void drawDRProton1D()
 
         fInpData->cd();
         hCFkt[kt-1] = fInpData->Get<TH1D>(histName);
-        hCFkt[kt-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
-        hCFkt[kt-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
+        hCFkt[kt-1]->SetMarkerColor(TColor::GetColor(JJColor::goldWut.AsHexString()));
+        hCFkt[kt-1]->SetLineColor(TColor::GetColor(JJColor::goldWut.AsHexString()));
 
         hDRkt[kt-1] = static_cast<TH1D*>(hCFkt[kt-1]->Clone(TString::Format("hQinvDRKt%d",kt)));
+        hDRkt[kt-1]->SetMarkerColor(TColor::GetColor(JJColor::blueWut.AsHexString()));
+        hDRkt[kt-1]->SetLineColor(TColor::GetColor(JJColor::blueWut.AsHexString()));
         AnalyticalDivide(hDRkt[kt-1],fFitkt[kt-1]);
         SetErrors(hDRkt[kt-1],hCFkt[kt-1],hErrkt[kt-1]);
         hDRkt[kt-1]->GetXaxis()->SetTitleOffset();
@@ -110,12 +112,14 @@ void drawDRProton1D()
         canvkt[kt-1] = new TCanvas(TString::Format("cQinvRatKt%d",kt),"",1600,900);
         canvkt[kt-1]->SetMargin(0.15,0.01,0.15,0.01);
         hDRkt[kt-1]->Draw("hist pe");
+        hCFkt[kt-1]->Draw("same hist pe");
         hSimkt[kt-1]->Draw("same hist pe");
         hErrkt[kt-1]->Draw("same e4");
         fFitkt[kt-1]->Draw("same c");
 
         legkt[kt-1] = new TLegend(0.3,0.21,0.3,0.21,"","NB");
         legkt[kt-1]->AddEntry(hDRkt[kt-1],"Corrected result","p");
+        legkt[kt-1]->AddEntry(hCFkt[kt-1],"Uncorrected result","p");
         legkt[kt-1]->AddEntry(hSimkt[kt-1],"Simulation","p");
         legkt[kt-1]->AddEntry(hErrkt[kt-1],"Fit to simulation","l");
         legkt[kt-1]->Draw("same");
@@ -131,8 +135,8 @@ void drawDRProton1D()
 
         fInpSim->cd();
         hSimy[y-1] = fInpSim->Get<TH1D>(histName);
-        hSimy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::greenWut.AsHexString()));
-        hSimy[y-1]->SetLineColor(TColor::GetColor(JJColor::greenWut.AsHexString()));
+        hSimy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::violetWut.AsHexString()));
+        hSimy[y-1]->SetLineColor(TColor::GetColor(JJColor::violetWut.AsHexString()));
 
         hErry[y-1] = fInpSim->Get<TH1D>(errName);
         hErry[y-1]->SetFillColorAlpha(TColor::GetColor(JJColor::fireRedWut.AsHexString()),.75);
@@ -144,10 +148,12 @@ void drawDRProton1D()
 
         fInpData->cd();
         hCFy[y-1] = fInpData->Get<TH1D>(histName);
-        hCFy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
-        hCFy[y-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
+        hCFy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::goldWut.AsHexString()));
+        hCFy[y-1]->SetLineColor(TColor::GetColor(JJColor::goldWut.AsHexString()));
 
         hDRy[y-1] = static_cast<TH1D*>(hCFy[y-1]->Clone(TString::Format("hQinvDRy%d",y)));
+        hDRy[y-1]->SetMarkerColor(TColor::GetColor(JJColor::blueWut.AsHexString()));
+        hDRy[y-1]->SetLineColor(TColor::GetColor(JJColor::blueWut.AsHexString()));
         AnalyticalDivide(hDRy[y-1],fFity[y-1]);
         SetErrors(hDRy[y-1],hCFy[y-1],hErry[y-1]);
         hDRy[y-1]->GetXaxis()->SetTitleOffset();
@@ -161,12 +167,14 @@ void drawDRProton1D()
         canvy[y-1] = new TCanvas(TString::Format("cQinvRatY%d",y),"",1600,900);
         canvy[y-1]->SetMargin(0.15,0.01,0.15,0.01);
         hDRy[y-1]->Draw("hist pe");
+        hCFy[y-1]->Draw("same hist pe");
         hSimy[y-1]->Draw("same hist pe");
         hErry[y-1]->Draw("same e3");
         fFity[y-1]->Draw("same c");
 
         legy[y-1] = new TLegend(0.3,0.21,0.3,0.21,"","NB");
         legy[y-1]->AddEntry(hDRy[y-1],"Corrected result","p");
+        legy[y-1]->AddEntry(hCFy[y-1],"Uncorrected result","p");
         legy[y-1]->AddEntry(hSimy[y-1],"Simulation","p");
         legy[y-1]->AddEntry(hErry[y-1],"Fit to simulation","l");
         legy[y-1]->Draw("same");
@@ -182,8 +190,8 @@ void drawDRProton1D()
 
         fInpSim->cd();
         hSimpsi[psi-1] = fInpSim->Get<TH1D>(histName);
-        hSimpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::greenWut.AsHexString()));
-        hSimpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::greenWut.AsHexString()));
+        hSimpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::violetWut.AsHexString()));
+        hSimpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::violetWut.AsHexString()));
 
         hErrpsi[psi-1] = fInpSim->Get<TH1D>(errName);
         hErrpsi[psi-1]->SetFillColorAlpha(TColor::GetColor(JJColor::fireRedWut.AsHexString()),0.75);
@@ -195,10 +203,12 @@ void drawDRProton1D()
 
         fInpData->cd();
         hCFpsi[psi-1] = fInpData->Get<TH1D>(histName);
-        hCFpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
-        hCFpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::navyWut.AsHexString()));
+        hCFpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::goldWut.AsHexString()));
+        hCFpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::goldWut.AsHexString()));
 
         hDRpsi[psi-1] = static_cast<TH1D*>(hCFpsi[psi-1]->Clone(TString::Format("hQinvDRpsi%d",psi)));
+        hDRpsi[psi-1]->SetMarkerColor(TColor::GetColor(JJColor::blueWut.AsHexString()));
+        hDRpsi[psi-1]->SetLineColor(TColor::GetColor(JJColor::blueWut.AsHexString()));
         AnalyticalDivide(hDRpsi[psi-1],fFitpsi[psi-1]);
         SetErrors(hDRpsi[psi-1],hCFpsi[psi-1],hErrpsi[psi-1]);
         hDRpsi[psi-1]->GetXaxis()->SetTitleOffset();
@@ -211,13 +221,15 @@ void drawDRProton1D()
 
         canvpsi[psi-1] = new TCanvas(TString::Format("cQinvRatPsi%d",psi),"",1600,900);
         canvpsi[psi-1]->SetMargin(0.15,0.01,0.15,0.01);
-        hCFpsi[psi-1]->Draw("hist pe");
+        hDRpsi[psi-1]->Draw("hist pe");
+        hCFpsi[psi-1]->Draw("same hist pe");
         hSimpsi[psi-1]->Draw("same hist pe");
         hErrpsi[psi-1]->Draw("same e3");
         fFitpsi[psi-1]->Draw("same c");
 
         legpsi[psi-1] = new TLegend(0.3,0.21,0.3,0.21,"","NB");
         legpsi[psi-1]->AddEntry(hDRpsi[psi-1],"Corrected result","p");
+        legpsi[psi-1]->AddEntry(hCFpsi[psi-1],"Uncorrected result","p");
         legpsi[psi-1]->AddEntry(hSimpsi[psi-1],"Simulation","p");
         legpsi[psi-1]->AddEntry(hErrpsi[psi-1],"Fit to simulation","l");
         legpsi[psi-1]->Draw("same");
