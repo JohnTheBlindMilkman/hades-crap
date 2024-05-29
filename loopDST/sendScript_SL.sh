@@ -31,7 +31,7 @@ user=$(whoami)
 currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
-day="all"
+day="quarter"
 submmissionbase=/lustre/hades/user/${user}/sub/apr12/
 submissiondir=${submmissionbase}/loopDST
  nFilesPerJob=50                                # number of files to be analyzed by 1 job (default==1)
@@ -46,7 +46,7 @@ par4=${outputdir}                                              # optional par4 :
 par5=-1                                                        # optional par5 : number of events
 par6="no"                                                      # optional par6
 par7="no"                                                      # optional par7   "single" to run comma separated list as single files in jobscript
-resources="--mem=6000 --time=0-8:00:00"                        # runtime < 10h, mem < 2GB
+resources="--mem=6000 --time=0-2:00:00"                        # runtime < 10h, mem < 2GB
 email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs have finished
 
 jobarrayFile="loop_day_${day}_jobarray.dat"
