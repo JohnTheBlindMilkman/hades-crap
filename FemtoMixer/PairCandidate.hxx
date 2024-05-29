@@ -13,10 +13,11 @@ namespace Selection
         private:
             std::string pairId;
             TrackCandidate Particle1,Particle2;
-            float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta;
+            unsigned SharedWires, BothLayers, MinWireDistance, SharedMetaCells;
+            float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
             
             /**
-             * @brief Calculates the pair variables in the centre of mass system (here: LCMS)
+             * @brief Calculates the pair variables in their centre of mass system (here: LCMS)
              * 
              * @param part1 
              * @param part2 
@@ -63,7 +64,7 @@ namespace Selection
              * @param part2 
              * @return float 
              */
-            float CalcOpeningAngle(const TrackCandidate &part1, const TrackCandidate &part2)
+            float CalcOpeningAngle(const TrackCandidate &part1, const TrackCandidate &part2) const
             {
                 float ptot = sqrt((part1.Px*part1.Px + part1.Py*part1.Py + part1.Pz*part1.Pz) * (part2.Px*part2.Px + part2.Py*part2.Py + part2.Pz*part2.Pz));
                 if (ptot <= 0.)
@@ -93,6 +94,93 @@ namespace Selection
                 else
                     return angle;
             }
+            /**
+             * @brief Calculates the splitting level (SL) and number of shared wires (SW) between two tracks. Those values are a measure of track merging and splitting
+             * 
+             * @param part1 
+             * @param part2 
+             * @return std::pair<float,unsigned int> first = SL, second = SW
+             */
+            std::tuple<float,unsigned,unsigned,unsigned> CalcSplittingLevelAndSharedWires(const TrackCandidate &part1, const TrackCandidate &part2) const
+            {
+                float SL = 0;
+                unsigned int SW = 0, MWD = 1000;
+                int n0 = 0, n1 = 0, n2 = 0;
+                for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
+                {
+                    auto wires1 = part1.GetWires(layer);
+                    auto wires2 = part2.GetWires(layer);
+                    const std::size_t wires1Size = wires1.size();
+                    const std::size_t wires2Size = wires2.size();
+
+                    if (wires1Size > 0 && wires2Size > 0)
+                    {
+                        // iterate over all elements in both of the containers
+                        for (const auto &wire1 : wires1)
+                            for (const auto &wire2 : wires2)
+                            {
+                                if (wire1 == wire2)
+                                {
+                                    SL += 1.;
+                                    ++SW;
+                                }
+                                else
+                                {
+                                    SL -= 1.;
+                                }
+
+                                if (abs(wire1 - wire2) < MWD)
+                                    MWD = abs(wire1 - wire2);
+                            }
+                        ++n0;
+                        ++n1;
+                        ++n2;
+                    }
+                    else if (wires1Size > 0 && wires2Size == 0)
+                    {
+                        SL += 1.;
+                        ++n1;
+                    }
+                    else if (wires1Size == 0 && wires2Size > 0)
+                    {
+                        SL +=1.;
+                        ++n2;
+                    }
+                }
+
+                SL /= (n1 + n2);
+                return std::make_tuple(SL,SW,n0,MWD);
+            }
+            unsigned CalcSharedMetaCells(const TrackCandidate &part1, const TrackCandidate &part2) const
+            {
+                unsigned SMC = 0;
+                std::size_t i = 0, j = 0;
+                auto meta1 = part1.GetMetaCells();
+                auto meta2 = part2.GetMetaCells();
+                std::size_t meta1size = meta1.size();
+                std::size_t meta2size = meta2.size();
+
+                // iterate over all elements in both of the containers
+                while (i < meta1size && j < meta2size) // this method gives me O(NlogN) complexity, but is probably overengineered (I have max 2 entries in vector)
+                {
+                    if (meta1[i] == meta2[j])
+                    {
+                        ++i;
+                        ++j;
+                        ++SMC;
+                    }
+                    else if (meta1[i] < meta2[j])
+                    {
+                        ++i;
+                    }
+                    else
+                    {
+                        ++j;
+                    }
+                }
+
+                return SMC;
+            }
 
         public:
             /**
@@ -101,7 +189,7 @@ namespace Selection
              * @param trck1 
              * @param trck2 
              */
-            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2) : Particle1(trck1), Particle2(trck2)
+            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, bool isBackground = false) : Particle1(trck1), Particle2(trck2),SplittingLevel(0.),SharedWires(0)
             {
                 CFKinematics(trck1,trck2);
                 OpeningAngle = CalcOpeningAngle(trck1,trck2);
@@ -110,6 +198,11 @@ namespace Selection
                 DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;
                 DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
                 pairId = trck1.GetID() + trck2.GetID();
+                if (! isBackground)
+                {
+                    std::tie(SplittingLevel,SharedWires,BothLayers,MinWireDistance) = CalcSplittingLevelAndSharedWires(trck1,trck2);
+                    SharedMetaCells = CalcSharedMetaCells(trck1,trck2);
+                }
             }
             /**
              * @brief Construct a new Pair Candidate object with given reaction plane
@@ -118,7 +211,7 @@ namespace Selection
              * @param trck2 
              * @param reactionPlaneAngle 
              */
-            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle) : PairCandidate(trck1,trck2)
+            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle, bool isBackground = false) : PairCandidate(trck1,trck2,isBackground)
             {
                 AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*reactionPlaneAngle);
             }
@@ -200,6 +293,46 @@ namespace Selection
             float GetDTheta() const
             {
                 return DeltaTheta;
+            }
+            /**
+             * @brief Get the Splitting Level object
+             * 
+             * @return float 
+             */
+            float GetSplittingLevel() const
+            {
+                return SplittingLevel;
+            }
+            /**
+             * @brief Get the Shared Wires object
+             * 
+             * @return unsigned int 
+             */
+            unsigned int GetSharedWires() const
+            {
+                return SharedWires;
+            }
+            /**
+             * @brief Get the Both Layers object
+             * 
+             * @return unsigned 
+             */
+            unsigned GetBothLayers() const
+            {
+                return BothLayers;
+            }
+            /**
+             * @brief Get the Min Wire Distance object
+             * 
+             * @return unsigned 
+             */
+            unsigned GetMinWireDistance() const
+            {
+                return MinWireDistance;
+            }
+            unsigned GetSharedMetaCells() const
+            {
+                return SharedMetaCells;
             }
             /**
              * @brief Get the Qinv

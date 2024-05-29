@@ -1,3 +1,6 @@
+#ifndef Palettes_hxx
+    #define Palettes_hxx
+
 #include <vector>
 
 #include "TColor.h"
@@ -65,3 +68,5 @@ namespace JJColor
     }
 
 } // namespace JJColor
+
+#endif

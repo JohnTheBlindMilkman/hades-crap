@@ -33,25 +33,25 @@ currentDir=../$currentDir
 
 day="all"
 submmissionbase=/lustre/hades/user/${user}/sub/apr12/
-submissiondir=${submmissionbase}/hades-crap
+submissiondir=${submmissionbase}/loopDST
  nFilesPerJob=50                                # number of files to be analyzed by 1 job (default==1)
     jobscript=${submissiondir}/jobScript_SL.sh     # exec script (full path, call without dot, set it executable!)
     outputdir=/lustre/hades/user/${user}/apr12/ # outputdir for files AND logFiles
 pathoutputlog=${outputdir}/out                  # protocol from batch farm for each file
      filename=apr12ana_${day}                   # filename of log file if nFilesPerJob > 1 (partnumber will be appended)
-par1=/lustre/hades/user/kjedrzej/defallRoot6.24.02Hydra2-6.4.sh  # optional par1 : environment script
+par1=/lustre/hades/user/hadesdst/svn/debian10/6.24.02/hydra2trunk/defall.sh  # optional par1 : environment script
 par2=${submissiondir}/analysis                                 # optional par2 : executable
 par3=""                                                        # optional par3 : input file list
 par4=${outputdir}                                              # optional par4 : outputfile (part number will be appended (_num.root))
 par5=-1                                                        # optional par5 : number of events
 par6="no"                                                      # optional par6
 par7="no"                                                      # optional par7   "single" to run comma separated list as single files in jobscript
-resources="--mem=2000 --time=0-2:00:00"                        # runtime < 10h, mem < 2GB
+resources="--mem=6000 --time=0-8:00:00"                        # runtime < 10h, mem < 2GB
 email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs have finished
 
-jobarrayFile="loop_sim_${day}_jobarray.dat"
+jobarrayFile="loop_day_${day}_jobarray.dat"
 
-filelist=${currentDir}/listsApr12/sim_${day}.list  # file list in local dir! not in submissiondir!!!
+filelist=${currentDir}/listsApr12/day_${day}.list  # file list in local dir! not in submissiondir!!!
 ######################################################################
 
 

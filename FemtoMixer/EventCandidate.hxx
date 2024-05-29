@@ -32,8 +32,8 @@ namespace Selection
              * @param cent event centrality class (use HParticleEvtChara::getCentralityClass)
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
-            EventCandidate(const std::size_t &evtId, const float &vertx, const float &verty, const float &vertz, const int &cent, const float &EP)
-            : EventId(std::to_string(evtId)),Centrality(cent),ReactionPlaneAngle(EP),X(vertx),Y(verty),Z(vertz){}
+            EventCandidate(const std::string &evtId, const float &vertx, const float &verty, const float &vertz, const int &cent, const float &EP)
+            : EventId(evtId),Centrality(cent),ReactionPlaneAngle(EP),X(vertx),Y(verty),Z(vertz){}
             /**
              * @brief Destroy the Event Candidate object
              * 
@@ -154,6 +154,15 @@ namespace Selection
             std::size_t GetTrackListSize() const
             {
                 return trackList.size();
+            }
+            /**
+             * @brief Get the Reaction Plane angle (in deg)
+             * 
+             * @return float 
+             */
+            float GetReactionPlane() const
+            {
+                return ReactionPlaneAngle;
             }
             /**
              * @brief Add new TrackCandidate to this EventCandidate

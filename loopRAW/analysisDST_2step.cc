@@ -227,10 +227,10 @@ Int_t analysisDST(TString inFile, TString outdir,Int_t nEvents=1000000, Int_t st
     
     //crg301117 for 5 sector files:
     
-    mdcMods[2][0] = 0;
+    /* mdcMods[2][0] = 0;
     mdcMods[2][1] = 0;
     mdcMods[2][2] = 0;
-    mdcMods[2][3] = 0;
+    mdcMods[2][3] = 0; */
    
     
 

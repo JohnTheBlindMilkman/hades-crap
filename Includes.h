@@ -29,8 +29,6 @@
 #include "TLegend.h"
 #include "TLine.h"
 #include "TLatex.h"
-#include "RtypesCore.h"
-#include "ROOT/RVec.hxx"
 
 #include "hloop.h"
 #include "hcategorymanager.h"
@@ -53,6 +51,8 @@
 #include "hstart2cal.h"
 #include "hparticleevtchara.h"
 #include "hgeantkine.h"
+#include "hparticlemetamatcher.h"
+#include "hdst.h"
 
 #include "hmdclookupgeom.h"
 #include "hmdccalparraw.h"

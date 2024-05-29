@@ -31,12 +31,12 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_24_02_19_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_05_20_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
-    const int rebin = 1;
+    const int rebin = 2;
 
     float norm;    
     TLine *line = new TLine(0,1,3000,1);

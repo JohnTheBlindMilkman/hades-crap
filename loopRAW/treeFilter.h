@@ -69,15 +69,8 @@
 //       of the DSTs are preserved.
 
 Bool_t selectProtonsTreeFilter(HParticleCand* pcand){
-   // we want only leptons in this case
-   //crg271117 my filter
+   // we want only protons in this case
    Bool_t test = kFALSE;
-   
-   //Double_t beta = pcand->getBeta();
-   //Double_t mom  = pcand->getMomentum();
-   //Int_t system  = pcand->getSystemUsed();
-   
-   //if (mom > 1500) return test;
    
    test = pcand->isFlagAND(4,
    			Particle::kIsAcceptedHitInnerMDC,
@@ -86,14 +79,7 @@ Bool_t selectProtonsTreeFilter(HParticleCand* pcand){
    			Particle::kIsAcceptedRK
    		       );
    
-   
-   //if(test) test = pcand->getChi2() < 1000 ? kTRUE: kFALSE;
-   if(test) test = (pcand->getPID() == 14)  ? kTRUE: kFALSE; // only identified pions
-   
-   //if(!test) return kFALSE;
-   
-   //if(test) test = pcand->getBeta() > 0.9          ? kTRUE : kFALSE ;
-   //if(test) test = pcand->getMetaMatchQuality() < 3 ? kTRUE : kFALSE ;
+   if(test) test = (pcand->getPID() == 14)  ? kTRUE: kFALSE; // only identified protons
    
    return test;
 }

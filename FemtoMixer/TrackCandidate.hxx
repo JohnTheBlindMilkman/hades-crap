@@ -1,10 +1,13 @@
 #ifndef TrackCandidate_hxx
     #define TrackCandidate_hxx
 
+#include "../../HFiredWires/HFiredWires.hxx"
+
 #include "TLorentzVector.h"
 #include "TCutG.h"
 #include "hparticlecand.h"
 #include "hparticlecandsim.h"
+#include "hparticlemetamatcher.h"
 
 namespace Selection
 {
@@ -12,49 +15,93 @@ namespace Selection
 
     class TrackCandidate
     {
-        friend class PairCandidate;
+        friend class PairCandidate; // this is here because I have a badly structured code
 
         private:
             std::string TrackId;
             Detector System;
             bool IsAtMdcEdge;
             short int PID, Charge;
+            unsigned int NBadLayers;
             float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass2, Beta, PolarAngle, AzimuthalAngle;
-            std::array<std::vector<int>,24> FiredWireList; // this now has drastically increaded the memory usage of each track... - JJ
+            std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> firedWiresCollection;
+            std::vector<unsigned> goodLayers,metaCells;
 
             /**
-             * @brief Fill the list of fired cells in all MDC layers which create this track
+             * @brief Remove and mark MDC layers which are considered "bad", i.e. the track has fired too many wires in it
              * 
-             * @param innerSeg HMdcSeg object pointer to the inner MDC segments (before magnet)
-             * @param outerSeg HMdcSeg object pointer to the outer MDC segments (after magnet)
-             * @param wireList reference to the wire list
+             * @param list 
+             * @param cutoff 
              */
-            void SetWires(HMdcSeg* innerSeg, HMdcSeg* outerSeg, std::array<std::vector<int>,24> &wireList)
+            void RemoveBadLayers(std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &list, short int cutoff)
             {
-                const int segLayers = 12;
-                int ncells = 0;
-
-                if (innerSeg == nullptr || outerSeg == nullptr)
-                    return;
-
-                for (int layer = 0; layer < segLayers; ++layer)
+                for (auto &layer : firedWiresCollection)
+                    if (layer.size() > cutoff)
+                    {
+                        ++NBadLayers;
+                        layer.clear();
+                        layer.resize(0);
+                    }
+            }
+            /**
+             * @brief calculate in how many layers a hit has been registered for this track
+             * 
+             * @param list 
+             */
+            void CalculateLayersPerPlane(const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &list)
+            {
+                for (const auto &plane : HADES::MDC::WireInfo::allLayerPerPlaneIndexing)
                 {
-                    ncells = innerSeg->getNCells(layer);
-                    if (ncells < 1)
-                        continue;
-
-                    for (int cell = 0; cell < ncells; ++cell)
-                        wireList.at(layer).push_back(innerSeg->getCell(layer,cell));
+                    unsigned counter = 0;
+                    for (const auto &layer : plane)
+                    {
+                        if (list[layer].size() > 0)
+                            ++counter;
+                    }
+                    goodLayers.push_back(counter);
                 }
-                for (int layer = segLayers; layer < segLayers+segLayers; ++layer)
-                {
-                    ncells = outerSeg->getNCells(layer);
-                    if (ncells < 1)
-                        continue;
+            }
+            /**
+             * @brief Get the Meta Hits information for this track
+             * 
+             * @param part 
+             * @return std::vector<unsigned> 
+             */
+            std::vector<unsigned> GetMetaHits(HParticleCand* part)
+            {
+                std::vector<unsigned> output;
+                unsigned hit;
 
-                    for (int cell = 0; cell < ncells; ++cell)
-                        wireList.at(layer).push_back(outerSeg->getCell(layer,cell));
-                }
+                hit = part->getMetaModule(0);
+                if (hit != -1)
+                    output.push_back(hit);
+
+                hit = part->getMetaModule(1);
+                if (hit != -1)
+                    output.push_back(hit);
+
+                return output;
+            }
+            /**
+             * @brief Get the Meta Hits information for this track
+             * 
+             * @param part 
+             * @return std::vector<unsigned> 
+             */
+            std::vector<unsigned> GetMetaHits(HParticleCandSim* part)
+            {
+                std::vector<unsigned> output;
+                unsigned hit;
+
+                hit = part->getMetaModule(0);
+                if (hit != -1)
+                    output.push_back(hit);
+
+                hit = part->getMetaModule(1);
+                if (hit != -1)
+                    output.push_back(hit);
+
+                return output;
             }
 
         public:
@@ -63,16 +110,18 @@ namespace Selection
              * @brief Construct a new Track Candidate object
              * 
              * @param particleCand HParticleCand object pointer
-             * @param innerSeg HMdcSeg object pointer to the inner MDC segments (before magnet), set to nullptr if MDC segment info is not needed
-             * @param outerSeg HMdcSeg object pointer to the outer MDC segments (after magnet), set to nullptr if MDC segment info is not needed
+             * @param wires array of the fired wires, obtained from HFiredWires class
              * @param evtId unique ID of the underlying event
-             * @param trackId unique ID of this track within the event (e.g. for (int i = 0; i < nTracks; ++i) trackId = i;)
+             * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (when using DSTs put here whatever, just make sure the same PID is in the TrackCandidate::SelectTrack method)
              */
-            TrackCandidate(HParticleCand* particleCand, HMdcSeg* innerSeg, HMdcSeg* outerSeg, const std::string &evtId, const std::size_t &trackId, const short int &pid)
+            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const std::size_t &trackId, const short int &pid)
+            : firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
+                CalculateLayersPerPlane(firedWiresCollection);
+                RemoveBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
                 AzimuthalAngle = particleCand->getPhi();
@@ -93,18 +142,16 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
-                SetWires(innerSeg,outerSeg,FiredWireList);
+                metaCells = GetMetaHits(particleCand);
             }
             /**
              * @brief Construct a new Track Candidate object
              * 
              * @param particleCand HParticleCandSim object pointer (contains PID)
-             * @param innerSeg HMdcSeg object pointer to the inner MDC segments (before magnet)
-             * @param outerSeg HMdcSeg object pointer to the outer MDC segments (after magnet)
              * @param evtId unique ID of the underlying event
-             * @param trackId unique ID of this track within the event (e.g. for (int i = 0; i < nTracks; ++i) trackId = i;)
+             * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              */
-            TrackCandidate(HParticleCandSim* particleCand, HMdcSeg* innerSeg, HMdcSeg* outerSeg, const std::string &evtId, const std::size_t &trackId)
+            TrackCandidate(HParticleCandSim* particleCand, const std::string &evtId, const std::size_t &trackId)
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
@@ -128,7 +175,7 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
-                SetWires(innerSeg,outerSeg,FiredWireList);
+                metaCells = GetMetaHits(particleCand);
             }
             /**
              * @brief Destroy the Track Candidate object
@@ -155,6 +202,10 @@ namespace Selection
                     return false;
                 if (Beta < 0.2)
                     return false;
+                if (NBadLayers > 1)
+                    return false;
+                //if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
+                    //return false;
 
                 switch (System)
                 {
@@ -171,32 +222,36 @@ namespace Selection
                 
                 return false;
             }
-            /**
-             * @brief Prints on the standard output the indexes of all the wires that were hit
-             * 
-             */
-            void PrintWires()
+            static std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> CreateWireArray(const HParticleWireInfo &wi)
             {
-                std::cout << "\n\n---=== Inner Segment ===---\n";
-                for (int i = 0; i < 12; ++i)
-                {
-                    std::cout << "Layer " << i+1 << ":\t";
-                    for (const auto &wire : FiredWireList.at(i))
-                        std::cout << wire << "\t";
+                static constexpr std::size_t nLayers{6}, nModules{4};
+                std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> array;
 
-                    std::cout << "\n";
-                }
+                for (std::size_t mod = 0; mod < nModules; ++mod)
+                    for (std::size_t lay = 0; lay < nLayers; ++lay)
+                    {
+                        std::vector<int> tmpVec;
 
-                std::cout << "---=== Outer Segment ===---\n";
-                for (int i = 12; i < 24; ++i)
-                {
-                    std::cout << "Layer " << i+1 << ":\t";
-                    for (const auto &wire : FiredWireList.at(i))
-                        std::cout << wire << "\t";
+                        if (wi.ar[mod][lay][0] != -1)
+                            tmpVec.push_back(wi.ar[mod][lay][0]);
+                        if (wi.ar[mod][lay][1] != -1)
+                            tmpVec.push_back(wi.ar[mod][lay][1]);
 
-                    std::cout << "\n";
-                }
-                std::cout << "\n\n";
+                        array[mod*nLayers + lay] = tmpVec;
+                    }
+
+                return array;
+            }
+            /**
+             * @brief Get the indexes of wires at given layer
+             * 
+             * @param layer 
+             * @return std::vector<int> 
+             * @throw std::out_of_range is thrown when layer value exceeds the HADES::MDC::WireInfo::numberOfAllLayers-1 value
+             */
+            std::vector<int> GetWires(std::size_t layer) const
+            {
+                return firedWiresCollection.at(layer);
             }
             /**
              * @brief Returns combined hash for this track. Required when used inside an std::map 
@@ -212,15 +267,6 @@ namespace Selection
                 return TrackId;
             }
             /**
-             * @brief Get the Wire List object
-             * 
-             * @return std::array<std::vector<int>,24> 
-             */
-            std::array<std::vector<int>,24> GetWireList() const
-            {
-                return FiredWireList;
-            }
-            /**
              * @brief Get the detector which registered the track
              * 
              * @return Detector 
@@ -228,6 +274,15 @@ namespace Selection
             Detector GetSystem() const
             {
                 return System;
+            }
+            /**
+             * @brief Get the Number Of Bad Layers object
+             * 
+             * @return unsigned int 
+             */
+            unsigned int GetNumberOfBadLayers() const
+            {
+                return NBadLayers;
             }
             /**
              * @brief Get the azimuthan angle of the track (in deg)
@@ -300,6 +355,15 @@ namespace Selection
             float GetM2() const
             {
                 return Mass2;
+            }
+            /**
+             * @brief Get the Meta Cells object
+             * 
+             * @return std::vector<unsigned> 
+             */
+            std::vector<unsigned> GetMetaCells() const
+            {
+                return metaCells;
             }
             /**
              * @brief Check if two tracks are equal

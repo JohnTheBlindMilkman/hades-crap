@@ -2,6 +2,8 @@
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
 #include "FemtoMixer/JJFemtoMixer.hxx"
+#include "../HFiredWires/HFiredWires.hxx"
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -45,12 +47,19 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     	return ktCut*1e2 + yCut*1e1 + EpCut;
 }
 
-int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)
+bool PairCut(const Selection::PairCandidate &pair)
+{
+	return (pair.GetMinWireDistance() < 2 /* || pair.GetBothLayers() < 20 */ || pair.GetSharedMetaCells() > 0);
+}
+
+int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 
 	constexpr bool isSimulation = false; // for now this could be easly just const
+
+	using HFiredWires = HADES::MDC::HFiredWires;
 
 	//--------------------------------------------------------------------------------
     // Initialization of the global ROOT object and the Hades Loop
@@ -59,6 +68,21 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     TROOT dst_analysis("DstAnalysisMacro", "Simple DST analysis Macro");
     HLoop* loop = new HLoop(kTRUE);
+	TString beamtime="apr12";
+	
+	Int_t mdcMods[6][4]=
+	{ {1,1,1,1},
+	{1,1,1,1},
+	{1,1,1,1},
+	{1,1,1,1},
+	{1,1,1,1},
+	{1,1,1,1} };
+	TString asciiParFile     = "";
+	TString rootParFile      = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+	TString paramSource      = "root"; // root, ascii, oracle
+	TString paramrelease     = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
+	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
+	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease);  // now, APR12_gen2_dst
 
     //--------------------------------------------------------------------------------
     // The following block finds / adds the input DST files to the HLoop
@@ -73,14 +97,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		TString inputFolder;
 		if (isSimulation) // simulation
 		{
-			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
+			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
 		}
 		else // data
 		{
-			inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
+			//inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
 			//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
-			//inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+			inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
 		}
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
@@ -101,7 +125,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit,+HMdcSeg"))
+    if (!loop->setInput("-*,+HParticleCand,+HParticleEvtInfo,+HWallHit")) // make sure to use +HMdcSeg if you want the wires
 		exit(1);
 
 	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
@@ -125,7 +149,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
-	HCategory* mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // initialise MDC segment category
+	//HCategory *mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // so... this is my stupid fix for now, without it HFiredWires doesn't work
 
 	if (isSimulation && !isSim(particle_cand)) // verification if you changed particle_cand class for running simulations
 	{
@@ -149,10 +173,16 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
 	TH2D *hBetaMomRpc = new TH2D("hBetaMomRpc","#beta vs p of accepted protons (RPC);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
 	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",2000,0,2000,121,-1.15,1.25);
-	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0,1.2,1250,0,2.5);
-	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0,1.2,1250,0,2.5);
+	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
+	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
 	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,-0.5,23.5,10,-0.5,9.5);
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
+	
+	TH2D *hQinvSL = new TH2D("hQinvSL","q_{inv} vs Splitting Level for signal of p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQinvSW = new TH2D("hQinvSW","q_{inv} vs Shared Wires for signal of p-p CF;q_{inv} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQinvBL = new TH2D("hQinvBL","q_{inv} vs Shared layers for signal of p-p CF;q_{inv} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQinvMWD = new TH2D("hQinvMWD","q_{inv} vs Minimal Wire DIstance for signal of p-p CF;q_{inv} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQinvSMC = new TH2D("hQinvSMC","q_{inv} vs Shared Meta Cells for signal of p-p CF;q_{inv} [MeV/c];SMC",250,0,3000,4,0,4);
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
@@ -161,9 +191,19 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	// create objects for particle selection
 	Selection::EventCandidate fEvent;	
 	Selection::TrackCandidate fTrack;
+	HParticleWireInfo fWireInfo;
 
-	// create pointers for MDC wire cuts
-	HMdcSeg *inner_seg = nullptr,*outer_seg = nullptr;
+	// create object for getting MDC wires
+	//HFiredWires firedWires;
+	//HMdcSeg *innerSeg,*outerSeg;
+
+	std::unordered_map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
+
+    Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
+	mixer.SetMaxBufferSize(50);
+	mixer.SetEventHashingFunction(EventHashing);
+	mixer.SetPairHashingFunction(PairHashing);
+	mixer.SetPairCuttingFunction(PairCut);
 
     //--------------------------------------------------------------------------------
     // The following counter histogram is used to gather some basic information on the analysis
@@ -182,6 +222,15 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     hCounter->GetXaxis()->SetBinLabel(2, "Selected Events");
     hCounter->GetXaxis()->SetBinLabel(3, "All Tracks");
     hCounter->GetXaxis()->SetBinLabel(4, "Selected Tracks");
+
+	//--------------------------------------------------------------------------------
+	// wire information w/o HMdcSeg class access
+	//--------------------------------------------------------------------------------
+	HTaskSet *masterTaskSet = gHades->getTaskSet("all");
+    HParticleMetaMatcher* matcher = new HParticleMetaMatcher();
+    matcher->setDebug();
+	matcher->setUseEMC(kFALSE);
+    masterTaskSet->add(matcher);
 
 	//--------------------------------------------------------------------------------
 	// event characteristic & reaction plane
@@ -251,6 +300,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			cout << " Last events processed " << endl;
 			break;
 		}
+		hCounter->Fill(cNumAllEvents);
 
 		//--------------------------------------------------------------------------------
 		// Just the progress of the analysis
@@ -281,12 +331,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 				continue;
 		}
 
-		fEvent = Selection::EventCandidate(event_header->getId(),vertX,vertY,vertZ,centClassIndex,EventPlane);
+		fEvent = Selection::EventCandidate(std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),vertX,vertY,vertZ,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
 		//--------------------------------------------------------------------------------
-        hCounter->Fill(cNumAllEvents);
+        
 		// remove first two to get vortex x,y,z
 		if (   !particle_info->isGoodEvent(Particle::kGoodVertexClust)
 			|| !particle_info->isGoodEvent(Particle::kGoodVertexCand)
@@ -321,8 +371,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		for (Int_t track = 0; track < nTracks; track++) 
 		{
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
-			inner_seg = HCategoryManager::getObject(inner_seg,mdc_seg_cat,particle_cand->getInnerSegInd());
-			outer_seg = HCategoryManager::getObject(outer_seg,mdc_seg_cat,particle_cand->getOuterSegInd());
+			//innerSeg = HCategoryManager::getObject(innerSeg,mdc_seg_cat,particle_cand->getInnerSegInd());
+			//outerSeg = HCategoryManager::getObject(outerSeg,mdc_seg_cat,particle_cand->getOuterSegInd());
+			HParticleWireManager &wire_manager = matcher->getWireManager();
+			//wire_manager.setDebug();
+			wire_manager.setWireRange(0);
+			wire_manager.getWireInfo(track,fWireInfo,particle_cand);
 			
 			//--------------------------------------------------------------------------------
 			// Discarding all tracks that have been discarded by the track sorter and counting all / good tracks
@@ -335,7 +389,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrack = Selection::TrackCandidate(particle_cand,inner_seg,outer_seg,fEvent.GetID(),track,14);
+			fTrack = Selection::TrackCandidate(particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),fEvent.GetID(),track,14);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
@@ -356,10 +410,9 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			hCounter->Fill(cNumSelectedTracks);
 			hPtRap->Fill(fTrack.GetPt(), fTrack.GetRapidity() - fBeamRapidity);
 			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
-
-			auto wireList = fTrack.GetWireList();
-			for (int i = 1; i <= 24; ++i)
-				hSegNcells->Fill(i,wireList.at(i-1).size());
+			
+			for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
+				hSegNcells->Fill(layer+1,fTrack.GetWires(layer).size());
 
 			fEvent.AddTrack(fTrack);
 
@@ -374,6 +427,21 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 				hM2momTof->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
 			}
 		} // End of track loop
+
+		if (fEvent.GetTrackListSize() > 0)
+		{
+			fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
+			for (const auto &pair : fSignMap)
+				for (const auto &elem : pair.second)
+				{
+					hQinvSL->Fill(elem.GetQinv(),elem.GetSplittingLevel());
+					hQinvSW->Fill(elem.GetQinv(),elem.GetSharedWires());
+					hQinvBL->Fill(elem.GetQinv(),elem.GetBothLayers());
+					hQinvMWD->Fill(elem.GetQinv(),elem.GetMinWireDistance());
+					hQinvSMC->Fill(elem.GetQinv(),elem.GetSharedMetaCells());
+				}
+		}
+
 	} // End of event loop
 	
 	// printing some info about the RAM I'm using to know how much memory each job should be given
@@ -410,6 +478,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hM2momTof->Write();
 	hSegNcells->Write();
 	hPhiTheta->Write();
+
+	hQinvSL->Write();
+	hQinvSW->Write();
+	hQinvBL->Write();
+	hQinvMWD->Write();
+	hQinvSMC->Write();
 
     //--------------------------------------------------------------------------------
     // Closing file and finalization

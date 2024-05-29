@@ -28,8 +28,8 @@ void drawProton1D()
 {
     gStyle->SetPalette(kPastel);
 
-    const TString fileName = "/home/jedkol/lxpool/hades-crap/slurmOutput/apr12ana_all_23_12_11.root";
-    const TString outputFile = "/home/jedkol/lxpool/hades-crap/output/1Dcorr_0_10_cent.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_05_10_processed.root";
+    const TString outputFile = "../output/1Dcorr_0_10_cent.root";
     const std::vector<std::tuple<TString,TString> > kTbins = {{"150","450"},{"450","750"},{"750","1050"},{"1050","1350"},{"1350","1650"}};
     const int kTlen = static_cast<int>(kTbins.size());
     const int rebin = 2;

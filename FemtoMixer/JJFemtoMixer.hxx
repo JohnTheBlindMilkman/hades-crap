@@ -32,10 +32,11 @@
                 std::unordered_map<std::size_t, std::deque<std::pair<Event, Track> > > fSimilarityMap;
                 std::function<std::size_t(const Event &)> fEventHashingFunction;
                 std::function<std::size_t(const Pair &)> fPairHashingFunction;
+                std::function<bool(const Pair &)> fPairCutFunction;
 
-                std::vector<Pair> MakePairs(const std::vector<Track> &tracks, const float &EPangle);
-                std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
-                std::unordered_map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
+                std::vector<Pair> MakePairs(const std::vector<Track> &tracks, const float &EPangle, bool isBckg = false);
+                std::vector<Pair> MakePairs(const std::vector<Track> &tracks, bool isBckg = false);
+                std::unordered_map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs, bool isBckg = false);
 
             public:
                 JJFemtoMixer() : fBufferSize(10), 
@@ -43,13 +44,17 @@
                                 fDimensions(0), 
                                 fGenerator(fRandomDevice()),
                                 fEventHashingFunction([](const Event &){return 0;}),
-                                fPairHashingFunction([](const Pair &){return 0;}) {}
+                                fPairHashingFunction([](const Pair &){return 0;}),
+                                fPairCutFunction([](const Pair &){return false;}) {}
 
                 void SetEventHashingFunction(std::function<std::size_t(const Event &)> func) {fEventHashingFunction = func;}
                 std::size_t GetEventHash(const Event &obj) const {return fEventHashingFunction(obj);}
 
                 void SetPairHashingFunction(std::function<std::size_t(const Pair &)> func) {fPairHashingFunction = func;}
                 std::size_t GetPairHash(const Pair &obj) const {return fPairHashingFunction(obj);}
+
+                void SetPairCuttingFunction(std::function<bool(const Pair &)> func) {fPairCutFunction = func;}
+                bool GetPairCutResult(const Pair &obj) const {return fPairCutFunction(obj);}
 
                 void SetMaxBufferSize(std::size_t buffer) {fBufferSize = buffer;}
                 std::size_t GetMaxBufferSize() const {return fBufferSize;}
@@ -63,7 +68,7 @@
         };
 
         template<typename Event, typename Track, typename Pair>
-        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks, const float &EPangle)
+        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks, const float &EPangle, bool isBckg)
         {
             bool reverse = true;
             const std::size_t trackVecSize = tracks.size();
@@ -75,9 +80,9 @@
                 for (std::size_t iter2 = iter1 + 1; iter2 < trackVecSize; ++iter2)
                 {
                     if (reverse)
-                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1),EPangle));
+                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1),EPangle,isBckg));
                     else
-                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2),EPangle));
+                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2),EPangle,isBckg));
 
                     reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
                 }
@@ -86,7 +91,7 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks)
+        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks, bool isBckg)
         {
             bool reverse = true;
             const std::size_t trackVecSize = tracks.size();
@@ -98,9 +103,9 @@
                 for (std::size_t iter2 = iter1 + 1; iter2 < trackVecSize; ++iter2)
                 {
                     if (reverse)
-                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1)));
+                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1),isBckg));
                     else
-                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2)));
+                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2),isBckg));
 
                     reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
                 }
@@ -109,13 +114,16 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs)
+        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs, bool isBckg)
         {
             std::size_t currentPairHash = 0;
             std::unordered_map<std::size_t, std::vector<Pair> > pairMap;
 
             for (const auto &pair : pairs)
             {
+                if (fPairCutFunction(pair) /*&&  !isBckg */)
+                    continue;
+
                 currentPairHash = fPairHashingFunction(pair);
 
                 // an entry for given currentPairHash may already exist so we must check if that's the case
@@ -138,7 +146,7 @@
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
-            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks,event.ReactionPlaneAngle));
+            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks,event.GetReactionPlane(),false),false);
             std::pair<Event, Track> trackPair{event,tracks.at(dist(fGenerator))};
 
             // an entry for given evtHash may not exist, so we must check if that's the case
@@ -171,7 +179,7 @@
                         outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
             }
 
-            return SortPairs(MakePairs(outputVector,event.ReactionPlaneAngle));
+            return SortPairs(MakePairs(outputVector,event.GetReactionPlane(),false),false);
         }
 
         template<typename Event, typename Track, typename Pair>
@@ -187,7 +195,7 @@
                         outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
             }
 
-            return SortPairs(MakePairs(outputVector,EPangle));
+            return SortPairs(MakePairs(outputVector,EPangle,false),false);
         }
     } // namespace Mixing
     

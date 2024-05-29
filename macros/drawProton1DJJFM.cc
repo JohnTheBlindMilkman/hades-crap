@@ -32,7 +32,7 @@ void drawProton1DJJFM()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_02_19_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_05_20_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
     const int rebin = 2;
 
@@ -53,7 +53,7 @@ void drawProton1DJJFM()
 
     hRat->Divide(hBckg);
     hRat->Sumw2();
-    norm = getNorm(hRat,300,900);
+    norm = getNorm(hRat,200,600);
     hRat->Rebin(rebin);
     norm *= rebin;
     hRat->Scale(1./norm);

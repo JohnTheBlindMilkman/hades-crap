@@ -7,7 +7,7 @@ USES_GFORTRAN := yes
 
 include $(HADDIR)/hades.def.mk
 
-HYDRA_LIBS    += -lDst -L/u/kjedrzej/hades-crap/myCrap/libBuild/lib
+HYDRA_LIBS    += -lDst
 
 
 .PHONY:  default

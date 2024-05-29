@@ -25,9 +25,9 @@ TH1D* ConvertXaxisUnits(TH1D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_0_10_cent_DR.root";
-    const TString inpHistBaseKt = "hQinvDRKt";
-    const TString inpHistBaseRap = "hQinvDRy";
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent.root";
+    const TString inpHistBaseKt = "hQinvRatKt";
+    const TString inpHistBaseRap = "hQinvRatY";
     const std::vector<int> ktBins = {1,2,3,4,5};
     const std::vector<int> rapBins = {1,2,3};
 

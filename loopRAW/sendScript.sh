@@ -32,7 +32,7 @@ currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
 day=109 #127, 128
-prefix1=5sec
+prefix1=6sec
 #prefix1=5sec_reversedfield
 submmissionbase=/lustre/hades/user/${user}/sub/customDST/apr12PlusHMdcSeg
 submissiondir=${submmissionbase}/loopRAW
@@ -42,7 +42,7 @@ submissiondir=${submmissionbase}/loopRAW
 pathoutputlog=${outputdir}/out                  # protocol from batch farm for each file
      filename=apr12ana_${day}_${prefix1}            # filename of log file if nFilesPerJob > 1 (partnumber will be appended)
 wrapscript=${submissiondir}/wrap.sh
-par1=/cvmfs/hades.gsi.de/install/5.34.34/hydra2-4.9u/defall.sh # optional par1 : environment script
+par1=/cvmfs/hades.gsi.de/install/5.34.34/hydra2-4.9f/defall.sh # optional par1 : environment script
 par2=${submissiondir}/analysisDST                                 # optional par2 : executable
 par3=""                                                        # optional par3 : input file list
 par4=${outputdir}                                              # optional par4 : outputfile (part number will be appended (_num.root))
