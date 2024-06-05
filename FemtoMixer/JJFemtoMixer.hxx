@@ -34,9 +34,9 @@
                 std::function<std::size_t(const Pair &)> fPairHashingFunction;
                 std::function<bool(const Pair &)> fPairCutFunction;
 
-                std::vector<Pair> MakePairs(const std::vector<Track> &tracks, const float &EPangle, bool isBckg = false);
-                std::vector<Pair> MakePairs(const std::vector<Track> &tracks, bool isBckg = false);
-                std::unordered_map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs, bool isBckg = false);
+                std::vector<Pair> MakePairs(const std::vector<Track> &tracks, const float &EPangle);
+                std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
+                std::unordered_map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
 
             public:
                 JJFemtoMixer() : fBufferSize(10), 
@@ -68,9 +68,9 @@
         };
 
         template<typename Event, typename Track, typename Pair>
-        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks, const float &EPangle, bool isBckg)
+        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks, const float &EPangle)
         {
-            bool reverse = true;
+            bool reverse;
             const std::size_t trackVecSize = tracks.size();
 
             std::vector<Pair> tmpVector;
@@ -80,9 +80,9 @@
                 for (std::size_t iter2 = iter1 + 1; iter2 < trackVecSize; ++iter2)
                 {
                     if (reverse)
-                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1),EPangle,isBckg));
+                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1),EPangle));
                     else
-                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2),EPangle,isBckg));
+                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2),EPangle));
 
                     reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
                 }
@@ -91,9 +91,9 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks, bool isBckg)
+        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks)
         {
-            bool reverse = true;
+            bool reverse;
             const std::size_t trackVecSize = tracks.size();
 
             std::vector<Pair> tmpVector;
@@ -103,9 +103,9 @@
                 for (std::size_t iter2 = iter1 + 1; iter2 < trackVecSize; ++iter2)
                 {
                     if (reverse)
-                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1),isBckg));
+                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1)));
                     else
-                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2),isBckg));
+                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2)));
 
                     reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
                 }
@@ -114,7 +114,7 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs, bool isBckg)
+        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs)
         {
             std::size_t currentPairHash = 0;
             std::unordered_map<std::size_t, std::vector<Pair> > pairMap;
@@ -146,7 +146,7 @@
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
-            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks,event.GetReactionPlane(),false),false);
+            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks,event.GetReactionPlane()));
             std::pair<Event, Track> trackPair{event,tracks.at(dist(fGenerator))};
 
             // an entry for given evtHash may not exist, so we must check if that's the case
@@ -179,7 +179,7 @@
                         outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
             }
 
-            return SortPairs(MakePairs(outputVector,event.GetReactionPlane(),false),false);
+            return SortPairs(MakePairs(outputVector,event.GetReactionPlane()));
         }
 
         template<typename Event, typename Track, typename Pair>
@@ -195,7 +195,7 @@
                         outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
             }
 
-            return SortPairs(MakePairs(outputVector,EPangle,false),false);
+            return SortPairs(MakePairs(outputVector,EPangle));
         }
     } // namespace Mixing
     

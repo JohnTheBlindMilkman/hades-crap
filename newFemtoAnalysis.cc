@@ -48,7 +48,8 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 
 bool PairRejection(const Selection::PairCandidate &pair)
 {
-	return (pair.GetMinWireDistance() < 2 /* || pair.GetBothLayers() < 20 */ || pair.GetSharedMetaCells() > 0 );
+	using Behaviour = Selection::PairCandidate::Behaviour;
+	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(5,2) || pair.GetSharedMetaCells() > 0;
 }
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
@@ -77,9 +78,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	TString asciiParFile     = "";
 	TString rootParFile      = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
 	TString paramSource      = "root"; // root, ascii, oracle
-	TString paramrelease     = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
+	TString paramrelease     = "APR12_dst_gen9"; 
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
-	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease);  // now, APR12_gen2_dst
+	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease); 
 
     //--------------------------------------------------------------------------------
     // The following block finds / adds the input DST files to the HLoop
@@ -402,7 +403,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		if (fEvent.GetTrackListSize()) // if track vector has entries
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize());
+			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
 
             fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent,fEvent.GetReactionPlane());
