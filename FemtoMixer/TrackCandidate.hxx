@@ -23,7 +23,7 @@ namespace Selection
             bool IsAtMdcEdge;
             short int PID, Charge;
             unsigned int NBadLayers;
-            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass2, Beta, PolarAngle, AzimuthalAngle;
+            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass2, Beta, PolarAngle, AzimuthalAngle, ReactionPlaneAngle;
             std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> firedWiresCollection;
             std::vector<unsigned> goodLayers,metaCells;
 
@@ -112,11 +112,12 @@ namespace Selection
              * @param particleCand HParticleCand object pointer
              * @param wires array of the fired wires, obtained from HFiredWires class
              * @param evtId unique ID of the underlying event
+             * @param EP event plane angle of the underlying event
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (when using DSTs put here whatever, just make sure the same PID is in the TrackCandidate::SelectTrack method)
              */
-            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const std::size_t &trackId, const short int &pid)
-            : firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
+            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid)
+            : ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
@@ -355,6 +356,15 @@ namespace Selection
             float GetM2() const
             {
                 return Mass2;
+            }
+            /**
+             * @brief Get the Reaction Plane object
+             * 
+             * @return float 
+             */
+            float GetReactionPlane() const
+            {
+                return ReactionPlaneAngle;
             }
             /**
              * @brief Get the Meta Cells object

@@ -49,7 +49,7 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 bool PairRejection(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(5,2) || pair.GetSharedMetaCells() > 0;
+	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(9,2) || pair.GetSharedMetaCells() > 0;
 }
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
@@ -122,7 +122,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit,+HMdcSeg"))
+    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit"))
 		exit(1);
 
 	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
@@ -146,7 +146,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
-    HCategory *mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // so... this is my stupid fix for now, without it HFiredWires doesn't work
 
 	if (isSimulation && !isSim(particle_cand)) // verification if you changed particle_cand class for running simulations
 	{
@@ -287,6 +286,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			break;
 		}
 
+		hCounter->Fill(cNumAllEvents);
+
 		//--------------------------------------------------------------------------------
 		// Just the progress of the analysis
 		//--------------------------------------------------------------------------------
@@ -313,12 +314,18 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		if (EventPlaneA < 0 || EventPlaneB < 0)
 			continue;
 
-		fEvent = Selection::EventCandidate(std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),vertX,vertY,vertZ,centClassIndex,EventPlane);
+		fEvent = Selection::EventCandidate(
+			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
+			vertX,
+			vertY,
+			vertZ,
+			centClassIndex,
+			EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
 		//--------------------------------------------------------------------------------
-        hCounter->Fill(cNumAllEvents);
+        
 		// remove first two to get vortex x,y,z
 		if (   !particle_info->isGoodEvent(Particle::kGoodVertexClust)
 			|| !particle_info->isGoodEvent(Particle::kGoodVertexCand)
@@ -368,7 +375,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrack = Selection::TrackCandidate(particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),fEvent.GetID(),track,14);
+			fTrack = Selection::TrackCandidate(
+				particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),
+				fEvent.GetID(),
+				fEvent.GetReactionPlane(),
+				track,
+				14);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
@@ -406,7 +418,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
 
             fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
-			fBckgMap = mixer.GetSimilarPairs(fEvent,fEvent.GetReactionPlane());
+			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
 			for (const auto &signalEntry : fSignMap)
 			{
@@ -422,7 +434,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
 						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
 						};
-						fMapFoHistograms.emplace(signalEntry.first,histos);
+						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
 					//fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.GetQinv());
 					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
@@ -449,7 +461,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
 						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
 						};
-						fMapFoHistograms.emplace(backgroundEntry.first,histos);
+						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
 					//fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.GetQinv());
 					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);

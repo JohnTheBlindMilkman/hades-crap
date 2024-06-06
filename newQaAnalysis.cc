@@ -49,7 +49,7 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 
 bool PairCut(const Selection::PairCandidate &pair)
 {
-	return pair.RejectPairByCloseHits<Selection::PairCandidate::Behaviour::OneUnder>(3,2) || pair.GetSharedMetaCells() > 0;
+	return pair.RejectPairByCloseHits<Selection::PairCandidate::Behaviour::OneUnder>(9,2) || pair.GetSharedMetaCells() > 0;
 }
 
 int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)
@@ -333,7 +333,13 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 				continue;
 		}
 
-		fEvent = Selection::EventCandidate(std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),vertX,vertY,vertZ,centClassIndex,EventPlane);
+		fEvent = Selection::EventCandidate(
+			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
+			vertX,
+			vertY,
+			vertZ,
+			centClassIndex,
+			EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
@@ -391,7 +397,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrack = Selection::TrackCandidate(particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),fEvent.GetID(),track,14);
+			fTrack = Selection::TrackCandidate(
+				particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),
+				fEvent.GetID(),
+				fEvent.GetReactionPlane(),
+				track,
+				14);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here

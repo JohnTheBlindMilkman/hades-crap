@@ -23,23 +23,12 @@ namespace Selection
                 CFKinematics(trck1,trck2);
                 OpeningAngle = CalcOpeningAngle(trck1,trck2);
                 Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;
-                AzimuthalAngle = (trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2.;
+                AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*trck1.GetReactionPlane());
                 DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;
                 DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
                 pairId = trck1.GetID() + trck2.GetID();
                 std::tie(SplittingLevel,SharedWires,BothLayers,MinWireDistance,wireDistances) = CalcSplittingLevelAndSharedWires(trck1,trck2);
                 SharedMetaCells = CalcSharedMetaCells(trck1,trck2);
-            }
-            /**
-             * @brief Construct a new Pair Candidate object with given reaction plane
-             * 
-             * @param trck1 
-             * @param trck2 
-             * @param reactionPlaneAngle 
-             */
-            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle) : PairCandidate(trck1,trck2)
-            {
-                AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*reactionPlaneAngle);
             }
             /**
              * @brief Destroy the Pair Candidate object
@@ -57,15 +46,6 @@ namespace Selection
             {
                 return (pairId == other.pairId);
             }
-            /**
-             * @brief Perform pair selection based on the number of neighbouring wires with certain distance from each other
-             * 
-             * @param nLayers in how many layers (max 24) the merging can occur
-             * @param cutoff how close the wires are allowed to be
-             * @return true 
-             * @return false 
-             */
-
             /**
              * @brief Perform pair selection based on the number of neighbouring wires with certain distance from each other. Allows for a modifiable behaviour of selection
              * 
