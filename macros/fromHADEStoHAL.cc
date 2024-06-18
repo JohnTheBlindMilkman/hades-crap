@@ -8,8 +8,8 @@ TH1D* ConvertXaxisUnits(TH1D *hInp)
 {
     const double MeVtoGeV = 1./1000.;
     const int nBins = hInp->GetNbinsX();
-    const double newMin = hInp->GetXaxis()->GetXmin() * MeVtoGeV;
-    const double newMax = hInp->GetXaxis()->GetXmax() * MeVtoGeV; // /2 to convert from qinv to k*
+    const double newMin = hInp->GetXaxis()->GetXmin() /* * MeVtoGeV */;
+    const double newMax = hInp->GetXaxis()->GetXmax() / 2. /* * MeVtoGeV */; // /2 to convert from qinv to k*
 
     TH1D *hOtp = new TH1D(hInp->GetName(),hInp->GetTitle(),nBins,newMin,newMax);
     //hOtp->GetXaxis()->SetTitle("k* [MeV/c]");
@@ -25,8 +25,8 @@ TH1D* ConvertXaxisUnits(TH1D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_0_10_cent.root";
-    const TString inpHistBaseKt = "hQinvRatKt";
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent_DR.root";
+    const TString inpHistBaseKt = "hQinvDRKt";
     const TString inpHistBaseRap = "hQinvRatY";
     const std::vector<int> ktBins = {1,2,3,4,5};
     const std::vector<int> rapBins = {1,2,3};

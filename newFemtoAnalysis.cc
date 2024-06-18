@@ -49,10 +49,10 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 bool PairRejection(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(9,2) || pair.GetSharedMetaCells() > 0;
+	return /* pair.RejectPairByCloseHits<Behaviour::Uniform>(0,1) || */ pair.GetMinWireDistance() < 2 || pair.GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
@@ -434,7 +434,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
 						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
 						};
-						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
+						fMapFoHistograms.emplace(signalEntry.first,histos);
 					}
 					//fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.GetQinv());
 					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
@@ -461,7 +461,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
 						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
 						};
-						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
+						fMapFoHistograms.emplace(backgroundEntry.first,histos);
 					}
 					//fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.GetQinv());
 					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);

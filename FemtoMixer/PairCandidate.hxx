@@ -232,9 +232,9 @@ namespace Selection
                 Double_t particle2lcms_px = (part2.Px * tPx + part2.Py * tPy) / Kt;
                 Double_t particle2lcms_py = (-part2.Px * tPy + part2.Py * tPx) / Kt;
 
-                QOut = abs(particle1lcms_px - particle2lcms_px);
-                QSide = abs(particle1lcms_py - particle2lcms_py);
-                QLong = abs(particle1lcms_pz - particle2lcms_pz);
+                QOut = particle1lcms_px - particle2lcms_px;
+                QSide = particle1lcms_py - particle2lcms_py;
+                QLong = particle1lcms_pz - particle2lcms_pz;
                 Double_t mDE = particle1lcms_e - particle2lcms_e;
                 QInv = TMath::Sqrt(TMath::Abs(QOut * QOut + QSide * QSide + QLong * QLong - mDE * mDE));
             }

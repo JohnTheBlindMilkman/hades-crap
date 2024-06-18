@@ -108,8 +108,7 @@
                 }
                 else
                 {
-                    std::vector<Pair> tmpVec{pair};
-                    pairMap.emplace(currentPairHash,tmpVec);
+                    pairMap.emplace(currentPairHash,std::vector<Pair>(1,pair));
                 }
             }
 
@@ -121,15 +120,12 @@
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
-            std::unordered_map<std::size_t, std::vector<Pair> > tmpPairMap = SortPairs(MakePairs(tracks));
             std::pair<Event, Track> trackPair{event,tracks.at(dist(fGenerator))};
 
             // an entry for given evtHash may not exist, so we must check if that's the case
             if (fSimilarityMap.find(evtHash) == fSimilarityMap.end())
             {
-                std::deque<std::pair<Event, Track> > tmpQueue;
-                tmpQueue.push_back(trackPair);
-                fSimilarityMap.emplace(evtHash,tmpQueue);
+                fSimilarityMap.emplace(evtHash,std::deque<std::pair<Event, Track> >(1,trackPair));
             }
             else
             {
@@ -138,7 +134,7 @@
                     fSimilarityMap.at(evtHash).pop_front(); 
             }
 
-            return tmpPairMap;
+            return SortPairs(MakePairs(tracks));
         }
 
         template<typename Event, typename Track, typename Pair>

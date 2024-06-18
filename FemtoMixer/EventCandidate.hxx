@@ -147,6 +147,15 @@ namespace Selection
                 return trackList;
             }
             /**
+             * @brief Get the list of tracks assigned th this EventCandidate
+             * 
+             * @return std::vector<TrackCandidate> 
+             */
+            std::vector<TrackCandidate> GetTrackList()
+            {
+                return trackList;
+            }
+            /**
              * @brief Get the size of the list of tracks assigned th this EventCandidate
              * 
              * @return std::size_t 
