@@ -48,8 +48,12 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 
 bool PairRejection(const Selection::PairCandidate &pair)
 {
+<<<<<<< HEAD
 	using Behaviour = Selection::PairCandidate::Behaviour;
 	return /* pair.RejectPairByCloseHits<Behaviour::Uniform>(0,1) || */ pair.GetMinWireDistance() < 2 || pair.GetSharedMetaCells() > 0;
+=======
+	return (pair.GetMinWireDistance() < 2 /* || pair.GetBothLayers() < 20 */ || pair.GetSharedMetaCells() > 0 );
+>>>>>>> parent of 8c5fd6b... I have no idea what I've done its been so long, sorry
 }
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
@@ -78,9 +82,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	TString asciiParFile     = "";
 	TString rootParFile      = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
 	TString paramSource      = "root"; // root, ascii, oracle
-	TString paramrelease     = "APR12_dst_gen9"; 
+	TString paramrelease     = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
-	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease); 
+	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease);  // now, APR12_gen2_dst
 
     //--------------------------------------------------------------------------------
     // The following block finds / adds the input DST files to the HLoop
@@ -415,7 +419,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		if (fEvent.GetTrackListSize()) // if track vector has entries
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
+			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize());
 
             fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent);

@@ -38,8 +38,6 @@
 #include "hparticlestructs.h"
 #include "hparticletracksorter.h"
 #include "hparticlecand.h"
-#include "hspectrometer.h"
-#include "hgeomshapes.h"
 
 #include "heventheader.h"
 #include "hparticleevtinfo.h"

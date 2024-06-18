@@ -49,7 +49,11 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 
 bool PairCut(const Selection::PairCandidate &pair)
 {
+<<<<<<< HEAD
 	return pair.RejectPairByCloseHits<Selection::PairCandidate::Behaviour::OneUnder>(9,2) || pair.GetSharedMetaCells() > 0;
+=======
+	return (pair.GetMinWireDistance() < 2 /* || pair.GetBothLayers() < 20 */ || pair.GetSharedMetaCells() > 0);
+>>>>>>> parent of 8c5fd6b... I have no idea what I've done its been so long, sorry
 }
 
 int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)
@@ -175,7 +179,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",2000,0,2000,121,-1.15,1.25);
 	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
 	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
-	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,0.5,24.5,10,-0.5,9.5);
+	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,-0.5,23.5,10,-0.5,9.5);
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
 	
 	TH2D *hQinvSL = new TH2D("hQinvSL","q_{inv} vs Splitting Level for signal of p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
@@ -203,7 +207,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	mixer.SetMaxBufferSize(50);
 	mixer.SetEventHashingFunction(EventHashing);
 	mixer.SetPairHashingFunction(PairHashing);
-	//mixer.SetPairCuttingFunction(PairCut);
+	mixer.SetPairCuttingFunction(PairCut);
 
     //--------------------------------------------------------------------------------
     // The following counter histogram is used to gather some basic information on the analysis
@@ -213,9 +217,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	cNumSelectedEvents = 1,
 	cNumAllTracks      = 2,
 	cNumSelectedTracks = 3,
-	cNumAllPairs       = 4,
-	cNumSelectedPairs  = 5,
-	cNumCounters       = 6
+	cNumCounters       = 4
     };
 
     TH1D* hCounter = new TH1D("hCounter", "", cNumCounters, 0, cNumCounters);
@@ -443,8 +445,6 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 
 		if (fEvent.GetTrackListSize() > 0)
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
-
 			fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			for (const auto &pair : fSignMap)
 				for (const auto &elem : pair.second)
@@ -454,9 +454,6 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 					hQinvBL->Fill(elem.GetQinv(),elem.GetBothLayers());
 					hQinvMWD->Fill(elem.GetQinv(),elem.GetMinWireDistance());
 					hQinvSMC->Fill(elem.GetQinv(),elem.GetSharedMetaCells());
-
-					if (pair.first != 0)
-						hCounter->Fill(cNumSelectedPairs);
 				}
 		}
 
