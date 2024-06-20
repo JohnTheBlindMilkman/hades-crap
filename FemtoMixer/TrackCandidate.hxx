@@ -254,15 +254,6 @@ namespace Selection
             {
                 return firedWiresCollection.at(layer);
             }
-            /**
-             * @brief Returns combined hash for this track. Required when used inside an std::map 
-             * 
-             * @return std::size_t 
-             */
-            std::size_t GetHash() const
-            {
-                return std::hash<std::string>{}(TrackId);
-            }
             std::string GetID() const
             {
                 return TrackId;
@@ -375,27 +366,7 @@ namespace Selection
             {
                 return metaCells;
             }
-            /**
-             * @brief Check if two tracks are equal
-             * 
-             * @param other 
-             * @return true 
-             * @return false 
-             */
-            bool operator==(const TrackCandidate &other) const
-            {
-                return (TrackId == other.TrackId);
-            }
     };
 } // namespace Selection
-
-    template<>
-    struct std::hash<Selection::TrackCandidate>
-    {
-        std::size_t operator()(const Selection::TrackCandidate &trck) const
-        {
-            return trck.GetHash();
-        }
-    };
 
 #endif

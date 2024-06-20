@@ -36,17 +36,6 @@ namespace Selection
              */
             ~PairCandidate(){}
             /**
-             * @brief Check if two tracks are equal
-             * 
-             * @param other 
-             * @return true 
-             * @return false 
-             */
-            bool operator==(const PairCandidate &other) const
-            {
-                return (pairId == other.pairId);
-            }
-            /**
              * @brief Perform pair selection based on the number of neighbouring wires with certain distance from each other. Allows for a modifiable behaviour of selection
              * 
              * @tparam T Behaviour type: OneUnder, Uniform, and Weighted
@@ -58,15 +47,6 @@ namespace Selection
             template<Behaviour T> bool RejectPairByCloseHits(const unsigned &nLayers,const unsigned &cutoff) const
             {
                 return Reject(type<T>{},nLayers,cutoff);
-            }
-            /**
-             * @brief Returns combined hash for this pair. Required when used inside an std::map 
-             * 
-             * @return std::size_t 
-             */
-            std::size_t GetHash() const
-            {
-                return std::hash<std::string>{}(Particle1.GetID()+Particle2.GetID());
             }
             /**
              * @brief Returns unique ID of the pair
@@ -403,14 +383,5 @@ namespace Selection
             }
     };
 }
-
-    template<>
-    struct std::hash<Selection::PairCandidate>
-    {
-        std::size_t operator()(const Selection::PairCandidate &pair) const
-        {
-            return pair.GetHash();
-        }
-    };
 
 #endif

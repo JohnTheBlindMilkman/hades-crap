@@ -80,15 +80,6 @@ namespace Selection
                 return false;
             }
             /**
-             * @brief Returns combined hash for this event. Required when used inside an std::map 
-             * 
-             * @return std::size_t 
-             */
-            std::size_t GetHash() const
-            {
-                return std::hash<std::string>{}(EventId);
-            }
-            /**
              * @brief Returns the unique event ID
              * 
              * @return std::string 
@@ -96,17 +87,6 @@ namespace Selection
             std::string GetID() const
             {
                 return EventId;
-            }
-            /**
-             * @brief Chcek if two events are equal
-             * 
-             * @param other 
-             * @return true 
-             * @return false 
-             */
-            bool operator==(const EventCandidate &other) const
-            {
-                return (EventId == other.EventId);
             }
             /**
              * @brief Check if two events are not equal
@@ -117,7 +97,7 @@ namespace Selection
              */
             bool operator!=(const EventCandidate &other)
             {
-                return !(*this == other);
+                return (EventId != other.EventId);
             }
             /**
              * @brief Get the Centrality class (same layout as from HParticleEvtChara)
@@ -184,24 +164,5 @@ namespace Selection
             }
     };
 } // namespace Selection
-
-    template<>
-    struct std::hash<Selection::EventCandidate>
-    {
-        std::size_t operator()(const Selection::EventCandidate &evt) const
-        {
-            return evt.GetHash();
-        }
-    };
-
-    /* template<> 
-    std::size_t boost::hash_value(std::vector<Selection::TrackCandidate> const &trckVec)
-    {
-        std::size_t res = 17;
-        for (const auto &track : trckVec)
-            res = res *31 + std::hash<Selection::TrackCandidate>()(track);
-
-        return res;
-    } */
 
 #endif

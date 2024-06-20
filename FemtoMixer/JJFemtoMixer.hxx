@@ -13,7 +13,7 @@
 
     #include <vector>
     #include <deque>
-    #include <unordered_map>
+    #include <map>
     #include <functional>
     #include <random>
 
@@ -29,15 +29,30 @@
                 std::random_device fRandomDevice;
                 std::mt19937 fGenerator;
                 //map of similar events (of maximal size give by fBufferSize); each event has a single track (randomly chosen from the collection)
-                std::unordered_map<std::size_t, std::deque<std::pair<Event, Track> > > fSimilarityMap;
+                std::map<std::size_t, std::deque<std::pair<Event, Track> > > fSimilarityMap;
                 std::function<std::size_t(const Event &)> fEventHashingFunction;
                 std::function<std::size_t(const Pair &)> fPairHashingFunction;
                 std::function<bool(const Pair &)> fPairCutFunction;
-
+                /**
+                 * @brief Create pairs of identical particles from given tracks
+                 * 
+                 * @param tracks tracks vector
+                 * @return std::vector<Pair> vector of pairs
+                 */
                 std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
-                std::unordered_map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
+                /**
+                 * @brief Divide pairs into corresponding category (given by the pair hash)
+                 * 
+                 * @param pairs pairs vector
+                 * @return std::map<std::size_t, std::vector<Pair> > map of sorted vectors (each "branch"/bucket is a single group of similar pairs)
+                 */
+                std::map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
 
             public:
+                /**
+                 * @brief Default constructor. Create mixer object with: buffer size 10, no wait for full buffer, no hashing in event and pair, and no pair cut
+                 * 
+                 */
                 constexpr JJFemtoMixer() : fBufferSize(10), 
                                 fWaitForBuffer(false), 
                                 fGenerator(fRandomDevice()),
@@ -45,28 +60,116 @@
                                 fPairHashingFunction([](const Pair &){return 0;}),
                                 fPairCutFunction([](const Pair &){return false;}) {}
 
+                /**
+                 * @brief Set the Event Hashing Function object.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
                 constexpr void SetEventHashingFunction(const std::function<std::size_t(const Event &)> &func) {fEventHashingFunction = func;}
+                /**
+                 * @brief Set the Event Hashing Function object.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
                 constexpr void SetEventHashingFunction(std::function<std::size_t(const Event &)> &&func) {fEventHashingFunction = std::move(func);}
+                /**
+                 * @brief Get the corresponding hash for given Event object.
+                 * 
+                 * @param obj Event-type object
+                 * @return constexpr std::size_t 
+                 */
                 constexpr std::size_t GetEventHash(const Event &obj) const {return fEventHashingFunction(obj);}
-
+                /**
+                 * @brief Set the Pair Hashing Function object.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
                 constexpr void SetPairHashingFunction(const std::function<std::size_t(const Pair &)> &func) {fPairHashingFunction = func;}
+                /**
+                 * @brief Set the Pair Hashing Function object.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
                 constexpr void SetPairHashingFunction(std::function<std::size_t(const Pair &)> &&func) {fPairHashingFunction = std::move(func);}
+                /**
+                 * @brief Get the corresponding hash for given Pair object.
+                 * 
+                 * @param obj Pair-type object.
+                 * @return constexpr std::size_t 
+                 */
                 constexpr std::size_t GetPairHash(const Pair &obj) const {return fPairHashingFunction(obj);}
-
+                /**
+                 * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
                 constexpr void SetPairCuttingFunction(const std::function<bool(const Pair &)> &func) {fPairCutFunction = func;}
+                /**
+                 * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
                 constexpr void SetPairCuttingFunction(std::function<bool(const Pair &)> &&func) {fPairCutFunction = std::move(func);}
+                /**
+                 * @brief Get the result of pair selection function for a given Pair object.
+                 * 
+                 * @param obj Pair-type object.
+                 * @return true Pair is rejected.
+                 * @return false Pair is not rejected.
+                 */
                 constexpr bool GetPairCutResult(const Pair &obj) const {return fPairCutFunction(obj);}
-
+                /**
+                 * @brief Set the max mixing buffer size for each "branch".
+                 * 
+                 * @param buffer Max buffer size.
+                 */
                 constexpr void SetMaxBufferSize(const std::size_t &buffer) {fBufferSize = buffer;}
+                /**
+                 * @brief Set the max mixing buffer size for each "branch".
+                 * 
+                 * @param buffer Max buffer size.
+                 */
                 constexpr void SetMaxBufferSize(std::size_t &&buffer) {fBufferSize = std::move(buffer);}
+                /**
+                 * @brief Get the max mixing buffer size.
+                 * 
+                 * @return constexpr std::size_t Max buffer size.
+                 */
                 constexpr std::size_t GetMaxBufferSize() const {return fBufferSize;}
-
+                /**
+                 * @brief Define whether mixing should occur only for "branches" with size equal (if true) / equal or less than (if flase) the max buffer size.
+                 * 
+                 * @param isFixed Buffer size usage flag.
+                 */
                 constexpr void SetFixedBuffer(const bool &isFixed) {fWaitForBuffer = isFixed;}
+                /**
+                 * @brief Define whether mixing should occur only for "branches" with size equal (if true) / equal or less than (if flase) the max buffer size.
+                 * 
+                 * @param isFixed Buffer size usage flag.
+                 */
                 constexpr void SetFixedBuffer(bool &&isFixed) {fWaitForBuffer = std::move(isFixed);}
+                /**
+                 * @brief Get the mixing buffer flag.
+                 * 
+                 * @return true Mixing with fixed size.
+                 * @return false Mixnig with not fixed size.
+                 */
                 constexpr bool GetBufferState() const {return fWaitForBuffer;};
-
-                std::unordered_map<std::size_t, std::vector<Pair> > AddEvent(const Event &event, const std::vector<Track> &tracks);
-                std::unordered_map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
+                /**
+                 * @brief Add currently processed event to the mixer.
+                 * 
+                 * @param event Current event.
+                 * @param tracks Tracks from the current event.
+                 * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from provided tracks for given event.
+                 */
+                std::map<std::size_t, std::vector<Pair> > AddEvent(const Event &event, const std::vector<Track> &tracks);
+                /**
+                 * @brief Get the sorted pairs which come from similar events, but not from this event.
+                 * 
+                 * @param event Current event (the event from which we don't want to get tracks).
+                 * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from stored tracks for similar events.
+                 */
+                std::map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
         };
 
         template<typename Event, typename Track, typename Pair>
@@ -93,10 +196,10 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs)
+        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs)
         {
             std::size_t currentPairHash = 0;
-            std::unordered_map<std::size_t, std::vector<Pair> > pairMap;
+            std::map<std::size_t, std::vector<Pair> > pairMap;
 
             for (const auto &pair : pairs)
             {
@@ -121,7 +224,7 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::AddEvent(const Event &event, const std::vector<Track> &tracks)
+        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::AddEvent(const Event &event, const std::vector<Track> &tracks)
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
@@ -145,7 +248,7 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::unordered_map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const Event &event)
+        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const Event &event)
         {
             std::vector<Track> outputVector;
             std::size_t evtHash = fEventHashingFunction(event);

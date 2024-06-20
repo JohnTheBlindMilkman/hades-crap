@@ -52,7 +52,7 @@ bool PairRejection(const Selection::PairCandidate &pair)
 	return pair.RejectPairByCloseHits<Behaviour::Uniform>(0,1) || pair.GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
@@ -165,7 +165,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","#phi vs #theta distribution of tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
 
-	std::unordered_map<std::size_t, HistogramCollection> fMapFoHistograms;
+	std::map<std::size_t, HistogramCollection> fMapFoHistograms;
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
@@ -178,7 +178,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	// create object for getting MDC wires
 	HParticleWireInfo fWireInfo;
 
-	std::unordered_map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
+	std::map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
 	mixer.SetMaxBufferSize(50);
