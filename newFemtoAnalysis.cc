@@ -48,15 +48,11 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 
 bool PairRejection(const Selection::PairCandidate &pair)
 {
-<<<<<<< HEAD
 	using Behaviour = Selection::PairCandidate::Behaviour;
-	return /* pair.RejectPairByCloseHits<Behaviour::Uniform>(0,1) || */ pair.GetMinWireDistance() < 2 || pair.GetSharedMetaCells() > 0;
-=======
-	return (pair.GetMinWireDistance() < 2 /* || pair.GetBothLayers() < 20 */ || pair.GetSharedMetaCells() > 0 );
->>>>>>> parent of 8c5fd6b... I have no idea what I've done its been so long, sorry
+	return pair.RejectPairByCloseHits<Behaviour::Uniform>(0,1) || pair.GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
@@ -82,9 +78,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	TString asciiParFile     = "";
 	TString rootParFile      = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
 	TString paramSource      = "root"; // root, ascii, oracle
-	TString paramrelease     = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
+	TString paramrelease     = "APR12_dst_gen9"; 
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
-	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease);  // now, APR12_gen2_dst
+	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease); 
 
     //--------------------------------------------------------------------------------
     // The following block finds / adds the input DST files to the HLoop
@@ -419,7 +415,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		if (fEvent.GetTrackListSize()) // if track vector has entries
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize());
+			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
 
             fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent);
@@ -438,7 +434,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
 						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
 						};
-						fMapFoHistograms.emplace(signalEntry.first,histos);
+						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
 					//fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.GetQinv());
 					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
@@ -465,7 +461,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
 						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
 						};
-						fMapFoHistograms.emplace(backgroundEntry.first,histos);
+						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
 					//fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.GetQinv());
 					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);

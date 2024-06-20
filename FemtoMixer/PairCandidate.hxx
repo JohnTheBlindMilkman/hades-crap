@@ -10,7 +10,6 @@ namespace Selection
 {
     class PairCandidate
     {
-<<<<<<< HEAD
         public:
             enum class Behaviour{OneUnder,Uniform,Weighted};
             /**
@@ -190,14 +189,14 @@ namespace Selection
             {
                 return std::make_tuple(QOut,QSide,QLong);
             }
-=======
->>>>>>> parent of 8c5fd6b... I have no idea what I've done its been so long, sorry
         private:
             std::string pairId;
             TrackCandidate Particle1,Particle2;
             unsigned SharedWires, BothLayers, MinWireDistance, SharedMetaCells;
+            std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> wireDistances;
             float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
-            
+            template <Behaviour T> struct type {};
+
             /**
              * @brief Calculates the pair variables in their centre of mass system (here: LCMS)
              * 
@@ -283,10 +282,12 @@ namespace Selection
              * @param part2 
              * @return std::pair<float,unsigned int> first = SL, second = SW
              */
-            std::tuple<float,unsigned,unsigned,unsigned> CalcSplittingLevelAndSharedWires(const TrackCandidate &part1, const TrackCandidate &part2) const
+            std::tuple<float,unsigned,unsigned,unsigned,std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> > CalcSplittingLevelAndSharedWires(const TrackCandidate &part1, const TrackCandidate &part2) const
             {
                 float SL = 0;
                 unsigned int SW = 0, MWD = 1000;
+                std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> allWD;
+                std::fill(allWD.begin(),allWD.end(),-999); // we don't want to initialise with zeros, because it would mean that the unpopulated fiels are sharing a wire
                 int n0 = 0, n1 = 0, n2 = 0;
                 for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
                 {
@@ -314,6 +315,8 @@ namespace Selection
                                 if (abs(wire1 - wire2) < MWD)
                                     MWD = abs(wire1 - wire2);
                             }
+
+                        allWD.at(layer) = MWD;
                         ++n0;
                         ++n1;
                         ++n2;
@@ -331,7 +334,7 @@ namespace Selection
                 }
 
                 SL /= (n1 + n2);
-                return std::make_tuple(SL,SW,n0,MWD);
+                return std::make_tuple(SL,SW,n0,MWD,allWD);
             }
             unsigned CalcSharedMetaCells(const TrackCandidate &part1, const TrackCandidate &part2) const
             {
@@ -363,176 +366,40 @@ namespace Selection
 
                 return SMC;
             }
-
-        public:
-            /**
-             * @brief Construct a new Pair Candidate object
-             * 
-             * @param trck1 
-             * @param trck2 
-             */
-            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, bool isBackground = false) : Particle1(trck1), Particle2(trck2),SplittingLevel(0.),SharedWires(0)
+            bool Reject(type<Behaviour::Uniform>,const unsigned &nLayers, const unsigned &cutoff) const
             {
-                CFKinematics(trck1,trck2);
-                OpeningAngle = CalcOpeningAngle(trck1,trck2);
-                Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;
-                AzimuthalAngle = (trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2.;
-                DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;
-                DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
-                pairId = trck1.GetID() + trck2.GetID();
-                if (! isBackground)
+                return (std::count_if(wireDistances.begin(),wireDistances.end(),[&cutoff](const int &dist){return (dist >= 0 && dist < cutoff) ? true : false;}) > nLayers) ? true : false;
+            }
+            bool Reject(type<Behaviour::OneUnder>,const unsigned &nLayers, const unsigned &cutoff) const
+            {
+                unsigned counter = 0;
+                for (const int &dist : wireDistances)
                 {
-                    std::tie(SplittingLevel,SharedWires,BothLayers,MinWireDistance) = CalcSplittingLevelAndSharedWires(trck1,trck2);
-                    SharedMetaCells = CalcSharedMetaCells(trck1,trck2);
+                    if (dist >= 0 && dist < cutoff)
+                    {
+                        if (abs(dist - static_cast<int>(cutoff)) > 1)
+                        {    
+                            return true;
+                        }
+                        else
+                        {
+                            ++counter;
+                        }
+                    }
                 }
+
+                return (counter > nLayers) ? true : false;
             }
-            /**
-             * @brief Construct a new Pair Candidate object with given reaction plane
-             * 
-             * @param trck1 
-             * @param trck2 
-             * @param reactionPlaneAngle 
-             */
-            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2, const float reactionPlaneAngle, bool isBackground = false) : PairCandidate(trck1,trck2,isBackground)
+            bool Reject(type<Behaviour::Weighted>,const unsigned &nLayers, const unsigned &cutoff) const
             {
-                AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*reactionPlaneAngle);
-            }
-            /**
-             * @brief Destroy the Pair Candidate object
-             * 
-             */
-            ~PairCandidate(){}
-            /**
-             * @brief Check if two tracks are equal
-             * 
-             * @param other 
-             * @return true 
-             * @return false 
-             */
-            bool operator==(const PairCandidate &other) const
-            {
-                return (pairId == other.pairId);
-            }
-            /**
-             * @brief Returns combined hash for this pair. Required when used inside an std::map 
-             * 
-             * @return std::size_t 
-             */
-            std::size_t GetHash() const
-            {
-                return std::hash<std::string>{}(Particle1.GetID()+Particle2.GetID());
-            }
-            /**
-             * @brief Returns unique ID of the pair
-             * 
-             * @return std::string 
-             */
-            std::string GetID() const
-            {
-                return pairId;
-            }
-            /**
-             * @brief Get the transverse component of the average pair momentum
-             * 
-             * @return float 
-             */
-            float GetKt() const
-            {
-                return Kt;
-            }
-            /**
-             * @brief Get the pair average rapidity
-             * 
-             * @return float 
-             */
-            float GetRapidity() const
-            {
-                return Rapidity;
-            }
-            /**
-             * @brief Get the pair average azimuthal angle w.r.t. the EP (if specified in the constructor)
-             * 
-             * @return float 
-             */
-            float GetPhi() const
-            {
-                return AzimuthalAngle;
-            }
-            /**
-             * @brief Get difference of the azimuthal angles between the two pair components
-             * 
-             * @return float 
-             */
-            float GetDPhi() const
-            {
-                return DeltaPhi;
-            }
-            /**
-             * @brief Get difference of the polar angles between the two pair components
-             * 
-             * @return float 
-             */
-            float GetDTheta() const
-            {
-                return DeltaTheta;
-            }
-            /**
-             * @brief Get the Splitting Level object
-             * 
-             * @return float 
-             */
-            float GetSplittingLevel() const
-            {
-                return SplittingLevel;
-            }
-            /**
-             * @brief Get the Shared Wires object
-             * 
-             * @return unsigned int 
-             */
-            unsigned int GetSharedWires() const
-            {
-                return SharedWires;
-            }
-            /**
-             * @brief Get the Both Layers object
-             * 
-             * @return unsigned 
-             */
-            unsigned GetBothLayers() const
-            {
-                return BothLayers;
-            }
-            /**
-             * @brief Get the Min Wire Distance object
-             * 
-             * @return unsigned 
-             */
-            unsigned GetMinWireDistance() const
-            {
-                return MinWireDistance;
-            }
-            unsigned GetSharedMetaCells() const
-            {
-                return SharedMetaCells;
-            }
-            /**
-             * @brief Get the Qinv
-             * 
-             * @return float 
-             */
-            float GetQinv() const
-            {
-                return QInv;
-            }
-            /**
-             * @brief Get the Qout, Qside, and Qlong components
-             * 
-             * @return std::tuple<float,float,float> 
-             */
-            std::tuple<float,float,float> GetOSL() const
-            {
-                return std::make_tuple(QOut,QSide,QLong);
+                unsigned counter = 0;
+                for (const int &dist : wireDistances)
+                {
+                    if (dist >= 0 && dist < cutoff)
+                        counter += abs(dist - static_cast<int>(cutoff));
+                }
+
+                return (counter > nLayers) ? true : false;
             }
     };
 }

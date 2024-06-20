@@ -3,11 +3,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-<<<<<<< HEAD
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/femtoOutFile.root", TString signName = "hQoslSign_", TString bckgName = "hQoslBckg_", int ktMax = 5, int yMax = 3, int psiMax = 8)
-=======
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_05_29.root", TString signName = "hQoslSign_", TString bckgName = "hQoslBckg_", int ktMax = 5, int yMax = 3, int psiMax = 8)
->>>>>>> parent of 8c5fd6b... I have no idea what I've done its been so long, sorry
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_06_20.root", TString signName = "hQoslSign_", TString bckgName = "hQoslBckg_", int ktMax = 5, int yMax = 3, int psiMax = 8)
 { 
     const int maxHistos = ktMax * yMax * psiMax * 2;
 
