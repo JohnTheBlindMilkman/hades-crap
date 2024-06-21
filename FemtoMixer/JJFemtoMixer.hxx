@@ -16,15 +16,20 @@
     #include <map>
     #include <functional>
     #include <random>
+    #include <type_traits>
 
     namespace Mixing
     {
         template<typename Event, typename Track, typename Pair>
         class JJFemtoMixer
         {
+            static_assert(std::is_class<Event>::value,"Provided event-type template parameter is not a class or a struct!");
+            static_assert(std::is_class<Track>::value,"Provided track-type template parameter is not a class or a struct!");
+            static_assert(std::is_class<Pair>::value,"Prowided pair-type template parameter is not a class or a struct!");
+
             private:
                 std::size_t fBufferSize;
-                bool fWaitForBuffer;
+                bool fWaitForBuffer,fEventHashingFunctionIsDefined,fPairHashingFunctionIsDefined,fPairCutFunctionIsDefined;
                 std::size_t fDimensions;
                 std::random_device fRandomDevice;
                 std::mt19937 fGenerator;
@@ -55,6 +60,9 @@
                  */
                 constexpr JJFemtoMixer() : fBufferSize(10), 
                                 fWaitForBuffer(false), 
+                                fEventHashingFunctionIsDefined(false),
+                                fPairHashingFunctionIsDefined(false),
+                                fPairCutFunctionIsDefined(false),
                                 fGenerator(fRandomDevice()),
                                 fEventHashingFunction([](const Event &){return 0;}),
                                 fPairHashingFunction([](const Pair &){return 0;}),
@@ -65,13 +73,13 @@
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetEventHashingFunction(const std::function<std::size_t(const Event &)> &func) {fEventHashingFunction = func;}
+                constexpr void SetEventHashingFunction(const std::function<std::size_t(const Event &)> &func) {fEventHashingFunction = func; fEventHashingFunctionIsDefined = true;}
                 /**
                  * @brief Set the Event Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetEventHashingFunction(std::function<std::size_t(const Event &)> &&func) {fEventHashingFunction = std::move(func);}
+                constexpr void SetEventHashingFunction(std::function<std::size_t(const Event &)> &&func) {fEventHashingFunction = std::move(func);  fEventHashingFunctionIsDefined = true;}
                 /**
                  * @brief Get the corresponding hash for given Event object.
                  * 
@@ -84,13 +92,13 @@
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairHashingFunction(const std::function<std::size_t(const Pair &)> &func) {fPairHashingFunction = func;}
+                constexpr void SetPairHashingFunction(const std::function<std::size_t(const Pair &)> &func) {fPairHashingFunction = func; fPairHashingFunctionIsDefined = true;}
                 /**
                  * @brief Set the Pair Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairHashingFunction(std::function<std::size_t(const Pair &)> &&func) {fPairHashingFunction = std::move(func);}
+                constexpr void SetPairHashingFunction(std::function<std::size_t(const Pair &)> &&func) {fPairHashingFunction = std::move(func); fPairHashingFunctionIsDefined = true;}
                 /**
                  * @brief Get the corresponding hash for given Pair object.
                  * 
@@ -103,13 +111,13 @@
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairCuttingFunction(const std::function<bool(const Pair &)> &func) {fPairCutFunction = func;}
+                constexpr void SetPairCuttingFunction(const std::function<bool(const Pair &)> &func) {fPairCutFunction = func; fPairCutFunctionIsDefined = true;}
                 /**
                  * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairCuttingFunction(std::function<bool(const Pair &)> &&func) {fPairCutFunction = std::move(func);}
+                constexpr void SetPairCuttingFunction(std::function<bool(const Pair &)> &&func) {fPairCutFunction = std::move(func); fPairCutFunctionIsDefined = true;}
                 /**
                  * @brief Get the result of pair selection function for a given Pair object.
                  * 
@@ -155,6 +163,11 @@
                  * @return false Mixnig with not fixed size.
                  */
                 constexpr bool GetBufferState() const {return fWaitForBuffer;};
+                /**
+                 * @brief Prints to the standard output information about current setup of JJFemtoMixer.
+                 * 
+                 */
+                void PrintSettings() const;
                 /**
                  * @brief Add currently processed event to the mixer.
                  * 
@@ -215,12 +228,22 @@
                 }
                 else
                 {
-                    //std::vector<Pair> tmpVec{pair};
                     pairMap.emplace(currentPairHash,std::vector<Pair>(1,pair));
                 }
             }
 
             return pairMap;
+        }
+
+        template<typename Event, typename Track, typename Pair>
+        void JJFemtoMixer<Event,Track,Pair>::PrintSettings() const
+        {
+            std::cout << "\n------=========== JJFemtoMixer Settings ===========------\n";
+            std::cout << "Max Background Mixing Buffer Size: " << fBufferSize << ((fWaitForBuffer) ? " (FIXED)\n" : " (LOOSE)\n");
+            std::cout << "Event Hashing Function: " << ((fEventHashingFunctionIsDefined) ? " User-defined\n" : " Not set\n");
+            std::cout << "Pair Hashing Function: " << ((fPairHashingFunctionIsDefined) ? " User-defined\n" : " Not set\n");
+            std::cout << "Pair Rejection Function: " << ((fPairCutFunctionIsDefined) ? " User-defined\n" : " Not set\n");
+            std::cout << "------==============================================------\n" << std::endl;
         }
 
         template<typename Event, typename Track, typename Pair>
@@ -233,8 +256,6 @@
             // an entry for given evtHash may not exist, so we must check if that's the case
             if (fSimilarityMap.find(evtHash) == fSimilarityMap.end())
             {
-                //std::deque<std::pair<Event, Track> > tmpQueue;
-                //tmpQueue.push_back(trackPair);
                 fSimilarityMap.emplace(evtHash,std::deque<std::pair<Event, Track> >(1,trackPair));
             }
             else
@@ -264,5 +285,4 @@
         }
     } // namespace Mixing
     
-
 #endif

@@ -31,7 +31,7 @@ user=$(whoami)
 currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
-day="all"
+day="quarter"
 submmissionbase=/lustre/hades/user/${user}/sub/apr12/
 submissiondir=${submmissionbase}/loopDST
  nFilesPerJob=50                                # number of files to be analyzed by 1 job (default==1)

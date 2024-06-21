@@ -49,15 +49,18 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 bool PairRejection(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
-	return pair.RejectPairByCloseHits<Behaviour::Uniform>(0,1) || pair.GetSharedMetaCells() > 0;
+
+	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(11,2) || 
+		pair.GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	
-	constexpr bool isSimulation = false; // for now this could be easly just const
+	constexpr bool isSimulation{false}; // for now this could be easly just const
+	constexpr int protonPID{14};
 
 	//--------------------------------------------------------------------------------
     // Initialization of the global ROOT object and the Hades Loop
@@ -66,7 +69,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     TROOT dst_analysis("DstAnalysisMacro", "Simple DST analysis Macro");
     HLoop* loop = new HLoop(kTRUE);
-	TString beamtime="apr12";
+	const TString beamtime="apr12";
 	
 	Int_t mdcMods[6][4]=
 	{ {1,1,1,1},
@@ -218,6 +221,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     masterTaskSet->add(matcher);
 
 	//--------------------------------------------------------------------------------
+	// Momentum corrected for energy loss (look-up table)
+	//--------------------------------------------------------------------------------
+    HEnergyLossCorrPar enLossCorr;
+    enLossCorr.setDefaultPar(beamtime);
+
+	//--------------------------------------------------------------------------------
 	// event characteristic & reaction plane
 	//--------------------------------------------------------------------------------
 	HParticleEvtChara evtChara;
@@ -364,6 +373,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			wire_manager.setWireRange(0);
 			wire_manager.getWireInfo(track,fWireInfo,particle_cand);
 			
+			// I have no freakin idea if this is how it should be done
+			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
+
 			//--------------------------------------------------------------------------------
 			// Discarding all tracks that have been discarded by the track sorter and counting all / good tracks
 			//--------------------------------------------------------------------------------
@@ -380,7 +392,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				fEvent.GetID(),
 				fEvent.GetReactionPlane(),
 				track,
-				14);
+				protonPID);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here

@@ -3,7 +3,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_06_20.root", TString signName = "hQoslSign_", TString bckgName = "hQoslBckg_", int ktMax = 5, int yMax = 3, int psiMax = 8)
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_06_21.root", TString signName = "hQoslSign_", TString bckgName = "hQoslBckg_", int ktMax = 5, int yMax = 3, int psiMax = 8)
 { 
     const int maxHistos = ktMax * yMax * psiMax * 2;
 

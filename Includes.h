@@ -53,6 +53,7 @@
 #include "hgeantkine.h"
 #include "hparticlemetamatcher.h"
 #include "hdst.h"
+#include "henergylosscorrpar.h"
 
 #include "hmdclookupgeom.h"
 #include "hmdccalparraw.h"
