@@ -1,0 +1,322 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.8.17"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<!-- BEGIN opengraph metadata -->
+<meta property="og:title" content="Doxygen Awesome" />
+<meta property="og:image" content="https://repository-images.githubusercontent.com/348492097/4f16df80-88fb-11eb-9d31-4015ff22c452" />
+<meta property="og:description" content="Custom CSS theme for doxygen html-documentation with lots of customization parameters." />
+<meta property="og:url" content="https://jothepro.github.io/doxygen-awesome-css/" />
+<!-- END opengraph metadata -->
+<!-- BEGIN twitter metadata -->
+<meta name="twitter:image:src" content="https://repository-images.githubusercontent.com/348492097/4f16df80-88fb-11eb-9d31-4015ff22c452" />
+<meta name="twitter:title" content="Doxygen Awesome" />
+<meta name="twitter:description" content="Custom CSS theme for doxygen html-documentation with lots of customization parameters." />
+<!-- END twitter metadata -->
+<title>JJFemtoMixer: JJFemtoMixer.hxx Source File</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<link rel="icon" type="image/svg+xml" href="logo.drawio.svg"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="doxygen-awesome-darkmode-toggle.js"></script>
+<script type="text/javascript" src="doxygen-awesome-fragment-copy-button.js"></script>
+<script type="text/javascript" src="doxygen-awesome-paragraph-link.js"></script>
+<script type="text/javascript" src="doxygen-awesome-interactive-toc.js"></script>
+<script type="text/javascript" src="doxygen-awesome-tabs.js"></script>
+<script type="text/javascript" src="toggle-alternative-theme.js"></script>
+<script type="text/javascript">
+    DoxygenAwesomeFragmentCopyButton.init()
+    DoxygenAwesomeDarkModeToggle.init()
+    DoxygenAwesomeParagraphLink.init()
+    DoxygenAwesomeInteractiveToc.init()
+    DoxygenAwesomeTabs.init()
+</script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+<link href="doxygen-awesome.css" rel="stylesheet" type="text/css"/>
+<link href="custom.css" rel="stylesheet" type="text/css"/>
+<link href="doxygen-awesome-sidebar-only.css" rel="stylesheet" type="text/css"/>
+<link href="doxygen-awesome-sidebar-only-darkmode-toggle.css" rel="stylesheet" type="text/css"/>
+<link href="custom-alternative.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<!-- https://tholman.com/github-corners/ -->
+<a href="https://github.com/JohnTheBlindMilkman/hades-crap" class="github-corner" title="View source on GitHub" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 250 250" width="40" height="40" style="position: absolute; top: 0; border: 0; right: 0; z-index: 99;" aria-hidden="true">
+    <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">JJFemtoMixer
+   </div>
+   <div id="projectbrief">Pair mixer for femtoscopic analysis of identical particles</div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generated by Doxygen 1.8.17 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+var searchBox = new SearchBox("searchBox", "search",false,'Search');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(function() {
+  initMenu('',true,false,'search.php','Search');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */</script>
+<div id="main-nav"></div>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(document).ready(function(){initNavTree('_j_j_femto_mixer_8hxx_source.html',''); initResizable(); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+<div class="header">
+  <div class="headertitle">
+<div class="title">JJFemtoMixer.hxx</div>  </div>
+</div><!--header-->
+<div class="contents">
+<a href="_j_j_femto_mixer_8hxx.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160; </div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#ifndef JJFemtoMixer_hxx</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">    #define JJFemtoMixer_hxx</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">    #include &lt;vector&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">    #include &lt;deque&gt;</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">    #include &lt;map&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">    #include &lt;functional&gt;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">    #include &lt;random&gt;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">    #include &lt;type_traits&gt;</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
+<div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="namespace_mixing.html">   21</a></span>&#160;    <span class="keyword">namespace </span><a class="code" href="namespace_mixing.html">Mixing</a></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    {</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;        <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Event, <span class="keyword">typename</span> Track, <span class="keyword">typename</span> Pair&gt;</div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html">   24</a></span>&#160;        <span class="keyword">class </span><a class="code" href="class_mixing_1_1_j_j_femto_mixer.html">JJFemtoMixer</a></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        {</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            static_assert(std::is_class&lt;Event&gt;::value,<span class="stringliteral">&quot;Provided event-type template parameter is not a class or a struct!&quot;</span>);</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;            static_assert(std::is_class&lt;Track&gt;::value,<span class="stringliteral">&quot;Provided track-type template parameter is not a class or a struct!&quot;</span>);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;            static_assert(std::is_class&lt;Pair&gt;::value,<span class="stringliteral">&quot;Prowided pair-type template parameter is not a class or a struct!&quot;</span>);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;            <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                std::size_t fBufferSize;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                <span class="keywordtype">bool</span> fWaitForBuffer,fEventHashingFunctionIsDefined,fPairHashingFunctionIsDefined,fPairCutFunctionIsDefined;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                std::size_t fDimensions;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                std::random_device fRandomDevice;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                std::mt19937 fGenerator;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                <span class="comment">//map of similar events (of maximal size give by fBufferSize); each event has a single track (randomly chosen from the collection)</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                std::map&lt;std::size_t, std::deque&lt;std::pair&lt;Event, Track&gt; &gt; &gt; fSimilarityMap;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                std::function&lt;std::size_t(<span class="keyword">const</span> Event &amp;)&gt; fEventHashingFunction;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                std::function&lt;std::size_t(<span class="keyword">const</span> Pair &amp;)&gt; fPairHashingFunction;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                std::function&lt;bool(<span class="keyword">const</span> Pair &amp;)&gt; fPairCutFunction;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                std::vector&lt;Pair&gt; MakePairs(<span class="keyword">const</span> std::vector&lt;Track&gt; &amp;tracks);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; SortPairs(<span class="keyword">const</span> std::vector&lt;Pair&gt; &amp;pairs);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a91d2899b11d5cdf0f3937f234ce61eb8">   61</a></span>&#160;                constexpr <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a91d2899b11d5cdf0f3937f234ce61eb8">JJFemtoMixer</a>() : fBufferSize(10), </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                fWaitForBuffer(false), </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                                fEventHashingFunctionIsDefined(false),</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                fPairHashingFunctionIsDefined(false),</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                                fPairCutFunctionIsDefined(false),</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                fGenerator(fRandomDevice()),</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                                fEventHashingFunction([](const Event &amp;){<span class="keywordflow">return</span> 0;}),</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                                fPairHashingFunction([](<span class="keyword">const</span> Pair &amp;){<span class="keywordflow">return</span> 0;}),</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                                fPairCutFunction([](<span class="keyword">const</span> Pair &amp;){<span class="keywordflow">return</span> <span class="keyword">false</span>;}) {}</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a930eb2a1b288cead39448b8768945f04">   76</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a930eb2a1b288cead39448b8768945f04">SetEventHashingFunction</a>(<span class="keyword">const</span> std::function&lt;std::size_t(<span class="keyword">const</span> Event &amp;)&gt; &amp;func) {fEventHashingFunction = func; fEventHashingFunctionIsDefined = <span class="keyword">true</span>;}</div>
+<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#aa40d53d582d0eaeff32a81f81d11684d">   82</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#aa40d53d582d0eaeff32a81f81d11684d">SetEventHashingFunction</a>(std::function&lt;std::size_t(<span class="keyword">const</span> Event &amp;)&gt; &amp;&amp;func) {fEventHashingFunction = std::move(func);  fEventHashingFunctionIsDefined = <span class="keyword">true</span>;}</div>
+<div class="line"><a name="l00089"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a8cde31f3d462870d55ee62192ea49acc">   89</a></span>&#160;                constexpr std::size_t <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a8cde31f3d462870d55ee62192ea49acc">GetEventHash</a>(<span class="keyword">const</span> Event &amp;obj)<span class="keyword"> const </span>{<span class="keywordflow">return</span> fEventHashingFunction(obj);}</div>
+<div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#aa06cfad038febc6d35386453069988a9">   95</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#aa06cfad038febc6d35386453069988a9">SetPairHashingFunction</a>(<span class="keyword">const</span> std::function&lt;std::size_t(<span class="keyword">const</span> Pair &amp;)&gt; &amp;func) {fPairHashingFunction = func; fPairHashingFunctionIsDefined = <span class="keyword">true</span>;}</div>
+<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a60fae9a9adf05f87d0549fb8767e3080">  101</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a60fae9a9adf05f87d0549fb8767e3080">SetPairHashingFunction</a>(std::function&lt;std::size_t(<span class="keyword">const</span> Pair &amp;)&gt; &amp;&amp;func) {fPairHashingFunction = std::move(func); fPairHashingFunctionIsDefined = <span class="keyword">true</span>;}</div>
+<div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a683bb2012dbbd8a9e2f9cff046201320">  108</a></span>&#160;                constexpr std::size_t <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a683bb2012dbbd8a9e2f9cff046201320">GetPairHash</a>(<span class="keyword">const</span> Pair &amp;obj)<span class="keyword"> const </span>{<span class="keywordflow">return</span> fPairHashingFunction(obj);}</div>
+<div class="line"><a name="l00114"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#ac9790028d00c557d44c5af9bc8979008">  114</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#ac9790028d00c557d44c5af9bc8979008">SetPairCuttingFunction</a>(<span class="keyword">const</span> std::function&lt;<span class="keywordtype">bool</span>(<span class="keyword">const</span> Pair &amp;)&gt; &amp;func) {fPairCutFunction = func; fPairCutFunctionIsDefined = <span class="keyword">true</span>;}</div>
+<div class="line"><a name="l00120"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#ae0dc1b30e100a8281b413d65548c9dd9">  120</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#ae0dc1b30e100a8281b413d65548c9dd9">SetPairCuttingFunction</a>(std::function&lt;<span class="keywordtype">bool</span>(<span class="keyword">const</span> Pair &amp;)&gt; &amp;&amp;func) {fPairCutFunction = std::move(func); fPairCutFunctionIsDefined = <span class="keyword">true</span>;}</div>
+<div class="line"><a name="l00128"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a01571dcf10d1670742ebc0c69e9f7ced">  128</a></span>&#160;                constexpr <span class="keywordtype">bool</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a01571dcf10d1670742ebc0c69e9f7ced">GetPairCutResult</a>(<span class="keyword">const</span> Pair &amp;obj)<span class="keyword"> const </span>{<span class="keywordflow">return</span> fPairCutFunction(obj);}</div>
+<div class="line"><a name="l00134"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a6dc1c319ad9435613563f987cc9295e9">  134</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a6dc1c319ad9435613563f987cc9295e9">SetMaxBufferSize</a>(<span class="keyword">const</span> std::size_t &amp;buffer) {fBufferSize = buffer;}</div>
+<div class="line"><a name="l00140"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a90f8cc2ddbfccafc85df515a54c52d85">  140</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a90f8cc2ddbfccafc85df515a54c52d85">SetMaxBufferSize</a>(std::size_t &amp;&amp;buffer) {fBufferSize = std::move(buffer);}</div>
+<div class="line"><a name="l00146"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a78989a61d2e916fa10d1b19b8962cd1c">  146</a></span>&#160;                constexpr std::size_t <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a78989a61d2e916fa10d1b19b8962cd1c">GetMaxBufferSize</a>()<span class="keyword"> const </span>{<span class="keywordflow">return</span> fBufferSize;}</div>
+<div class="line"><a name="l00152"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#ab2177180698051ce563152adcd168807">  152</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#ab2177180698051ce563152adcd168807">SetFixedBuffer</a>(<span class="keyword">const</span> <span class="keywordtype">bool</span> &amp;isFixed) {fWaitForBuffer = isFixed;}</div>
+<div class="line"><a name="l00158"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a072496004df535578ba3305b055085ae">  158</a></span>&#160;                constexpr <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a072496004df535578ba3305b055085ae">SetFixedBuffer</a>(<span class="keywordtype">bool</span> &amp;&amp;isFixed) {fWaitForBuffer = std::move(isFixed);}</div>
+<div class="line"><a name="l00165"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a279033af2e8d00bdbd9f9a4cb12bb90f">  165</a></span>&#160;                constexpr <span class="keywordtype">bool</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a279033af2e8d00bdbd9f9a4cb12bb90f">GetBufferState</a>()<span class="keyword"> const </span>{<span class="keywordflow">return</span> fWaitForBuffer;};</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a4d3b37b6384fca96a6fa761f97351d21">PrintSettings</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a9744f3dc03c74aaef520bb228a6643ed">AddEvent</a>(<span class="keyword">const</span> Event &amp;event, <span class="keyword">const</span> std::vector&lt;Track&gt; &amp;tracks);</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a82b7ca842f7b4401ec64fc82b53572d4">GetSimilarPairs</a>(<span class="keyword">const</span> Event &amp;event);</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        };</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; </div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Event, <span class="keyword">typename</span> Track, <span class="keyword">typename</span> Pair&gt;</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        std::vector&lt;Pair&gt; JJFemtoMixer&lt;Event,Track,Pair&gt;::MakePairs(<span class="keyword">const</span> std::vector&lt;Track&gt; &amp;tracks)</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;        {</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keywordtype">bool</span> reverse = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            <span class="keyword">const</span> std::size_t trackVecSize = tracks.size();</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;            std::vector&lt;Pair&gt; tmpVector;</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;            tmpVector.reserve((1 + trackVecSize) * trackVecSize / 2); <span class="comment">// reserve the expected vector size (arithmetic sum, from 1 to N)</span></div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; </div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;            <span class="keywordflow">for</span> (std::size_t iter1 = 0; iter1 &lt; trackVecSize; ++iter1)</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                <span class="keywordflow">for</span> (std::size_t iter2 = iter1 + 1; iter2 &lt; trackVecSize; ++iter2)</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                {</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                    <span class="keywordflow">if</span> (reverse)</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1)));</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2)));</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160; </div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                    reverse = !reverse; <span class="comment">// reverse the order of tracks every other time (get rid of the bias from the track sorter)</span></div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                }</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            <span class="keywordflow">return</span> tmpVector;</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        }</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160; </div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Event, <span class="keyword">typename</span> Track, <span class="keyword">typename</span> Pair&gt;</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; JJFemtoMixer&lt;Event,Track,Pair&gt;::SortPairs(<span class="keyword">const</span> std::vector&lt;Pair&gt; &amp;pairs)</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        {</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            std::size_t currentPairHash = 0;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;            std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; pairMap;</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160; </div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;            <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;pair : pairs)</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;            {</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                <span class="keywordflow">if</span> (fPairCutFunction(pair))</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                    <span class="keywordflow">continue</span>;</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160; </div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                currentPairHash = fPairHashingFunction(pair);</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160; </div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                <span class="comment">// an entry for given currentPairHash may already exist so we must check if that&#39;s the case</span></div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                <span class="keywordflow">if</span> (pairMap.find(currentPairHash) != pairMap.end())</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                {</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;                    pairMap.at(currentPairHash).push_back(pair);</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;                }</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                {</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                    pairMap.emplace(currentPairHash,std::vector&lt;Pair&gt;(1,pair));</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                }</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;            }</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160; </div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;            <span class="keywordflow">return</span> pairMap;</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        }</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Event, <span class="keyword">typename</span> Track, <span class="keyword">typename</span> Pair&gt;</div>
+<div class="line"><a name="l00239"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a4d3b37b6384fca96a6fa761f97351d21">  239</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a4d3b37b6384fca96a6fa761f97351d21">JJFemtoMixer&lt;Event,Track,Pair&gt;::PrintSettings</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;<span class="keyword">        </span>{</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;\n------=========== JJFemtoMixer Settings ===========------\n&quot;</span>;</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;Max Background Mixing Buffer Size: &quot;</span> &lt;&lt; fBufferSize &lt;&lt; ((fWaitForBuffer) ? <span class="stringliteral">&quot; (FIXED)\n&quot;</span> : <span class="stringliteral">&quot; (LOOSE)\n&quot;</span>);</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;Event Hashing Function: &quot;</span> &lt;&lt; ((fEventHashingFunctionIsDefined) ? <span class="stringliteral">&quot; User-defined\n&quot;</span> : <span class="stringliteral">&quot; Not set\n&quot;</span>);</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;Pair Hashing Function: &quot;</span> &lt;&lt; ((fPairHashingFunctionIsDefined) ? <span class="stringliteral">&quot; User-defined\n&quot;</span> : <span class="stringliteral">&quot; Not set\n&quot;</span>);</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;Pair Rejection Function: &quot;</span> &lt;&lt; ((fPairCutFunctionIsDefined) ? <span class="stringliteral">&quot; User-defined\n&quot;</span> : <span class="stringliteral">&quot; Not set\n&quot;</span>);</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;------==============================================------\n&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        }</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Event, <span class="keyword">typename</span> Track, <span class="keyword">typename</span> Pair&gt;</div>
+<div class="line"><a name="l00250"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a9744f3dc03c74aaef520bb228a6643ed">  250</a></span>&#160;        std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a9744f3dc03c74aaef520bb228a6643ed">JJFemtoMixer&lt;Event,Track,Pair&gt;::AddEvent</a>(<span class="keyword">const</span> Event &amp;event, <span class="keyword">const</span> std::vector&lt;Track&gt; &amp;tracks)</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        {</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            std::uniform_int_distribution&lt;int&gt; dist(0,tracks.size()-1);</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            std::size_t evtHash = fEventHashingFunction(event);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            std::pair&lt;Event, Track&gt; trackPair{event,tracks.at(dist(fGenerator))};</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160; </div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            <span class="comment">// an entry for given evtHash may not exist, so we must check if that&#39;s the case</span></div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            <span class="keywordflow">if</span> (fSimilarityMap.find(evtHash) == fSimilarityMap.end())</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            {</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                fSimilarityMap.emplace(evtHash,std::deque&lt;std::pair&lt;Event, Track&gt; &gt;(1,trackPair));</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            }</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;            {</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;                fSimilarityMap.at(evtHash).push_back(trackPair);</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                <span class="keywordflow">if</span> (fSimilarityMap.at(evtHash).size() &gt; fBufferSize)</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                    fSimilarityMap.at(evtHash).pop_front(); </div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;            }</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;            <span class="keywordflow">return</span> SortPairs(MakePairs(tracks));</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        }</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160; </div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Event, <span class="keyword">typename</span> Track, <span class="keyword">typename</span> Pair&gt;</div>
+<div class="line"><a name="l00272"></a><span class="lineno"><a class="line" href="class_mixing_1_1_j_j_femto_mixer.html#a82b7ca842f7b4401ec64fc82b53572d4">  272</a></span>&#160;        std::map&lt;std::size_t, std::vector&lt;Pair&gt; &gt; <a class="code" href="class_mixing_1_1_j_j_femto_mixer.html#a82b7ca842f7b4401ec64fc82b53572d4">JJFemtoMixer&lt;Event,Track,Pair&gt;::GetSimilarPairs</a>(<span class="keyword">const</span> Event &amp;event)</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        {</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;            std::vector&lt;Track&gt; outputVector;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            std::size_t evtHash = fEventHashingFunction(event);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordflow">if</span> (fSimilarityMap.at(evtHash).size() == fBufferSize || fWaitForBuffer == <span class="keyword">false</span>)</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            {</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                <span class="keywordflow">for</span> (std::size_t evtIter = 0; evtIter &lt; fSimilarityMap.at(evtHash).size(); ++evtIter)</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                    <span class="keywordflow">if</span> (fSimilarityMap.at(evtHash).at(evtIter).first != event)</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                        outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            }</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            <span class="keywordflow">return</span> SortPairs(MakePairs(outputVector));</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        }</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    } <span class="comment">// namespace Mixing</span></div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    </div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="preprocessor">#endif</span></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a683bb2012dbbd8a9e2f9cff046201320"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a683bb2012dbbd8a9e2f9cff046201320">Mixing::JJFemtoMixer::GetPairHash</a></div><div class="ttdeci">constexpr std::size_t GetPairHash(const Pair &amp;obj) const</div><div class="ttdoc">Get the corresponding hash for given Pair object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:108</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a60fae9a9adf05f87d0549fb8767e3080"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a60fae9a9adf05f87d0549fb8767e3080">Mixing::JJFemtoMixer::SetPairHashingFunction</a></div><div class="ttdeci">constexpr void SetPairHashingFunction(std::function&lt; std::size_t(const Pair &amp;)&gt; &amp;&amp;func)</div><div class="ttdoc">Set the Pair Hashing Function object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:101</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a78989a61d2e916fa10d1b19b8962cd1c"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a78989a61d2e916fa10d1b19b8962cd1c">Mixing::JJFemtoMixer::GetMaxBufferSize</a></div><div class="ttdeci">constexpr std::size_t GetMaxBufferSize() const</div><div class="ttdoc">Get the max mixing buffer size.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:146</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_aa40d53d582d0eaeff32a81f81d11684d"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#aa40d53d582d0eaeff32a81f81d11684d">Mixing::JJFemtoMixer::SetEventHashingFunction</a></div><div class="ttdeci">constexpr void SetEventHashingFunction(std::function&lt; std::size_t(const Event &amp;)&gt; &amp;&amp;func)</div><div class="ttdoc">Set the Event Hashing Function object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:82</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_ac9790028d00c557d44c5af9bc8979008"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#ac9790028d00c557d44c5af9bc8979008">Mixing::JJFemtoMixer::SetPairCuttingFunction</a></div><div class="ttdeci">constexpr void SetPairCuttingFunction(const std::function&lt; bool(const Pair &amp;)&gt; &amp;func)</div><div class="ttdoc">Set the Pair Cutting Function object. The function should return true if pair should be rejected and ...</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:114</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a01571dcf10d1670742ebc0c69e9f7ced"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a01571dcf10d1670742ebc0c69e9f7ced">Mixing::JJFemtoMixer::GetPairCutResult</a></div><div class="ttdeci">constexpr bool GetPairCutResult(const Pair &amp;obj) const</div><div class="ttdoc">Get the result of pair selection function for a given Pair object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:128</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a90f8cc2ddbfccafc85df515a54c52d85"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a90f8cc2ddbfccafc85df515a54c52d85">Mixing::JJFemtoMixer::SetMaxBufferSize</a></div><div class="ttdeci">constexpr void SetMaxBufferSize(std::size_t &amp;&amp;buffer)</div><div class="ttdoc">Set the max mixing buffer size for each &quot;branch&quot;.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:140</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a8cde31f3d462870d55ee62192ea49acc"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a8cde31f3d462870d55ee62192ea49acc">Mixing::JJFemtoMixer::GetEventHash</a></div><div class="ttdeci">constexpr std::size_t GetEventHash(const Event &amp;obj) const</div><div class="ttdoc">Get the corresponding hash for given Event object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:89</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html">Mixing::JJFemtoMixer</a></div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:24</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a072496004df535578ba3305b055085ae"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a072496004df535578ba3305b055085ae">Mixing::JJFemtoMixer::SetFixedBuffer</a></div><div class="ttdeci">constexpr void SetFixedBuffer(bool &amp;&amp;isFixed)</div><div class="ttdoc">Define whether mixing should occur only for &quot;branches&quot; with size equal (if true) / equal or less than...</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:158</div></div>
+<div class="ttc" id="anamespace_mixing_html"><div class="ttname"><a href="namespace_mixing.html">Mixing</a></div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:21</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a82b7ca842f7b4401ec64fc82b53572d4"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a82b7ca842f7b4401ec64fc82b53572d4">Mixing::JJFemtoMixer::GetSimilarPairs</a></div><div class="ttdeci">std::map&lt; std::size_t, std::vector&lt; Pair &gt; &gt; GetSimilarPairs(const Event &amp;event)</div><div class="ttdoc">Get the sorted pairs which come from similar events, but not from this event.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:272</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_aa06cfad038febc6d35386453069988a9"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#aa06cfad038febc6d35386453069988a9">Mixing::JJFemtoMixer::SetPairHashingFunction</a></div><div class="ttdeci">constexpr void SetPairHashingFunction(const std::function&lt; std::size_t(const Pair &amp;)&gt; &amp;func)</div><div class="ttdoc">Set the Pair Hashing Function object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:95</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a91d2899b11d5cdf0f3937f234ce61eb8"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a91d2899b11d5cdf0f3937f234ce61eb8">Mixing::JJFemtoMixer::JJFemtoMixer</a></div><div class="ttdeci">constexpr JJFemtoMixer()</div><div class="ttdoc">Default constructor. Create mixer object with: buffer size 10, no wait for full buffer,...</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:61</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a4d3b37b6384fca96a6fa761f97351d21"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a4d3b37b6384fca96a6fa761f97351d21">Mixing::JJFemtoMixer::PrintSettings</a></div><div class="ttdeci">void PrintSettings() const</div><div class="ttdoc">Prints to the standard output information about current setup of JJFemtoMixer.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:239</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_ab2177180698051ce563152adcd168807"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#ab2177180698051ce563152adcd168807">Mixing::JJFemtoMixer::SetFixedBuffer</a></div><div class="ttdeci">constexpr void SetFixedBuffer(const bool &amp;isFixed)</div><div class="ttdoc">Define whether mixing should occur only for &quot;branches&quot; with size equal (if true) / equal or less than...</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:152</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a9744f3dc03c74aaef520bb228a6643ed"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a9744f3dc03c74aaef520bb228a6643ed">Mixing::JJFemtoMixer::AddEvent</a></div><div class="ttdeci">std::map&lt; std::size_t, std::vector&lt; Pair &gt; &gt; AddEvent(const Event &amp;event, const std::vector&lt; Track &gt; &amp;tracks)</div><div class="ttdoc">Add currently processed event to the mixer.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:250</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a6dc1c319ad9435613563f987cc9295e9"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a6dc1c319ad9435613563f987cc9295e9">Mixing::JJFemtoMixer::SetMaxBufferSize</a></div><div class="ttdeci">constexpr void SetMaxBufferSize(const std::size_t &amp;buffer)</div><div class="ttdoc">Set the max mixing buffer size for each &quot;branch&quot;.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:134</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a930eb2a1b288cead39448b8768945f04"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a930eb2a1b288cead39448b8768945f04">Mixing::JJFemtoMixer::SetEventHashingFunction</a></div><div class="ttdeci">constexpr void SetEventHashingFunction(const std::function&lt; std::size_t(const Event &amp;)&gt; &amp;func)</div><div class="ttdoc">Set the Event Hashing Function object.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:76</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_a279033af2e8d00bdbd9f9a4cb12bb90f"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#a279033af2e8d00bdbd9f9a4cb12bb90f">Mixing::JJFemtoMixer::GetBufferState</a></div><div class="ttdeci">constexpr bool GetBufferState() const</div><div class="ttdoc">Get the mixing buffer flag.</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:165</div></div>
+<div class="ttc" id="aclass_mixing_1_1_j_j_femto_mixer_html_ae0dc1b30e100a8281b413d65548c9dd9"><div class="ttname"><a href="class_mixing_1_1_j_j_femto_mixer.html#ae0dc1b30e100a8281b413d65548c9dd9">Mixing::JJFemtoMixer::SetPairCuttingFunction</a></div><div class="ttdeci">constexpr void SetPairCuttingFunction(std::function&lt; bool(const Pair &amp;)&gt; &amp;&amp;func)</div><div class="ttdoc">Set the Pair Cutting Function object. The function should return true if pair should be rejected and ...</div><div class="ttdef"><b>Definition:</b> JJFemtoMixer.hxx:120</div></div>
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="_j_j_femto_mixer_8hxx.html">JJFemtoMixer.hxx</a></li>
+    <li class="footer">Generated by
+    <a href="http://www.doxygen.org/index.html">
+    <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
+  </ul>
+</div>
+</body>
+</html>

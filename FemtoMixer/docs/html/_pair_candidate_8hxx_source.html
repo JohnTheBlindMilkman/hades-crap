@@ -1,0 +1,439 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.8.17"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<!-- BEGIN opengraph metadata -->
+<meta property="og:title" content="Doxygen Awesome" />
+<meta property="og:image" content="https://repository-images.githubusercontent.com/348492097/4f16df80-88fb-11eb-9d31-4015ff22c452" />
+<meta property="og:description" content="Custom CSS theme for doxygen html-documentation with lots of customization parameters." />
+<meta property="og:url" content="https://jothepro.github.io/doxygen-awesome-css/" />
+<!-- END opengraph metadata -->
+<!-- BEGIN twitter metadata -->
+<meta name="twitter:image:src" content="https://repository-images.githubusercontent.com/348492097/4f16df80-88fb-11eb-9d31-4015ff22c452" />
+<meta name="twitter:title" content="Doxygen Awesome" />
+<meta name="twitter:description" content="Custom CSS theme for doxygen html-documentation with lots of customization parameters." />
+<!-- END twitter metadata -->
+<title>JJFemtoMixer: PairCandidate.hxx Source File</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<link rel="icon" type="image/svg+xml" href="logo.drawio.svg"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="doxygen-awesome-darkmode-toggle.js"></script>
+<script type="text/javascript" src="doxygen-awesome-fragment-copy-button.js"></script>
+<script type="text/javascript" src="doxygen-awesome-paragraph-link.js"></script>
+<script type="text/javascript" src="doxygen-awesome-interactive-toc.js"></script>
+<script type="text/javascript" src="doxygen-awesome-tabs.js"></script>
+<script type="text/javascript" src="toggle-alternative-theme.js"></script>
+<script type="text/javascript">
+    DoxygenAwesomeFragmentCopyButton.init()
+    DoxygenAwesomeDarkModeToggle.init()
+    DoxygenAwesomeParagraphLink.init()
+    DoxygenAwesomeInteractiveToc.init()
+    DoxygenAwesomeTabs.init()
+</script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+<link href="doxygen-awesome.css" rel="stylesheet" type="text/css"/>
+<link href="custom.css" rel="stylesheet" type="text/css"/>
+<link href="doxygen-awesome-sidebar-only.css" rel="stylesheet" type="text/css"/>
+<link href="doxygen-awesome-sidebar-only-darkmode-toggle.css" rel="stylesheet" type="text/css"/>
+<link href="custom-alternative.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<!-- https://tholman.com/github-corners/ -->
+<a href="https://github.com/JohnTheBlindMilkman/hades-crap" class="github-corner" title="View source on GitHub" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 250 250" width="40" height="40" style="position: absolute; top: 0; border: 0; right: 0; z-index: 99;" aria-hidden="true">
+    <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">JJFemtoMixer
+   </div>
+   <div id="projectbrief">Pair mixer for femtoscopic analysis of identical particles</div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generated by Doxygen 1.8.17 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+var searchBox = new SearchBox("searchBox", "search",false,'Search');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(function() {
+  initMenu('',true,false,'search.php','Search');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */</script>
+<div id="main-nav"></div>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(document).ready(function(){initNavTree('_pair_candidate_8hxx_source.html',''); initResizable(); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+<div class="header">
+  <div class="headertitle">
+<div class="title">PairCandidate.hxx</div>  </div>
+</div><!--header-->
+<div class="contents">
+<a href="_pair_candidate_8hxx.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#ifndef PairCandidate_hxx</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">    #define PairCandidate_hxx</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="_event_candidate_8hxx.html">EventCandidate.hxx</a>&quot;</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &lt;deque&gt;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &lt;random&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespace_selection.html">Selection</a></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;{</div>
+<div class="line"><a name="l00011"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html">   11</a></span>&#160;    <span class="keyword">class </span><a class="code" href="class_selection_1_1_pair_candidate.html">PairCandidate</a></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    {</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;        <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00014"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3">   14</a></span>&#160;            <span class="keyword">enum class</span> <a class="code" href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3">Behaviour</a>{<a class="code" href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3af3b1c4317da6f8f7734e55b75f30ed04">OneUnder</a>,<a class="code" href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3af19516d11f2946f894070e92fcb56b6d">Uniform</a>,<a class="code" href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3a582368ac8232617ead14ac74ccc40ea9">Weighted</a>};</div>
+<div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#acada2db51cb9c81d1afffc4257502693">   21</a></span>&#160;            <a class="code" href="class_selection_1_1_pair_candidate.html#acada2db51cb9c81d1afffc4257502693">PairCandidate</a>(<span class="keyword">const</span> <a class="code" href="class_selection_1_1_track_candidate.html">TrackCandidate</a> &amp;trck1, <span class="keyword">const</span> <a class="code" href="class_selection_1_1_track_candidate.html">TrackCandidate</a> &amp;trck2) : Particle1(trck1), Particle2(trck2),SplittingLevel(0.),SharedWires(0)</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;            {</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;                CFKinematics(trck1,trck2);</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                OpeningAngle = CalcOpeningAngle(trck1,trck2);</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*trck1.<a class="code" href="class_selection_1_1_track_candidate.html#a1669d3822b24e9a554431d863586d2d3">GetReactionPlane</a>());</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                pairId = trck1.<a class="code" href="class_selection_1_1_track_candidate.html#ad0a837c6fa95caa4e1f9235c5e42d292">GetID</a>() + trck2.<a class="code" href="class_selection_1_1_track_candidate.html#ad0a837c6fa95caa4e1f9235c5e42d292">GetID</a>();</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                std::tie(SplittingLevel,SharedWires,BothLayers,MinWireDistance,wireDistances) = CalcSplittingLevelAndSharedWires(trck1,trck2);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                SharedMetaCells = CalcSharedMetaCells(trck1,trck2);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;            }</div>
+<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#ae1de3406d5e9fb53d888d61ed4673812">   37</a></span>&#160;            <a class="code" href="class_selection_1_1_pair_candidate.html#ae1de3406d5e9fb53d888d61ed4673812">~PairCandidate</a>(){}</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a883014cd2cea816d4257a96e9db6cf0c">   47</a></span>&#160;            <span class="keyword">template</span>&lt;Behaviour T&gt; <span class="keywordtype">bool</span> <a class="code" href="class_selection_1_1_pair_candidate.html#a883014cd2cea816d4257a96e9db6cf0c">RejectPairByCloseHits</a>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;nLayers,<span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;cutoff)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                <span class="keywordflow">return</span> Reject(type&lt;T&gt;{},nLayers,cutoff);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            }</div>
+<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a0cceb9689ddc2e400095417887d1cac6">   56</a></span>&#160;            std::string <a class="code" href="class_selection_1_1_pair_candidate.html#a0cceb9689ddc2e400095417887d1cac6">GetID</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                <span class="keywordflow">return</span> pairId;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            }</div>
+<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#ad8ee77fbbcb90115e40ff625f43c3355">   65</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#ad8ee77fbbcb90115e40ff625f43c3355">GetKt</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                <span class="keywordflow">return</span> Kt;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            }</div>
+<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a032f1ac5c0e237920eab1ef4164fea54">   74</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#a032f1ac5c0e237920eab1ef4164fea54">GetRapidity</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                <span class="keywordflow">return</span> Rapidity;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;            }</div>
+<div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#ae3179bf7bbcb8d1d0fd40422d28bf6b1">   83</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#ae3179bf7bbcb8d1d0fd40422d28bf6b1">GetPhi</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                <span class="keywordflow">return</span> AzimuthalAngle;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;            }</div>
+<div class="line"><a name="l00092"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#aa9e3c093cb89e755f3657d2343c3ae74">   92</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#aa9e3c093cb89e755f3657d2343c3ae74">GetDPhi</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                <span class="keywordflow">return</span> DeltaPhi;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            }</div>
+<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a8120dbd4d87eb6750bb11118aef34d15">  101</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#a8120dbd4d87eb6750bb11118aef34d15">GetDTheta</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                <span class="keywordflow">return</span> DeltaTheta;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            }</div>
+<div class="line"><a name="l00110"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#af3ee26c728b645e1583dd04f28316d24">  110</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#af3ee26c728b645e1583dd04f28316d24">GetSplittingLevel</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                <span class="keywordflow">return</span> SplittingLevel;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            }</div>
+<div class="line"><a name="l00119"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#aa0c21ed4050e3b38f5f5fffec0230329">  119</a></span>&#160;            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="class_selection_1_1_pair_candidate.html#aa0c21ed4050e3b38f5f5fffec0230329">GetSharedWires</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                <span class="keywordflow">return</span> SharedWires;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;            }</div>
+<div class="line"><a name="l00128"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a44fa10d3075db620f434effcea4e020c">  128</a></span>&#160;            <span class="keywordtype">unsigned</span> <a class="code" href="class_selection_1_1_pair_candidate.html#a44fa10d3075db620f434effcea4e020c">GetBothLayers</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;                <span class="keywordflow">return</span> BothLayers;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;            }</div>
+<div class="line"><a name="l00137"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a12eb80fcc3d56dd67f1b2c91d8803a64">  137</a></span>&#160;            std::array&lt;int,HADES::MDC::WireInfo::numberOfAllLayers&gt; <a class="code" href="class_selection_1_1_pair_candidate.html#a12eb80fcc3d56dd67f1b2c91d8803a64">GetAllLayerDistances</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                <span class="keywordflow">return</span> wireDistances;</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;            }</div>
+<div class="line"><a name="l00146"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a028948526dc4f44cf799fadb094c9df8">  146</a></span>&#160;            <span class="keywordtype">unsigned</span> <a class="code" href="class_selection_1_1_pair_candidate.html#a028948526dc4f44cf799fadb094c9df8">GetMinWireDistance</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                <span class="keywordflow">return</span> MinWireDistance;</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;            }</div>
+<div class="line"><a name="l00150"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#a95b935f65a7be3dadea94f923f7e3418">  150</a></span>&#160;            <span class="keywordtype">unsigned</span> <a class="code" href="class_selection_1_1_pair_candidate.html#a95b935f65a7be3dadea94f923f7e3418">GetSharedMetaCells</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                <span class="keywordflow">return</span> SharedMetaCells;</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            }</div>
+<div class="line"><a name="l00159"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#ab2e61cc4ffcd598166a6eb3a924fe824">  159</a></span>&#160;            <span class="keywordtype">float</span> <a class="code" href="class_selection_1_1_pair_candidate.html#ab2e61cc4ffcd598166a6eb3a924fe824">GetQinv</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                <span class="keywordflow">return</span> QInv;</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            }</div>
+<div class="line"><a name="l00168"></a><span class="lineno"><a class="line" href="class_selection_1_1_pair_candidate.html#aa208fc84a5baba952bbb93d3b10d7bbd">  168</a></span>&#160;            std::tuple&lt;float,float,float&gt; <a class="code" href="class_selection_1_1_pair_candidate.html#aa208fc84a5baba952bbb93d3b10d7bbd">GetOSL</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                <span class="keywordflow">return</span> std::make_tuple(QOut,QSide,QLong);</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            }</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            std::string pairId;</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            <a class="code" href="class_selection_1_1_track_candidate.html">TrackCandidate</a> Particle1,Particle2;</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <span class="keywordtype">unsigned</span> SharedWires, BothLayers, MinWireDistance, SharedMetaCells;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            std::array&lt;int,HADES::MDC::WireInfo::numberOfAllLayers&gt; wireDistances;</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            <span class="keywordtype">float</span> QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            <span class="keyword">template</span> &lt;Behaviour T&gt; <span class="keyword">struct </span>type {};</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;            <span class="keywordtype">void</span> CFKinematics(<span class="keyword">const</span> TrackCandidate &amp;part1, <span class="keyword">const</span> TrackCandidate &amp;part2)</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            {</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                <span class="comment">// adapted from https://github.com/DanielWielanek/HAL/blob/main/analysis/femto/base/FemtoPairKinematics.cxx</span></div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                Double_t tPx = part1.Px + part2.Px;</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                Double_t tPy = part1.Py + part2.Py;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                Double_t tPz = part1.Pz + part2.Pz;</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                Double_t tE = part1.Energy + part2.Energy;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                Double_t tPt = tPx * tPx + tPy * tPy;</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                Double_t tMt = tE * tE - tPz * tPz;  <span class="comment">// mCVK;</span></div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                tMt = TMath::Sqrt(tMt);</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                Kt = TMath::Sqrt(tPt);</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                Double_t tBeta  = tPz / tE;</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                Double_t tGamma = tE / tMt;</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160; </div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                <span class="comment">// Transform to LCMS</span></div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                Double_t particle1lcms_pz = tGamma * (part1.Pz - tBeta * part1.Energy);</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                Double_t particle1lcms_e  = tGamma * (part1.Energy - tBeta * part1.Pz);</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                Double_t particle2lcms_pz = tGamma * (part2.Pz - tBeta * part2.Energy);</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                Double_t particle2lcms_e  = tGamma * (part2.Energy - tBeta * part2.Pz);</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160; </div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                <span class="comment">// Rotate in transverse plane</span></div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160; </div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                Double_t particle1lcms_px = (part1.Px * tPx + part1.Py * tPy) / Kt;</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                Double_t particle1lcms_py = (-part1.Px * tPy + part1.Py * tPx) / Kt;</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                Double_t particle2lcms_px = (part2.Px * tPx + part2.Py * tPy) / Kt;</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                Double_t particle2lcms_py = (-part2.Px * tPy + part2.Py * tPx) / Kt;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160; </div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                QOut = abs(particle1lcms_px - particle2lcms_px);</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;                QSide = abs(particle1lcms_py - particle2lcms_py);</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                QLong = abs(particle1lcms_pz - particle2lcms_pz);</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;                Double_t mDE = particle1lcms_e - particle2lcms_e;</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                QInv = TMath::Sqrt(TMath::Abs(QOut * QOut + QSide * QSide + QLong * QLong - mDE * mDE));</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;            }</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            <span class="keywordtype">float</span> CalcOpeningAngle(<span class="keyword">const</span> TrackCandidate &amp;part1, <span class="keyword">const</span> TrackCandidate &amp;part2)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                <span class="keywordtype">float</span> ptot = sqrt((part1.Px*part1.Px + part1.Py*part1.Py + part1.Pz*part1.Pz) * (part2.Px*part2.Px + part2.Py*part2.Py + part2.Pz*part2.Pz));</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                <span class="keywordflow">if</span> (ptot &lt;= 0.)</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                {   </div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                    <span class="keywordflow">return</span> 0.;</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                }</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                {</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                    <span class="keywordtype">float</span> arg = (part1.Px*part2.Px + part1.Py*part2.Py + part1.Pz*part2.Pz) / ptot;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                    <span class="keywordflow">if</span> (arg &gt; 1.) <span class="keywordflow">return</span> 1.;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                    <span class="keywordflow">if</span> (arg &lt; -1.) <span class="keywordflow">return</span> -1.;</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                    <span class="keywordflow">return</span> acos(arg);</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                }</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            }</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;            <span class="keywordtype">float</span> ConstrainAngle(<span class="keyword">const</span> <span class="keywordtype">float</span> &amp;angle)</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;            {</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                <span class="keywordflow">if</span> (angle &gt; 157.5)</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                    <span class="keywordflow">return</span> angle -360.;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                <span class="keywordflow">else</span> <span class="keywordflow">if</span> (angle &lt;= -202.5)</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                    <span class="keywordflow">return</span> angle + 360.;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                    <span class="keywordflow">return</span> angle;</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            }</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;            std::tuple&lt;float,unsigned,unsigned,unsigned,std::array&lt;int,HADES::MDC::WireInfo::numberOfAllLayers&gt; &gt; CalcSplittingLevelAndSharedWires(<span class="keyword">const</span> TrackCandidate &amp;part1, <span class="keyword">const</span> TrackCandidate &amp;part2)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                <span class="keywordtype">float</span> SL = 0;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> SW = 0, MWD = 1000;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                std::array&lt;int,HADES::MDC::WireInfo::numberOfAllLayers&gt; allWD;</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                std::fill(allWD.begin(),allWD.end(),-999); <span class="comment">// we don&#39;t want to initialise with zeros, because it would mean that the unpopulated fiels are sharing a wire</span></div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                <span class="keywordtype">int</span> n0 = 0, n1 = 0, n2 = 0;</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keywordtype">int</span> &amp;layer : HADES::MDC::WireInfo::allLayerIndexing)</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                {</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                    <span class="keyword">auto</span> wires1 = part1.GetWires(layer);</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                    <span class="keyword">auto</span> wires2 = part2.GetWires(layer);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                    <span class="keyword">const</span> std::size_t wires1Size = wires1.size();</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                    <span class="keyword">const</span> std::size_t wires2Size = wires2.size();</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                    <span class="keywordflow">if</span> (wires1Size &gt; 0 &amp;&amp; wires2Size &gt; 0)</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                    {</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                        <span class="comment">// iterate over all elements in both of the containers</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;wire1 : wires1)</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                            <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;wire2 : wires2)</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                            {</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                                <span class="keywordflow">if</span> (wire1 == wire2)</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                                {</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                                    SL += 1.;</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                                    ++SW;</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;                                }</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                                <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                                {</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                                    SL -= 1.;</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                                }</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160; </div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                                <span class="keywordflow">if</span> (abs(wire1 - wire2) &lt; MWD)</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                                    MWD = abs(wire1 - wire2);</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                            }</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                        allWD.at(layer) = MWD;</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;                        ++n0;</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                        ++n1;</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                        ++n2;</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                    }</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (wires1Size &gt; 0 &amp;&amp; wires2Size == 0)</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                    {</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;                        SL += 1.;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                        ++n1;</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                    }</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (wires1Size == 0 &amp;&amp; wires2Size &gt; 0)</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                    {</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                        SL +=1.;</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                        ++n2;</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                    }</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                }</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                SL /= (n1 + n2);</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                <span class="keywordflow">return</span> std::make_tuple(SL,SW,n0,MWD,allWD);</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            }</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            <span class="keywordtype">unsigned</span> CalcSharedMetaCells(<span class="keyword">const</span> TrackCandidate &amp;part1, <span class="keyword">const</span> TrackCandidate &amp;part2)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                <span class="keywordtype">unsigned</span> SMC = 0;</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                std::size_t i = 0, j = 0;</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;                <span class="keyword">auto</span> meta1 = part1.GetMetaCells();</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                <span class="keyword">auto</span> meta2 = part2.GetMetaCells();</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;                std::size_t meta1size = meta1.size();</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;                std::size_t meta2size = meta2.size();</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                <span class="comment">// iterate over all elements in both of the containers</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;                <span class="keywordflow">while</span> (i &lt; meta1size &amp;&amp; j &lt; meta2size) <span class="comment">// this method gives me O(NlogN) complexity, but is probably overengineered (I have max 2 entries in vector)</span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;                {</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                    <span class="keywordflow">if</span> (meta1[i] == meta2[j])</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                    {</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                        ++i;</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                        ++j;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                        ++SMC;</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;                    }</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (meta1[i] &lt; meta2[j])</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                    {</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                        ++i;</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                    }</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                    {</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                        ++j;</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    }</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                }</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160; </div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;                <span class="keywordflow">return</span> SMC;</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            }</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;            <span class="keywordtype">bool</span> Reject(type&lt;Behaviour::Uniform&gt;,<span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;nLayers, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;cutoff)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;                <span class="keywordflow">return</span> (std::count_if(wireDistances.begin(),wireDistances.end(),[&amp;cutoff](<span class="keyword">const</span> <span class="keywordtype">int</span> &amp;dist){return (dist &gt;= 0 &amp;&amp; dist &lt; cutoff) ? true : false;}) &gt; nLayers) ? true : <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;            }</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;            <span class="keywordtype">bool</span> Reject(type&lt;Behaviour::OneUnder&gt;,<span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;nLayers, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;cutoff)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                <span class="keywordtype">unsigned</span> counter = 0;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keywordtype">int</span> &amp;dist : wireDistances)</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                {</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                    <span class="keywordflow">if</span> (dist &gt;= 0 &amp;&amp; dist &lt; cutoff)</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;                    {</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                        <span class="keywordflow">if</span> (abs(dist - <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(cutoff)) &gt; 1)</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;                        {    </div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                        }</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                        {</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;                            ++counter;</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;                        }</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                    }</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                }</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160; </div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;                <span class="keywordflow">return</span> (counter &gt; nLayers) ? true : <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;            }</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            <span class="keywordtype">bool</span> Reject(type&lt;Behaviour::Weighted&gt;,<span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;nLayers, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> &amp;cutoff)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="keyword">            </span>{</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;                <span class="keywordtype">unsigned</span> counter = 0;</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keywordtype">int</span> &amp;dist : wireDistances)</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;                {</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;                    <span class="keywordflow">if</span> (dist &gt;= 0 &amp;&amp; dist &lt; cutoff)</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;                        counter += abs(dist - <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(cutoff));</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;                }</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;                <span class="keywordflow">return</span> (counter &gt; nLayers) ? true : <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;            }</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    };</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;}</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160; </div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;<span class="preprocessor">#endif</span></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_af3ee26c728b645e1583dd04f28316d24"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#af3ee26c728b645e1583dd04f28316d24">Selection::PairCandidate::GetSplittingLevel</a></div><div class="ttdeci">float GetSplittingLevel() const</div><div class="ttdoc">Get the Splitting Level object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:110</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a028948526dc4f44cf799fadb094c9df8"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a028948526dc4f44cf799fadb094c9df8">Selection::PairCandidate::GetMinWireDistance</a></div><div class="ttdeci">unsigned GetMinWireDistance() const</div><div class="ttdoc">Get the Min Wire Distance object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:146</div></div>
+<div class="ttc" id="aclass_selection_1_1_track_candidate_html_a1669d3822b24e9a554431d863586d2d3"><div class="ttname"><a href="class_selection_1_1_track_candidate.html#a1669d3822b24e9a554431d863586d2d3">Selection::TrackCandidate::GetReactionPlane</a></div><div class="ttdeci">float GetReactionPlane() const</div><div class="ttdoc">Get the Reaction Plane object.</div><div class="ttdef"><b>Definition:</b> TrackCandidate.hxx:356</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_acada2db51cb9c81d1afffc4257502693"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#acada2db51cb9c81d1afffc4257502693">Selection::PairCandidate::PairCandidate</a></div><div class="ttdeci">PairCandidate(const TrackCandidate &amp;trck1, const TrackCandidate &amp;trck2)</div><div class="ttdoc">Construct a new Pair Candidate object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:21</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ab876abc9c55bb7bc5986bc13d7a1d4e3af3b1c4317da6f8f7734e55b75f30ed04"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3af3b1c4317da6f8f7734e55b75f30ed04">Selection::PairCandidate::Behaviour::OneUnder</a></div><div class="ttdeci">@ OneUnder</div></div>
+<div class="ttc" id="anamespace_selection_html"><div class="ttname"><a href="namespace_selection.html">Selection</a></div><div class="ttdef"><b>Definition:</b> EventCandidate.hxx:8</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html">Selection::PairCandidate</a></div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:11</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_aa208fc84a5baba952bbb93d3b10d7bbd"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#aa208fc84a5baba952bbb93d3b10d7bbd">Selection::PairCandidate::GetOSL</a></div><div class="ttdeci">std::tuple&lt; float, float, float &gt; GetOSL() const</div><div class="ttdoc">Get the Qout, Qside, and Qlong components.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:168</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ab2e61cc4ffcd598166a6eb3a924fe824"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ab2e61cc4ffcd598166a6eb3a924fe824">Selection::PairCandidate::GetQinv</a></div><div class="ttdeci">float GetQinv() const</div><div class="ttdoc">Get the Qinv.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:159</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a883014cd2cea816d4257a96e9db6cf0c"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a883014cd2cea816d4257a96e9db6cf0c">Selection::PairCandidate::RejectPairByCloseHits</a></div><div class="ttdeci">bool RejectPairByCloseHits(const unsigned &amp;nLayers, const unsigned &amp;cutoff) const</div><div class="ttdoc">Perform pair selection based on the number of neighbouring wires with certain distance from each othe...</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:47</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ab876abc9c55bb7bc5986bc13d7a1d4e3af19516d11f2946f894070e92fcb56b6d"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3af19516d11f2946f894070e92fcb56b6d">Selection::PairCandidate::Behaviour::Uniform</a></div><div class="ttdeci">@ Uniform</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ae3179bf7bbcb8d1d0fd40422d28bf6b1"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ae3179bf7bbcb8d1d0fd40422d28bf6b1">Selection::PairCandidate::GetPhi</a></div><div class="ttdeci">float GetPhi() const</div><div class="ttdoc">Get the pair average azimuthal angle w.r.t. the EP (if specified in the constructor)</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:83</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ad8ee77fbbcb90115e40ff625f43c3355"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ad8ee77fbbcb90115e40ff625f43c3355">Selection::PairCandidate::GetKt</a></div><div class="ttdeci">float GetKt() const</div><div class="ttdoc">Get the transverse component of the average pair momentum.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:65</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_aa9e3c093cb89e755f3657d2343c3ae74"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#aa9e3c093cb89e755f3657d2343c3ae74">Selection::PairCandidate::GetDPhi</a></div><div class="ttdeci">float GetDPhi() const</div><div class="ttdoc">Get difference of the azimuthal angles between the two pair components.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:92</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ab876abc9c55bb7bc5986bc13d7a1d4e3a582368ac8232617ead14ac74ccc40ea9"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3a582368ac8232617ead14ac74ccc40ea9">Selection::PairCandidate::Behaviour::Weighted</a></div><div class="ttdeci">@ Weighted</div></div>
+<div class="ttc" id="a_event_candidate_8hxx_html"><div class="ttname"><a href="_event_candidate_8hxx.html">EventCandidate.hxx</a></div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a95b935f65a7be3dadea94f923f7e3418"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a95b935f65a7be3dadea94f923f7e3418">Selection::PairCandidate::GetSharedMetaCells</a></div><div class="ttdeci">unsigned GetSharedMetaCells() const</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:150</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a44fa10d3075db620f434effcea4e020c"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a44fa10d3075db620f434effcea4e020c">Selection::PairCandidate::GetBothLayers</a></div><div class="ttdeci">unsigned GetBothLayers() const</div><div class="ttdoc">Get the Both Layers object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:128</div></div>
+<div class="ttc" id="aclass_selection_1_1_track_candidate_html"><div class="ttname"><a href="class_selection_1_1_track_candidate.html">Selection::TrackCandidate</a></div><div class="ttdef"><b>Definition:</b> TrackCandidate.hxx:16</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a8120dbd4d87eb6750bb11118aef34d15"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a8120dbd4d87eb6750bb11118aef34d15">Selection::PairCandidate::GetDTheta</a></div><div class="ttdeci">float GetDTheta() const</div><div class="ttdoc">Get difference of the polar angles between the two pair components.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:101</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a12eb80fcc3d56dd67f1b2c91d8803a64"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a12eb80fcc3d56dd67f1b2c91d8803a64">Selection::PairCandidate::GetAllLayerDistances</a></div><div class="ttdeci">std::array&lt; int, HADES::MDC::WireInfo::numberOfAllLayers &gt; GetAllLayerDistances() const</div><div class="ttdoc">Get the All Layer Distances object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:137</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ae1de3406d5e9fb53d888d61ed4673812"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ae1de3406d5e9fb53d888d61ed4673812">Selection::PairCandidate::~PairCandidate</a></div><div class="ttdeci">~PairCandidate()</div><div class="ttdoc">Destroy the Pair Candidate object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:37</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_ab876abc9c55bb7bc5986bc13d7a1d4e3"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#ab876abc9c55bb7bc5986bc13d7a1d4e3">Selection::PairCandidate::Behaviour</a></div><div class="ttdeci">Behaviour</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:14</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a032f1ac5c0e237920eab1ef4164fea54"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a032f1ac5c0e237920eab1ef4164fea54">Selection::PairCandidate::GetRapidity</a></div><div class="ttdeci">float GetRapidity() const</div><div class="ttdoc">Get the pair average rapidity.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:74</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_aa0c21ed4050e3b38f5f5fffec0230329"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#aa0c21ed4050e3b38f5f5fffec0230329">Selection::PairCandidate::GetSharedWires</a></div><div class="ttdeci">unsigned int GetSharedWires() const</div><div class="ttdoc">Get the Shared Wires object.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:119</div></div>
+<div class="ttc" id="aclass_selection_1_1_pair_candidate_html_a0cceb9689ddc2e400095417887d1cac6"><div class="ttname"><a href="class_selection_1_1_pair_candidate.html#a0cceb9689ddc2e400095417887d1cac6">Selection::PairCandidate::GetID</a></div><div class="ttdeci">std::string GetID() const</div><div class="ttdoc">Returns unique ID of the pair.</div><div class="ttdef"><b>Definition:</b> PairCandidate.hxx:56</div></div>
+<div class="ttc" id="aclass_selection_1_1_track_candidate_html_ad0a837c6fa95caa4e1f9235c5e42d292"><div class="ttname"><a href="class_selection_1_1_track_candidate.html#ad0a837c6fa95caa4e1f9235c5e42d292">Selection::TrackCandidate::GetID</a></div><div class="ttdeci">std::string GetID() const</div><div class="ttdef"><b>Definition:</b> TrackCandidate.hxx:257</div></div>
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="_pair_candidate_8hxx.html">PairCandidate.hxx</a></li>
+    <li class="footer">Generated by
+    <a href="http://www.doxygen.org/index.html">
+    <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
+  </ul>
+</div>
+</body>
+</html>
