@@ -51,7 +51,7 @@ bool PairCut(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(9,2) || 
+	return pair.GetMinWireDistance() < 2 || 
 		pair.GetSharedMetaCells() > 0;
 }
 
@@ -60,7 +60,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 
-	constexpr bool isSimulation{false}; // for now this could be easly just const
+	constexpr bool isCustomDst{false};
+	constexpr bool isSimulation{false};
 	constexpr int protonPID{14};
 
 	using HFiredWires = HADES::MDC::HFiredWires;
@@ -75,16 +76,24 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TString beamtime="apr12";
 	
 	Int_t mdcMods[6][4]=
-	{ {1,1,1,1},
-	{1,1,1,1},
-	{1,1,1,1},
-	{1,1,1,1},
-	{1,1,1,1},
-	{1,1,1,1} };
-	TString asciiParFile     = "";
-	TString rootParFile      = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
-	TString paramSource      = "root"; // root, ascii, oracle
-	TString paramrelease     = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
+		{ {1,1,1,1},
+		{1,1,1,1},
+		{1,1,1,1},
+		{1,1,1,1},
+		{1,1,1,1},
+		{1,1,1,1} };
+	TString asciiParFile = "";
+	TString rootParFile;
+	if (isSimulation)
+	{
+		rootParFile = "/cvmfs/hadessoft.gsi.de/param/sim/apr12/allParam_APR12_sim_run_12001_gen9_07112017.root";
+	}
+	else
+	{
+		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+	}
+	TString paramSource = "root"; // root, ascii, oracle
+	TString paramrelease = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
 	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease);  // now, APR12_gen2_dst
 
@@ -106,9 +115,15 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		}
 		else // data
 		{
-			//inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
-			//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
-			inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+			if (isCustomDst)
+			{
+				inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
+			}
+			else
+			{
+				//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
+				inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+			}
 		}
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
@@ -129,7 +144,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HParticleCand,+HParticleEvtInfo,+HWallHit")) // make sure to use +HMdcSeg if you want the wires
+	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit";
+	if (isCustomDst)
+		inputString += ",+HMdcSeg";
+    if (!loop->setInput(inputString.data())) // make sure to use +HMdcSeg if you want the wires
 		exit(1);
 
 	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
@@ -155,6 +173,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
 	//HCategory *mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // so... this is my stupid fix for now, without it HFiredWires doesn't work
 
+	/* static_assert((isSimulation && !isSim(particle_cand)),"particle candidate must be of type HParticleCandSim");
+	static_assert((!isSimulation && isSim(particle_cand)),"particle candidate must be of type HParticleCand"); */
 	if (isSimulation && !isSim(particle_cand)) // verification if you changed particle_cand class for running simulations
 	{
 		throw std::runtime_error("particle candidate must be of type HParticleCandSim"); // in C++17 this can be evaluated at compile-time, c++14 doesnt support if constexpr (condition)...
@@ -196,6 +216,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	Selection::EventCandidate fEvent;	
 	Selection::TrackCandidate fTrack;
 	HParticleWireInfo fWireInfo;
+	std::size_t tracks;
 
 	// create object for getting MDC wires
 	//HFiredWires firedWires;
@@ -237,6 +258,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     HParticleMetaMatcher* matcher = new HParticleMetaMatcher();
     matcher->setDebug();
 	matcher->setUseEMC(kFALSE);
+	if (isCustomDst)
+		matcher->setUseSeg(kTRUE);
     masterTaskSet->add(matcher);
 
 	//--------------------------------------------------------------------------------
@@ -392,10 +415,11 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
 			//innerSeg = HCategoryManager::getObject(innerSeg,mdc_seg_cat,particle_cand->getInnerSegInd());
 			//outerSeg = HCategoryManager::getObject(outerSeg,mdc_seg_cat,particle_cand->getOuterSegInd());
-			HParticleWireManager &wire_manager = matcher->getWireManager();
+			//HParticleWireManager &wire_manager = matcher->getWireManager();
 			//wire_manager.setDebug();
-			wire_manager.setWireRange(0);
-			wire_manager.getWireInfo(track,fWireInfo,particle_cand);
+			//wire_manager.setWireRange(0);
+			//wire_manager.getWireInfo(track,fWireInfo,particle_cand);
+			matcher->getWireInfoDirect(particle_cand,fWireInfo);
 
 			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
 			
@@ -411,7 +435,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
 			fTrack = Selection::TrackCandidate(
-				particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),
+				particle_cand,
+				Selection::TrackCandidate::CreateWireArray(fWireInfo),
 				fEvent.GetID(),
 				fEvent.GetReactionPlane(),
 				track,
@@ -433,7 +458,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
-			hCounter->Fill(cNumSelectedTracks);
+			//hCounter->Fill(cNumSelectedTracks);
 			hPtRap->Fill(fTrack.GetPt(), fTrack.GetRapidity() - fBeamRapidity);
 			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
 			
@@ -454,9 +479,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			}
 		} // End of track loop
 
-		if (fEvent.GetTrackListSize() > 0)
+		tracks = fEvent.GetTrackListSize();
+		hCounter->Fill(cNumSelectedTracks,tracks);
+
+		if (tracks > 0)
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
+			hCounter->Fill(cNumAllPairs,tracks*(tracks-1)/2); // all combinations w/o repetitions
 
 			fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			for (const auto &pair : fSignMap)

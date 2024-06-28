@@ -24,7 +24,7 @@ struct HistogramCollection
 
 std::size_t EventHashing(const Selection::EventCandidate &evt)
 {
-    return evt.GetCentrality()*1e1 + evt.GetPlate();
+    return evt.GetCentrality()*1e2 + evt.GetPlate();
 }
 
 std::size_t PairHashing(const Selection::PairCandidate &pair)
@@ -50,11 +50,11 @@ bool PairRejection(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(11,2) || 
+	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(8,2) || 
 		pair.GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
@@ -79,7 +79,15 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	{1,1,1,1},
 	{1,1,1,1} };
 	TString asciiParFile     = "";
-	TString rootParFile      = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+	TString rootParFile;
+	if (isSimulation)
+	{
+		rootParFile = "/cvmfs/hadessoft.gsi.de/param/sim/apr12/allParam_APR12_sim_run_12001_gen9_07112017.root";
+	}
+	else
+	{
+		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+	}
 	TString paramSource      = "root"; // root, ascii, oracle
 	TString paramrelease     = "APR12_dst_gen9"; 
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
@@ -97,8 +105,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		TString inputFolder;
 		if (isSimulation) // simulation
 		{
-			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
+			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
 		}
 		else // data
 		{
@@ -318,11 +326,14 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
 		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
 
-		if (EventPlane < 0)
-			continue;
-		if (EventPlaneA < 0 || EventPlaneB < 0)
-			continue;
-
+		if constexpr (!isSimulation)
+		{
+			if (EventPlane < 0)
+				continue;
+			if (EventPlaneA < 0 || EventPlaneB < 0)
+				continue;
+		}
+		
 		fEvent = Selection::EventCandidate(
 			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
 			vertX,
@@ -369,9 +380,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		for (Int_t track = 0; track < nTracks; track++) 
 		{
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
-			HParticleWireManager &wire_manager = matcher->getWireManager();
-			wire_manager.setWireRange(0);
-			wire_manager.getWireInfo(track,fWireInfo,particle_cand);
+			//fWireManager = matcher->getWireManager();
+			matcher->getWireInfoDirect(particle_cand,fWireInfo);
+			//fWireManager.setWireRange(0);
+			//fWireManager.getWireInfo(track,fWireInfo,particle_cand);
 			
 			// I have no freakin idea if this is how it should be done
 			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
@@ -388,7 +400,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
 			fTrack = Selection::TrackCandidate(
-				particle_cand,Selection::TrackCandidate::CreateWireArray(fWireInfo),
+				particle_cand,
+				Selection::TrackCandidate::CreateWireArray(fWireInfo),
 				fEvent.GetID(),
 				fEvent.GetReactionPlane(),
 				track,
@@ -443,8 +456,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH1D(/* TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
 						TH2D(/* TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
 						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
-						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
+						TH3D(TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500),
+						TH3D(TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500)
 						};
 						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
@@ -470,8 +483,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						TH1D(/* TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
 						TH2D(/* TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
 						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500),
-						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",126,-500,500,126,-500,500,126,-500,500)
+						TH3D(TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500),
+						TH3D(TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500)
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
@@ -499,6 +512,11 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     sorter.finalize();
     timer.Stop();
     cout << "Finished DST processing" << endl;
+
+	//--------------------------------------------------------------------------------
+    // Showing how much of the buffer was used for each event hash
+    //--------------------------------------------------------------------------------
+	mixer.PrintStatus();
 
     //--------------------------------------------------------------------------------
     // Creating output file and storing results there

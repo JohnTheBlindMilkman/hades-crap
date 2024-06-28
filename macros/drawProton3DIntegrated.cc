@@ -6,7 +6,7 @@
 #include "TStyle.h"
 #include "TString.h"
 #include "TPaveText.h"
-#include "Palettes.hxx"
+#include "../Externals/Palettes.hxx"
 
 double getNorm(const TH1D *hInp, double xMin, double xMax)
 {
@@ -37,11 +37,11 @@ void drawProton3DIntegrated()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_02_22_processed.root";
-    const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_tmp.root";
+    const TString fileName = "../slurmOutput/apr12ana_quarter_24_06_06_processed.root";
+    const TString outputFile = "../output/3Dcorr_0_10_cent_Integ.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
-    const int rebin = 1;
+    const int rebin = 2;
     const int wbin = 1; 
 
     float norm;
@@ -82,7 +82,7 @@ void drawProton3DIntegrated()
         {
             binc = hRat3D->GetXaxis()->FindFixBin(0.0);
             binmx = binc + wbin;
-            binmn = binc - wbin -1; // I don't have a central bin at 0...
+            binmn = binc - wbin ; // I don't have a central bin at 0...
 
             hRat3D->GetXaxis()->SetRange((i == 0) ? 1 : binmn, (i == 0) ? hSign->GetNbinsX() : binmx);
             hRat3D->GetYaxis()->SetRange((i == 1) ? 1 : binmn, (i == 1) ? hSign->GetNbinsY() : binmx);

@@ -3,13 +3,18 @@
 #include "TF3.h"
 #include "TStyle.h"
 #include "TCanvas.h"
-#include "Palettes.hxx"
+#include "../Externals/Palettes.hxx"
 
 enum class Projection{Out,Side,Long};
 
 double TanhFunc(double *x, double *par)
 {
-    return par[0] * tanh(par[1] * x[0]*x[0] + par[2] * x[1]*x[1] + par[3] * x[2]*x[2]) + par[4];
+    return par[0] * tanh(par[1] * (x[0] - par[4]) + par[2] * (x[1] - par[5]) + par[3] * (x[2] - par[6])) + (1 - par[0]);
+}
+
+double LogisticFunc(double *x, double *par)
+{
+    return 1/(1 + par[0] * exp(- (x[0] - par[6]) - (par[2] * x[1] - par[6]) - (x[2] - par[6])) + par[1] * exp(- (par[3] * x[0] - par[7]) - (par[4] * x[1] - par[7]) - (par[5] * x[2] - par[7])));
 }
 
 //derivative of TanhFunc over a
@@ -99,14 +104,16 @@ void fitHGeant3D()
     const TString fileName = "/u/kjedrzej/hades-crap/output/3Dcorr_0_10_cent_HGeant_Integ.root";
     const TString outputFile = "/u/kjedrzej/hades-crap/output/3Dcorr_0_10_cent_HGeant_Integ_fit.root";
 
-    TF3 *fitFunc = new TF3("fitFunc",TanhFunc,-500,500,-500,500,-500,500,5);
+    TF3 *fitFunc = new TF3("fitFunc",TanhFunc,0,500,0,500,0,500,7);
     fitFunc->SetLineColor(JJColor::fWutSecondaryColors[3]);
-    fitFunc->SetParameters(-0.876870,-0.0005,-0.0005,-0.0005,0.7);
-    fitFunc->SetParLimits(0,-0.8,-0.6);
-    fitFunc->SetParLimits(1,-0.001,-0.0001);
-    fitFunc->SetParLimits(2,-0.001,-0.0001);
-    fitFunc->SetParLimits(3,-0.001,-0.0001);
-    fitFunc->SetParLimits(4,0.1,0.9);
+    fitFunc->SetParameters(0.4,0.2,0.025,0.2,-3,-120,-3);
+    fitFunc->SetParLimits(0,0.1,1.6);
+    fitFunc->SetParLimits(1,0.05,0.3);
+    fitFunc->SetParLimits(2,0.01,0.05);
+    fitFunc->SetParLimits(3,0.05,0.3);
+    fitFunc->SetParLimits(4,-50,0);
+    fitFunc->SetParLimits(5,-200,-50);
+    fitFunc->SetParLimits(6,-10,0);
 
     TFile *inpFile = TFile::Open(fileName);
 

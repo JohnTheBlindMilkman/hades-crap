@@ -95,7 +95,7 @@ namespace Selection
              * @return true 
              * @return false 
              */
-            bool operator!=(const EventCandidate &other)
+            bool operator!=(const EventCandidate &other) const
             {
                 return (EventId != other.EventId);
             }

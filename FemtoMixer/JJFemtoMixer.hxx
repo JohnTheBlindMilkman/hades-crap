@@ -169,6 +169,11 @@
                  */
                 void PrintSettings() const;
                 /**
+                 * @brief Prints to the standard output information about the amounts of tracks and events currently stored in JJFemtoMixer.
+                 * 
+                 */
+                void PrintStatus() const;
+                /**
                  * @brief Add currently processed event to the mixer.
                  * 
                  * @param event Current event.
@@ -247,6 +252,16 @@
         }
 
         template<typename Event, typename Track, typename Pair>
+        void JJFemtoMixer<Event,Track,Pair>::PrintStatus() const
+        {
+            std::cout << "\n------=========== JJFemtoMixer Status ===========------\n";
+            std::cout << "Currently stored tracks:\n";
+            for (const auto &[key,val] : fSimilarityMap)
+                std::cout << val.size() << "/" << fBufferSize << "\t event hash: " << key << "\n";
+            std::cout << "------=============================================------\n" << std::endl;
+        }
+
+        template<typename Event, typename Track, typename Pair>
         std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::AddEvent(const Event &event, const std::vector<Track> &tracks)
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
@@ -276,9 +291,9 @@
 
             if (fSimilarityMap.at(evtHash).size() == fBufferSize || fWaitForBuffer == false)
             {
-                for (std::size_t evtIter = 0; evtIter < fSimilarityMap.at(evtHash).size(); ++evtIter)
-                    if (fSimilarityMap.at(evtHash).at(evtIter).first != event)
-                        outputVector.push_back(fSimilarityMap.at(evtHash).at(evtIter).second);
+                for (const auto &[evt,trck] : fSimilarityMap.at(evtHash))
+                    if (evt != event)
+                        outputVector.push_back(trck);
             }
 
             return SortPairs(MakePairs(outputVector));
