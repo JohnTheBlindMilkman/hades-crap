@@ -5,7 +5,7 @@
 #include "TH2D.h"
 #include "TFile.h"
 #include "TCanvas.h"
-#include "Palettes.hxx"
+#include "../Externals/Palettes.hxx"
 
 double getNorm(const TH1D *hInp, double xMin, double xMax)
 {
@@ -95,19 +95,17 @@ void AnalyticalDivide(TH3D *hNum, TF3 *fDen)
 
 void drawDRProton3DIntegrated()
 {
-    // /home/jedkol/lxpool/hades-crap/output/
-    // /home/jedkol/Downloads/HADES/HADES-CrAP/output/
     gStyle->SetOptStat(0);
-    const TString inpFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_Integ.root";
-    const TString simFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_HGeant_Integ_fit.root";
-    const TString otpFile = "/home/jedkol/Downloads/HADES/HADES-CrAP/output/3Dcorr_0_10_cent_DR_Integ.root";
+    const TString inpFile = "../output/3Dcorr_0_10_cent_Integ.root";
+    const TString simFile = "../output/3Dcorr_0_10_cent_HGeant_Integ_fit.root";
+    const TString otpFile = "../output/3Dcorr_0_10_cent_DR_Integ.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
     const int rebin = 1;
     const int wbin = 1;
 
     float binc,binmx,binmn,norm;
-    TLine line(-250,1,250,1);
+    TLine line(0,1,500,1);
     line.SetLineColor(kGray);
     line.SetLineStyle(kDashed);
 
@@ -119,6 +117,7 @@ void drawDRProton3DIntegrated()
     TH3D *hErr3D = fInpSim->Get<TH3D>("hQoslErrInteg");
 
     TH3D *hRat3D = new TH3D(*hExp3D);
+    //hRat3D->Divide(fFit3D);
     AnalyticalDivide(hRat3D,fFit3D);
     SetErrors(hRat3D,hExp3D,hErr3D);
 
@@ -134,17 +133,17 @@ void drawDRProton3DIntegrated()
         binmx = binc + wbin;
         binmn = binc - wbin;
 
-        hRat3D->GetXaxis()->SetRange((i == 0) ? 1 : binmn, (i == 0) ? hExp3D->GetNbinsX() : binmx);
-        hRat3D->GetYaxis()->SetRange((i == 1) ? 1 : binmn, (i == 1) ? hExp3D->GetNbinsY() : binmx);
-        hRat3D->GetZaxis()->SetRange((i == 2) ? 1 : binmn, (i == 2) ? hExp3D->GetNbinsZ() : binmx);
+        hRat3D->GetXaxis()->SetRange(binc, (i == 0) ? hExp3D->GetNbinsX() : binmx);
+        hRat3D->GetYaxis()->SetRange(binc, (i == 1) ? hExp3D->GetNbinsY() : binmx);
+        hRat3D->GetZaxis()->SetRange(binc, (i == 2) ? hExp3D->GetNbinsZ() : binmx);
 
         TH1D *hRat = static_cast<TH1D*>(hRat3D->Project3D(sProj[i].Data()));
-        norm = getNorm(hRat,150,250);
+        norm = getNorm(hRat,350,500);
         hRat->Rebin(rebin);
         norm *= rebin;
         hRat->Scale(1./norm);
         hRat->GetYaxis()->SetRangeUser(0.,1.9);
-        hRat->GetXaxis()->SetRangeUser(-245,245);
+        hRat->GetXaxis()->SetRangeUser(0,500);
         hRat->SetName(TString::Format("hQ%sRatInteg",sProjName[i].Data()));
         hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];CF(q_{%s})",sProjName[i].Data(),sProjName[i].Data()));
         hRat->GetXaxis()->SetTitleOffset(); // invoking this functione becasue the side direction title got wonky
@@ -168,24 +167,25 @@ void drawDRProton3DIntegrated()
 
     TCanvas *canv2DInteg = new TCanvas("canv2DInteg","",1800,600);
     canv2DInteg->Divide(3,1);
-    JJColor::CreatePrimaryWutGradient();
+    //JJColor::CreatePrimaryWutGradient();
+    gStyle->SetPalette(kPastel);
     for (const int &i : {0,1,2})
     {
         binc = hRat3D->GetXaxis()->FindFixBin(0.0);
         binmx = binc + wbin;
         binmn = binc - wbin;
 
-        hRat3D->GetXaxis()->SetRange((i == 0 || (i+1)%3 == 0) ? 1 : binmn, (i == 0 || (i+1)%3 == 0) ? hExp3D->GetNbinsX() : binmx);
-        hRat3D->GetYaxis()->SetRange((i == 1 || (i+1)%3 == 1) ? 1 : binmn, (i == 1 || (i+1)%3 == 1) ? hExp3D->GetNbinsY() : binmx);
-        hRat3D->GetZaxis()->SetRange((i == 2 || (i+1)%3 == 2) ? 1 : binmn, (i == 2 || (i+1)%3 == 2) ? hExp3D->GetNbinsZ() : binmx);
+        hRat3D->GetXaxis()->SetRange(binc, (i == 0 || (i+1)%3 == 0) ? hExp3D->GetNbinsX() : binmx);
+        hRat3D->GetYaxis()->SetRange(binc, (i == 1 || (i+1)%3 == 1) ? hExp3D->GetNbinsY() : binmx);
+        hRat3D->GetZaxis()->SetRange(binc, (i == 2 || (i+1)%3 == 2) ? hExp3D->GetNbinsZ() : binmx);
 
         TH2D *hRat = static_cast<TH2D*>(hRat3D->Project3D((sProj[i%3]+sProj[(i+1)%3]).Data()));
-        norm = getNorm(hRat,150,250,150,250);
+        norm = getNorm(hRat,350,500,350,500);
         hRat->Rebin2D(rebin,rebin);
         norm *= rebin;
         hRat->Scale(1./norm);
-        hRat->GetYaxis()->SetRangeUser(-245,245);
-        hRat->GetXaxis()->SetRangeUser(-245,245);
+        hRat->GetYaxis()->SetRangeUser(0,500);
+        hRat->GetXaxis()->SetRangeUser(0,500);
         hRat->SetName(TString::Format("hQ%s%sRatInteg",sProjName[i%3].Data(),sProjName[(i+1)%3].Data()));
         hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];q_{%s} [MeV/c];",sProjName[i].Data(),sProjName[(i+1)%3].Data()));
         hRat->GetXaxis()->SetTitleOffset();

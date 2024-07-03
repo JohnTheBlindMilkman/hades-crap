@@ -46,6 +46,13 @@
                  */
                 std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
                 /**
+                 * @brief Create pairs of identical particles from given tracks
+                 * 
+                 * @param tracks tracks vector
+                 * @return std::vector<Pair> vector of pairs
+                 */
+                std::vector<Pair> MakePairs(const std::vector<Track> &tracks1, const std::vector<Track> &tracks2);
+                /**
                  * @brief Divide pairs into corresponding category (given by the pair hash)
                  * 
                  * @param pairs pairs vector
@@ -84,7 +91,7 @@
                  * @brief Get the corresponding hash for given Event object.
                  * 
                  * @param obj Event-type object
-                 * @return constexpr std::size_t 
+                 * @return std::size_t 
                  */
                 constexpr std::size_t GetEventHash(const Event &obj) const {return fEventHashingFunction(obj);}
                 /**
@@ -103,7 +110,7 @@
                  * @brief Get the corresponding hash for given Pair object.
                  * 
                  * @param obj Pair-type object.
-                 * @return constexpr std::size_t 
+                 * @return std::size_t 
                  */
                 constexpr std::size_t GetPairHash(const Pair &obj) const {return fPairHashingFunction(obj);}
                 /**
@@ -141,7 +148,7 @@
                 /**
                  * @brief Get the max mixing buffer size.
                  * 
-                 * @return constexpr std::size_t Max buffer size.
+                 * @return std::size_t Max buffer size.
                  */
                 constexpr std::size_t GetMaxBufferSize() const {return fBufferSize;}
                 /**
@@ -187,7 +194,9 @@
                  * @param event Current event (the event from which we don't want to get tracks).
                  * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from stored tracks for similar events.
                  */
-                std::map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
+                std::map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event, const std::vector<Track> &tracks);
+
+                std::pair<std::map<std::size_t, std::vector<Pair> >,std::map<std::size_t, std::vector<Pair> > > ProcessCurrentEvent(const Event &event, const std::vector<Track> &tracks);
         };
 
         template<typename Event, typename Track, typename Pair>
@@ -206,6 +215,30 @@
                         tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1)));
                     else
                         tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2)));
+
+                    reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
+                }
+
+            return tmpVector;
+        }
+
+        template<typename Event, typename Track, typename Pair>
+        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks1, const std::vector<Track> &tracks2)
+        {
+            bool reverse = false;
+            const std::size_t trackVecSize1 = tracks1.size();
+            const std::size_t trackVecSize2 = tracks2.size();
+
+            std::vector<Pair> tmpVector;
+            tmpVector.reserve(trackVecSize1*trackVecSize2); // reserve the expected vector size
+
+            for (std::size_t iter1 = 0; iter1 < trackVecSize1; ++iter1)
+                for (std::size_t iter2 = 0; iter2 < trackVecSize2; ++iter2)
+                {
+                    if (reverse)
+                        tmpVector.push_back(Pair(tracks2.at(iter2),tracks1.at(iter1)));
+                    else
+                        tmpVector.push_back(Pair(tracks1.at(iter1),tracks2.at(iter2)));
 
                     reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
                 }
@@ -284,7 +317,7 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const Event &event)
+        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const Event &event, const std::vector<Track> &tracks)
         {
             std::vector<Track> outputVector;
             std::size_t evtHash = fEventHashingFunction(event);
@@ -296,7 +329,13 @@
                         outputVector.push_back(trck);
             }
 
-            return SortPairs(MakePairs(outputVector));
+            return SortPairs(MakePairs(outputVector,tracks));
+        }
+
+        template<typename Event, typename Track, typename Pair>
+        std::pair<std::map<std::size_t, std::vector<Pair> >,std::map<std::size_t, std::vector<Pair> > > JJFemtoMixer<Event,Track,Pair>::ProcessCurrentEvent(const Event &event, const std::vector<Track> &tracks)
+        {
+            return std::make_pair(AddEvent(event,tracks),GetSimilarPairs(event,tracks));
         }
     } // namespace Mixing
     

@@ -107,13 +107,13 @@ void fitHGeant3D()
     TF3 *fitFunc = new TF3("fitFunc",TanhFunc,0,500,0,500,0,500,7);
     fitFunc->SetLineColor(JJColor::fWutSecondaryColors[3]);
     fitFunc->SetParameters(0.4,0.2,0.025,0.2,-3,-120,-3);
-    fitFunc->SetParLimits(0,0.1,1.6);
-    fitFunc->SetParLimits(1,0.05,0.3);
+    fitFunc->SetParLimits(0,0.1,1.2);
+    fitFunc->SetParLimits(1,0.03,0.3);
     fitFunc->SetParLimits(2,0.01,0.05);
-    fitFunc->SetParLimits(3,0.05,0.3);
+    fitFunc->SetParLimits(3,0.03,0.3);
     fitFunc->SetParLimits(4,-50,0);
     fitFunc->SetParLimits(5,-200,-50);
-    fitFunc->SetParLimits(6,-10,0);
+    fitFunc->SetParLimits(6,-50,0);
 
     TFile *inpFile = TFile::Open(fileName);
 
@@ -141,14 +141,17 @@ void fitHGeant3D()
     canv->cd(1);
     hOutSim->Draw();
     hOutFit->Draw("c same");
+    hOutFit->Write();
 
     canv->cd(2);
     hSideSim->Draw();
     hSideFit->Draw("c same");
+    hSideFit->Write();
 
     canv->cd(3);
     hLongSim->Draw();
     hLongFit->Draw("c same");
+    hLongFit->Write();
 
     canv->Write();
 }

@@ -11,15 +11,15 @@ void compareHists()
 {
     const TString fileName1 = "../output/3Dcorr_0_10_cent_Integ.root";
     const TString fileName2 = "../output/3Dcorr_0_10_cent_Integ_tmp.root";
-    const TString fileName3 = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
+    //const TString fileName3 = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
     const TString fileNameOut = "../output/3Dcorr_0_10_cent_Integ_Comp.root";
     const std::vector<TString> histNames = {"hQoutRatInteg","hQsideRatInteg","hQlongRatInteg"};
-    const std::vector<TString> titleNames = {"FCH = 9/24","FCH = 10/24","FCH = 11/24"};
+    const std::vector<TString> titleNames = {"SL #in (-0.6,0.5)","No SL cut"};
     const std::vector<TString> sProjName{"out","side","long"};
 
     TFile *inpFile1 = TFile::Open(fileName1);
     TFile *inpFile2 = TFile::Open(fileName2);
-    TFile *inpFile3 = TFile::Open(fileName3);
+    //TFile *inpFile3 = TFile::Open(fileName3);
     TFile *outFile = TFile::Open(fileNameOut,"RECREATE");
 
     TCanvas *c = new TCanvas("c","",1800,600);
@@ -53,20 +53,20 @@ void compareHists()
         outFile->cd();
         hInp2->Write();
 
-        inpFile3->cd();
+        /* inpFile3->cd();
         TH1D *hInp3 = inpFile3->Get<TH1D>(histNames.at(i));
         hInp3->SetMarkerColor(JJColor::fWutSecondaryColors[3]); // secondary fire red WUT
         hInp3->SetName(TString::Format("%s_3",histNames.at(i).Data()));
         hInp3->SetTitle(TString::Format("%s;q_{%s} [MeV/c];CF(q_{%s})",titleNames[2].Data(),sProjName[i].Data(),sProjName[i].Data()));
         outFile->cd();
-        hInp3->Write();
+        hInp3->Write(); */
 
         TVirtualPad *tvp = c->cd(i+1);
         tvp->SetMargin(0.2,0.02,0.15,0.02);
         
         hInp1->Draw("hist pe");
         hInp2->Draw("hist pe same");
-        hInp3->Draw("hist pe same");
+        //hInp3->Draw("hist pe same");
 
         if (i == 1)
             tvp->BuildLegend(.3,.21,.3,.21,"","p");

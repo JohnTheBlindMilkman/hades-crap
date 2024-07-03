@@ -50,15 +50,18 @@ bool PairRejection(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(8,2) || 
+	return pair.GetMinWireDistance() < 2 ||
+		pair.GetBothLayers() < 20 || 
+		(pair.GetSplittingLevel() > -0.6 && pair.GetSplittingLevel() < 0.5) ||
 		pair.GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	
+	constexpr bool isCustomDst{false};
 	constexpr bool isSimulation{false}; // for now this could be easly just const
 	constexpr int protonPID{14};
 
@@ -110,9 +113,15 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		}
 		else // data
 		{
-			//inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
-			//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
-			inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+			if (isCustomDst)
+			{
+				inputFolder = "/lustre/hades/user/kjedrzej/customDST/apr12PlusHMdcSeg/5sec/109"; // test Robert filtered events
+			}
+			else
+			{
+				//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
+				inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+			}
 		}
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
@@ -226,6 +235,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     HParticleMetaMatcher* matcher = new HParticleMetaMatcher();
     matcher->setDebug();
 	matcher->setUseEMC(kFALSE);
+	if (isCustomDst)
+		matcher->setUseSeg(kTRUE);
     masterTaskSet->add(matcher);
 
 	//--------------------------------------------------------------------------------
@@ -299,7 +310,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     {
 		if (loop->nextEvent(event) <= 0) 
 		{
-			cout << " Last events processed " << endl;
+			std::cout << " Last events processed " << endl;
 			break;
 		}
 
@@ -335,7 +346,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		}
 		
 		fEvent = Selection::EventCandidate(
-			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
+			std::to_string(event_header->getEventRunNumber()) + std::to_string(event_header->getEventSeqNumber()),
 			vertX,
 			vertY,
 			vertZ,
@@ -443,7 +454,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
 
             fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
-			fBckgMap = mixer.GetSimilarPairs(fEvent);
+			fBckgMap = mixer.GetSimilarPairs(fEvent,fEvent.GetTrackList());
 
 			for (const auto &signalEntry : fSignMap)
 			{
@@ -511,7 +522,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     sorter.finalize();
     timer.Stop();
-    cout << "Finished DST processing" << endl;
+    std::cout << "Finished DST processing" << endl;
 
 	//--------------------------------------------------------------------------------
     // Showing how much of the buffer was used for each event hash
@@ -548,7 +559,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     out->Save();
     out->Close();
 
-    cout << "####################################################" << endl;
+    std::cout << "####################################################" << endl;
 	gROOT->SetBatch(kFALSE);
 	return 0;
 	}
