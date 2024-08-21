@@ -158,7 +158,7 @@ void drawProton3DOctants()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_06_21_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_07_09_processed.root";
     const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_Oct.root";
     const int rebin = 1;
     const int wbin = 1; 

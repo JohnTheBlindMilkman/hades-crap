@@ -267,7 +267,7 @@ namespace Selection
                 float SL = 0;
                 unsigned int SW = 0, MWD = 1000;
                 std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> allWD;
-                std::fill(allWD.begin(),allWD.end(),-999); // we don't want to initialise with zeros, because it would mean that the unpopulated fiels are sharing a wire
+                std::fill(allWD.begin(),allWD.end(),-999); // we don't want to initialise with zeros, because it would mean that the unpopulated fields are sharing a wire
                 int n0 = 0, n1 = 0, n2 = 0;
                 for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
                 {
@@ -314,7 +314,7 @@ namespace Selection
                 }
 
                 SL /= (n1 + n2);
-                return std::make_tuple(SL,SW,n0,MWD,allWD);
+                return std::make_tuple(SL,SW,n0,MWD,allWD); // this should be a struct at this point...
             }
             unsigned CalcSharedMetaCells(const TrackCandidate &part1, const TrackCandidate &part2) const
             {

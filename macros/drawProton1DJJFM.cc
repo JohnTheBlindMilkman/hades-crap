@@ -4,7 +4,7 @@
 #include "TH2D.h"
 #include "TString.h"
 #include "TLegend.h"
-#include "Palettes.hxx"
+#include "../Externals/Palettes.hxx"
 #include "TLine.h"
 
 #include "hadesifyPlot.cc"
@@ -32,9 +32,9 @@ void drawProton1DJJFM()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_05_20_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_08_21_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
-    const int rebin = 2;
+    const int rebin = 1;
 
     float norm;
     TH1D *hRat, *hSign, *hBckg;
@@ -69,6 +69,9 @@ void drawProton1DJJFM()
     hRat->GetXaxis()->SetTitleSize(0.06);
     hRat->GetXaxis()->SetLabelSize(0.06);
     hRat->GetXaxis()->SetNdivisions(506);
+
+    hRat->GetXaxis()->SetRangeUser(0,490);
+    hRat->GetYaxis()->SetRangeUser(0,1.9);
 
     TFile *outFile = TFile::Open(outputFile,"RECREATE");
 
