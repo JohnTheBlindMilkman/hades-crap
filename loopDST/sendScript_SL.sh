@@ -32,9 +32,9 @@ currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
 day="all"
-submmissionbase=/lustre/hades/user/${user}/sub/apr12/
-submissiondir=${submmissionbase}/loopDST
- nFilesPerJob=50                                # number of files to be analyzed by 1 job (default==1)
+submissionbase=/lustre/hades/user/${user}/sub/apr12/
+submissiondir=${submissionbase}/loopDST
+ nFilesPerJob=50                                # number of files to be analyzed by 1 job (default==1) ana=50, sim=200
     jobscript=${submissiondir}/jobScript_SL.sh     # exec script (full path, call without dot, set it executable!)
     outputdir=/lustre/hades/user/${user}/apr12/ # outputdir for files AND logFiles
 pathoutputlog=${outputdir}/out                  # protocol from batch farm for each file
@@ -46,12 +46,12 @@ par4=${outputdir}                                              # optional par4 :
 par5=-1                                                        # optional par5 : number of events
 par6="no"                                                      # optional par6
 par7="no"                                                      # optional par7   "single" to run comma separated list as single files in jobscript
-resources="--mem=2000 --time=0-2:00:00"                        # runtime < 10h, mem < 2GB
+resources="--mem=2000 --time=0-4:00:00"                        # runtime < 10h, mem < 2GB
 email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs have finished
 
-jobarrayFile="loop_sim_${day}_jobarray.dat"
+jobarrayFile="loop_day_${day}_jobarray.dat"
 
-filelist=${currentDir}/listsApr12/sim_${day}.list  # file list in local dir! not in submissiondir!!!
+filelist=${currentDir}/listsApr12/day_${day}.list  # file list in local dir! not in submissiondir!!!
 ######################################################################
 
 
@@ -61,12 +61,12 @@ nFiles=$( cat $filelist | wc -l)
 
 #---------------------------------------------------------------------
 # create needed dirs
-if [ ! -d $submmissionbase ]
+if [ ! -d $submissionbase ]
 then
-    echo "===> CREATE SUBMISSIONBASEDIR : $submmissionbase"
-    mkdir -p $submmissionbase
+    echo "===> CREATE SUBMISSIONBASEDIR : $submissionbase"
+    mkdir -p $submissionbase
 else
-    echo "===> USE SUBMISSIONBASEDIR : $submmissionbase"
+    echo "===> USE SUBMISSIONBASEDIR : $submissionbase"
 fi
 
 #---------------------------------------------------------------------
@@ -181,8 +181,8 @@ done
 #---------------------------------------------------------------------
 # sync the local modified stuff 
 # to the submission dir
-echo "===> SYNC CURENTDIR TO SUBMISSIONDIR : rsync  -vHaz $currentDir ${submmissionbase}"
-rsync  -vHaz $currentDir ${submmissionbase}/
+echo "===> SYNC CURENTDIR TO SUBMISSIONDIR : rsync  -vHaz $currentDir ${submissionbase}"
+rsync  -vHaz $currentDir ${submissionbase}/
 
 syncStat=$?
 

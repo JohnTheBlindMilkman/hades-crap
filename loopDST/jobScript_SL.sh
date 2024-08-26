@@ -6,8 +6,6 @@
 #
 # The user specific part of the script is indicated below.
 
-
-
 par1="no"
 par2="no"
 par3="no"
@@ -82,7 +80,6 @@ esac
     # map back params for the job
     input=$(awk "NR==${myline}" $jobarrayFile)   # get all params for this job
     
-    
     par1=$(echo $input | cut -d " " -f1)
     par2=$(echo $input | cut -d " " -f2)
     par3=$(echo $input | cut -d " " -f3)
@@ -99,7 +96,6 @@ esac
     echo "par6 = ${par6}"
     echo "par7 = ${par7}"
 
-
     format='+%Y/%m/%d-%H:%M:%S'
 
     host=$(hostname)
@@ -112,8 +108,7 @@ esac
     echo "USER is         : " $USER
     echo "DISK USAGE /tmp :"
     df -h /tmp
-    echo "--------------------------------"
-    
+    echo "--------------------------------" 
     
     echo ""               
     echo "--------------------------------"
@@ -126,8 +121,6 @@ esac
     echo "par7 = ${par7}"
     echo "--------------------------------"
     echo ""
-
-
 
     echo ""
     echo "--------------------------------"
@@ -143,18 +136,9 @@ esac
     echo "--------------------------------"     
     echo ""               
 
-
-
-
-
-
-
-
 ###################################################################
 ###################################################################
 #   EDIT THIS PART TO EXECUTE YOUR JOB!
-
-
 
 #----------------------
 # evironment 
@@ -183,8 +167,6 @@ esac
 
         status=$?
 
-
-
         echo "------------------------------------"
         echo "OUTPUT:"
 
@@ -204,8 +186,6 @@ esac
 
     status=$?
 
-
-
     echo "------------------------------------"
     echo "OUTPUT:"
 
@@ -222,17 +202,9 @@ esac
 
   fi
 
-
-
 #   END EDIT YOUR EXECUT JOB!
 ###################################################################
 ###################################################################
-
-    
-
-
-
-
 
     echo ""               
     echo "--------------------------------"
@@ -263,11 +235,8 @@ esac
     
     date $format
 
-
     sleep 2
 
     outfile=$(basename $par4 | sed 's/.root//')
 
-
     mv ${pathoutputlog}/slurm-${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out ${pathoutputlog}/${outfile}.log
-

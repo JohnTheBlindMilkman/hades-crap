@@ -2,6 +2,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 #include "TCanvas.h"
+#include "TLine.h"
 #include "TStyle.h"
 #include "TString.h"
 
@@ -14,13 +15,17 @@ void compareHists()
     const TString fileName3 = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
     const TString fileNameOut = "../output/3Dcorr_0_10_cent_Integ_Comp.root";
     const std::vector<TString> histNames = {"hQoutRatInteg","hQsideRatInteg","hQlongRatInteg"};
-    const std::vector<TString> titleNames = {"FCH = 9/24","FCH = 10/24","FCH = 11/24"};
+    const std::vector<TString> titleNames = {"FCH = 16/24","FCH = 17/24","FCH = 18/24"};
     const std::vector<TString> sProjName{"out","side","long"};
 
     TFile *inpFile1 = TFile::Open(fileName1);
     TFile *inpFile2 = TFile::Open(fileName2);
     TFile *inpFile3 = TFile::Open(fileName3);
     TFile *outFile = TFile::Open(fileNameOut,"RECREATE");
+
+    TLine *line = new TLine(-500,1,500,1);
+    line->SetLineStyle(kDashed);
+    line->SetLineColor(kGray);
 
     TCanvas *c = new TCanvas("c","",1800,600);
     c->Divide(3,1);
@@ -32,7 +37,7 @@ void compareHists()
         inpFile1->cd();
         TH1D *hInp1 = inpFile1->Get<TH1D>(histNames.at(i));
         hInp1->SetMarkerColor(JJColor::fWutSecondaryColors[1]); // secondary blue WUT
-        hInp1->GetYaxis()->SetRangeUser(0.,1.9);
+        hInp1->GetYaxis()->SetRangeUser(0.6,1.4);
         hInp1->GetXaxis()->SetRangeUser(-1,480);
         hInp1->SetName(TString::Format("%s_1",histNames.at(i).Data()));
         hInp1->SetTitle(TString::Format("%s;q_{%s} [MeV/c];CF(q_{%s})",titleNames[0].Data(),sProjName[i].Data(),sProjName[i].Data()));
@@ -67,6 +72,7 @@ void compareHists()
         hInp1->Draw("hist pe");
         hInp2->Draw("hist pe same");
         hInp3->Draw("hist pe same");
+        line->Draw("same");
 
         if (i == 1)
             tvp->BuildLegend(.3,.21,.3,.21,"","p");

@@ -31,6 +31,25 @@ namespace JJColor
         static_cast<Color_t>(TColor::GetColor(violetWut.AsHexString()))
     };
 
+    static const TColor mintToBuleWut(TColor::GetFreeColorIndex(),122./255,156./255,188./255);
+    static const TColor blueToGoldWut(TColor::GetFreeColorIndex(),143./255,132./255,99./255);
+    static const TColor goldToFireWut(TColor::GetFreeColorIndex(),231./255,107./255,21./255);
+    static const TColor fireToWineWut(TColor::GetFreeColorIndex(),192./255,33./255,6./255);
+    static const TColor wineToVioletWut(TColor::GetFreeColorIndex(),124./255,32./255,46./255);
+    static const std::vector<Color_t> fWutSecondaryColors11{
+        static_cast<Color_t>(TColor::GetColor(mintWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(mintToBuleWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(blueWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(blueToGoldWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(goldWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(goldToFireWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(fireRedWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(fireToWineWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(wineRedWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(wineToVioletWut.AsHexString())),
+        static_cast<Color_t>(TColor::GetColor(violetWut.AsHexString()))
+    };
+
     static const std::vector<Color_t> fWutAllColors{
         static_cast<Color_t>(TColor::GetColor(greenWut.AsHexString())),
         static_cast<Color_t>(TColor::GetColor(navyWut.AsHexString())),

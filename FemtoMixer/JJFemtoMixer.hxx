@@ -84,7 +84,7 @@
                  * @brief Get the corresponding hash for given Event object.
                  * 
                  * @param obj Event-type object
-                 * @return constexpr std::size_t 
+                 * @return std::size_t 
                  */
                 constexpr std::size_t GetEventHash(const Event &obj) const {return fEventHashingFunction(obj);}
                 /**
@@ -103,7 +103,7 @@
                  * @brief Get the corresponding hash for given Pair object.
                  * 
                  * @param obj Pair-type object.
-                 * @return constexpr std::size_t 
+                 * @return std::size_t 
                  */
                 constexpr std::size_t GetPairHash(const Pair &obj) const {return fPairHashingFunction(obj);}
                 /**
@@ -141,7 +141,7 @@
                 /**
                  * @brief Get the max mixing buffer size.
                  * 
-                 * @return constexpr std::size_t Max buffer size.
+                 * @return std::size_t Max buffer size.
                  */
                 constexpr std::size_t GetMaxBufferSize() const {return fBufferSize;}
                 /**

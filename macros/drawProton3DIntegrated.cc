@@ -37,12 +37,12 @@ void drawProton3DIntegrated()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_quarter_24_06_06_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_08_20_processed.root";
     const TString outputFile = "../output/3Dcorr_0_10_cent_Integ.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
-    const int rebin = 2;
-    const int wbin = 1; 
+    const int rebin = 1;
+    const int wbin = 3; 
 
     float norm;
     int binc, binmn, binmx;
@@ -57,7 +57,7 @@ void drawProton3DIntegrated()
     TCanvas *canvInteg = new TCanvas("canvInteg","",1800,600);
     canvInteg->Divide(3,1);
 
-    TPaveText *ptInfo = new TPaveText(0.1,0.8,0.7,0.95,"NB");
+    TPaveText *ptInfo = new TPaveText(.35,.7,.8,.95,"NB");
     ptInfo->SetBorderSize(0);
     ptInfo->SetTextAlign(12);
     ptInfo->SetTextFont(102);
@@ -82,11 +82,11 @@ void drawProton3DIntegrated()
         {
             binc = hRat3D->GetXaxis()->FindFixBin(0.0);
             binmx = binc + wbin;
-            binmn = binc - wbin ; // I don't have a central bin at 0...
+            //binmn = binc - wbin ; // I don't have a central bin at 0...
 
-            hRat3D->GetXaxis()->SetRange((i == 0) ? 1 : binmn, (i == 0) ? hSign->GetNbinsX() : binmx);
-            hRat3D->GetYaxis()->SetRange((i == 1) ? 1 : binmn, (i == 1) ? hSign->GetNbinsY() : binmx);
-            hRat3D->GetZaxis()->SetRange((i == 2) ? 1 : binmn, (i == 2) ? hSign->GetNbinsZ() : binmx);
+            hRat3D->GetXaxis()->SetRange(1, (i == 0) ? hSign->GetNbinsX() : binmx);
+            hRat3D->GetYaxis()->SetRange(1, (i == 1) ? hSign->GetNbinsY() : binmx);
+            hRat3D->GetZaxis()->SetRange(1, (i == 2) ? hSign->GetNbinsZ() : binmx);
 
             TH1D *hRat = static_cast<TH1D*>(hRat3D->Project3D(sProj[i].Data()));
             norm = getNorm(hRat,350,500);
@@ -108,13 +108,13 @@ void drawProton3DIntegrated()
 
             hRat->Write();
 
-            TPaveText *pt = new TPaveText(0.3,0.2,0.7,0.5,"NB");
+            TPaveText *pt = new TPaveText(0.3,0.4,0.7,0.6,"NB");
             pt->SetBorderSize(0);
             pt->SetFillStyle(1);
             pt->SetTextAlign(22);
             pt->SetTextFont(102);
-            pt->AddText(TString::Format("q_{%s} #in (%.2f,%.2f) [MeV/c]",sProjName[(i+1)%3].Data(),hRat->GetXaxis()->GetBinCenter(binmn),hRat->GetXaxis()->GetBinCenter(binmx)));
-            pt->AddText(TString::Format("q_{%s} #in (%.2f,%.2f) [MeV/c]",sProjName[(i+2)%3].Data(),hRat->GetXaxis()->GetBinCenter(binmn),hRat->GetXaxis()->GetBinCenter(binmx)));
+            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(i+1)%3].Data(),hRat->GetXaxis()->GetBinUpEdge(binmx)));
+            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(i+2)%3].Data(),hRat->GetXaxis()->GetBinUpEdge(binmx)));
 
             canvInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
             hRat->Draw("hist pe pmc plc");
