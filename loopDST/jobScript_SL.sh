@@ -240,3 +240,6 @@ esac
     outfile=$(basename $par4 | sed 's/.root//')
 
     mv ${pathoutputlog}/slurm-${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out ${pathoutputlog}/${outfile}.log
+
+# added propagation of the exit code from the root macro to here, so SLURM know if the job has crashed or not
+    exit "$status"

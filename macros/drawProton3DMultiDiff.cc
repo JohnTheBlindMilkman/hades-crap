@@ -61,7 +61,7 @@ void drawProton3DMultiDiff()
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
     const int rebin = 1;
-    const int wbin = 3; 
+    const int wbin = 2; 
 
     float norm;
     int binc, binmn, binmx;

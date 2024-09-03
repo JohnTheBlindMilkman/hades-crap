@@ -31,10 +31,10 @@ user=$(whoami)
 currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
-day="all"
+day="bad"
 submissionbase=/lustre/hades/user/${user}/sub/apr12/
 submissiondir=${submissionbase}/loopDST
- nFilesPerJob=50                                # number of files to be analyzed by 1 job (default==1) ana=50, sim=200
+ nFilesPerJob=1                                # number of files to be analyzed by 1 job (default==1) ana=50, sim=200
     jobscript=${submissiondir}/jobScript_SL.sh     # exec script (full path, call without dot, set it executable!)
     outputdir=/lustre/hades/user/${user}/apr12/ # outputdir for files AND logFiles
 pathoutputlog=${outputdir}/out                  # protocol from batch farm for each file
