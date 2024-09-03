@@ -68,8 +68,8 @@ void fit_proton() {
     Hal::DividedHisto2D* mapH = (Hal::DividedHisto2D*) file->Get("new");
     CorrFitMapKstarRstar* map = new CorrFitMapKstarRstar(*((TH2D*) mapH->GetHist()), Hal::Femto::EKinematics::kLCMS);
 
-    TFile *dataFile = TFile::Open("../output/1Dcorr_0_10_cent_DR_forHAL.root");
-    TH1D *hInp = MakeReducedHisto(dataFile->Get<TH1D>("hQinvDRy1"),0.4);
+    TFile *dataFile = TFile::Open("../output/1Dcorr_0_10_cent_forHAL.root");
+    TH1D *hInp = MakeReducedHisto(dataFile->Get<TH1D>("hQinvRatY1"),0.4);
 
   Femto1DCF* cf = new Femto1DCF("func", hInp->GetNbinsX(), hInp->GetXaxis()->GetXmin() , hInp->GetXaxis()->GetXmax(), Hal::Femto::EKinematics::kLCMS);
   // fill dummy data

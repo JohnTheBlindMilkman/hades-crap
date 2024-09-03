@@ -11,7 +11,7 @@
 void compareHists()
 {
     const TString fileName1 = "../output/3Dcorr_0_10_cent_Integ.root";
-    const TString fileName2 = "../output/3Dcorr_0_10_cent_Integ_tmp.root";
+    const TString fileName2 = "../output/3Dcorr_0_10_cent_DR_Integ.root";
     const TString fileName3 = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
     const TString fileNameOut = "../output/3Dcorr_0_10_cent_Integ_Comp.root";
     const std::vector<TString> histNames = {"hQoutRatInteg","hQsideRatInteg","hQlongRatInteg"};

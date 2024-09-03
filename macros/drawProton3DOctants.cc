@@ -8,6 +8,7 @@
 #include "TStyle.h"
 #include "TString.h"
 #include "TPaveText.h"
+#include "TPad.h"
 #include "../Externals/Palettes.hxx"
 
 double getNorm(const TH1D *hInp, double xMin, double xMax)
@@ -101,7 +102,7 @@ TH3D* CreateOctant(TH3D *hRat3D, TString id)
     return hOct;
 }
 
-void drawProjections(TH3D *hRat3D, TString id, const int wbin, const int rebin)
+void drawProjections(TH3D *hRat3D, TH3D *graphic3D, TString id, const int wbin, const int rebin)
 {
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
@@ -109,6 +110,14 @@ void drawProjections(TH3D *hRat3D, TString id, const int wbin, const int rebin)
     TLine *line = new TLine(0,1,500,1);
     TCanvas *canvInteg = new TCanvas(TString::Format("canvInteg_%s",id.Data()),"",1800,600);
     canvInteg->Divide(3,1);
+
+    TCanvas *canvWithGraphic = new TCanvas(TString::Format("canvWithGraphic_%s",id.Data()),"",1800,1200);
+    canvWithGraphic->SetMargin(0.,0.,0.,0.);
+    //canvWithGraphic->Divide(2,1);
+
+    TPad *pLeft = new TPad("pLeft","",.0,.0,.6,1.);
+    TPad *pRight = new TPad("pRight","",.6,.0,1.,1.);
+    pRight->Divide(1,3);
 
     int binc,binmn,binmx;
     double norm;
@@ -147,9 +156,35 @@ void drawProjections(TH3D *hRat3D, TString id, const int wbin, const int rebin)
             canvInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
             hRat->Draw("hist pe pmc plc");
             line->Draw("same");
+
+            pRight->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
+            hRat->Draw("hist pe pmc plc");
+            line->Draw("same");
         }
 
+        pLeft->cd()->SetMargin(0.2,0.2,0.15,0.02);
+        //graphic3D->SetMarkerColorAlpha(JJColor::fWutSecondaryColors[3],0.5);
+        //graphic3D->SetFillColorAlpha(JJColor::fWutSecondaryColors[3],0.5);
+        graphic3D->GetXaxis()->SetTitleSize(0.06);
+        //graphic3D->GetXaxis()->SetLabelSize(0.06);
+        graphic3D->GetXaxis()->SetNdivisions(206);
+        graphic3D->GetYaxis()->SetTitleSize(0.06);
+        //graphic3D->GetYaxis()->SetLabelSize(0.06);
+        graphic3D->GetYaxis()->SetNdivisions(206);
+        graphic3D->GetZaxis()->SetTitleSize(0.06);
+        graphic3D->GetZaxis()->SetTitleOffset(1.2);
+        //graphic3D->GetZaxis()->SetLabelSize(0.06);
+        graphic3D->GetZaxis()->SetNdivisions(206);
+        graphic3D->Draw("fb bb box3");
+
+        canvWithGraphic->cd();
+        pLeft->Draw();
+        //canvWithGraphic->cd(2);
+        pRight->Draw();
+
         canvInteg->Write();
+        canvWithGraphic->Write();
+        canvWithGraphic->SaveAs(TString::Format("../output/gif/canvWithGraphic_%s.gif",id.Data()));
     }
 }
 
@@ -160,6 +195,7 @@ void drawProton3DOctants()
 
     const TString fileName = "../slurmOutput/apr12ana_all_24_07_09_processed.root";
     const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_Oct.root";
+    const std::array<TString,2> signArr = {"p","m"};
     const int rebin = 1;
     const int wbin = 1; 
 
@@ -174,17 +210,14 @@ void drawProton3DOctants()
     TFile *inpFile = TFile::Open(fileName);
     TFile *otpFile = TFile::Open(outputFile,"RECREATE");
 
-    TCanvas *canvInteg = new TCanvas("canvInteg","",1800,600);
-    canvInteg->Divide(3,1);
-
     TH3D *hSign = inpFile->Get<TH3D>("hQoslSignInteg");
     TH3D *hBckg = inpFile->Get<TH3D>("hQoslBckgInteg");
 
-    for (const TString &x : {"p","m"})
-        for (const TString &y : {"p","m"})
-            for (const TString &z : {"p","m"})
+    for (const int &x : {0,1})
+        for (const int &y : {0,1})
+            for (const int &z : {0,1})
             {
-                octantHash = x+y+z;
+                octantHash = signArr[x] + signArr[y] + signArr[z];
                 TH3D *hTmpSign = CreateOctant(hSign,octantHash);
                 hTmpSign->Write();
                 TH3D *hTmpBckg = CreateOctant(hBckg,octantHash);
@@ -195,6 +228,10 @@ void drawProton3DOctants()
                 hRat3D->SetName("hQoslRatInteg_"+octantHash);
                 hRat3D->Write();
 
-                drawProjections(hRat3D,octantHash,wbin,rebin);
+                TH3D *hGraphic = new TH3D("hGraphic",";q_{out};q_{side};q_{long}",2,-500,500,2,-500,500,2,-500,500);
+                //hGraphic->SetMarkerColor(JJColor::fWutSecondaryColors[3]);
+                hGraphic->SetFillColor(JJColor::fWutMainColors[1]);
+                hGraphic->SetBinContent(x+1,y+1,z+1,1);
+                drawProjections(hRat3D,hGraphic,octantHash,wbin,rebin);
             }
 }

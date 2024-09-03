@@ -41,8 +41,8 @@ void drawProton3DIntegrated()
     const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
-    const int rebin = 1;
-    const int wbin = 3; 
+    const int rebin = 2;
+    const int wbin = 1; 
 
     float norm;
     int binc, binmn, binmx;
