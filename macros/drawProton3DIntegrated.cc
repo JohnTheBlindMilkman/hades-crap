@@ -37,12 +37,12 @@ void drawProton3DIntegrated()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_08_20_processed.root";
+    const TString fileName = "../slurmOutput/apr12sim_all_24_08_12_2_processed.root";
     const TString outputFile = "../output/3Dcorr_0_10_cent_Integ.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
-    const int rebin = 1;
-    const int wbin = 3; 
+    const int rebin = 2;
+    const int wbin = 1; 
 
     float norm;
     int binc, binmn, binmx;

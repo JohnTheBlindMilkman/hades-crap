@@ -11,11 +11,11 @@
 void compareHists()
 {
     const TString fileName1 = "../output/3Dcorr_0_10_cent_Integ.root";
-    const TString fileName2 = "../output/3Dcorr_0_10_cent_Integ_tmp.root";
+    const TString fileName2 = "../output/3Dcorr_0_10_cent_DR_Integ.root";
     const TString fileName3 = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
     const TString fileNameOut = "../output/3Dcorr_0_10_cent_Integ_Comp.root";
     const std::vector<TString> histNames = {"hQoutRatInteg","hQsideRatInteg","hQlongRatInteg"};
-    const std::vector<TString> titleNames = {"FCH = 16/24","FCH = 17/24","FCH = 18/24"};
+    const std::vector<TString> titleNames = {"#Delta#Phi - #Delta#Theta","Double Ratio","LLDC"};
     const std::vector<TString> sProjName{"out","side","long"};
 
     TFile *inpFile1 = TFile::Open(fileName1);
