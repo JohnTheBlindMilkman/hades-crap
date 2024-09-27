@@ -11,19 +11,21 @@
 void compareHists()
 {
     const TString fileName1 = "../output/3Dcorr_0_10_cent_Integ.root";
-    const TString fileName2 = "../output/3Dcorr_0_10_cent_DR_Integ.root";
+    const TString fileName2 = "../output/3Dcorr_0_10_cent_Integ_tmp.root";
     const TString fileName3 = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
+    const TString fileName4 = "../output/3Dcorr_0_10_cent_Integ_tmp3.root";
     const TString fileNameOut = "../output/3Dcorr_0_10_cent_Integ_Comp.root";
     const std::vector<TString> histNames = {"hQoutRatInteg","hQsideRatInteg","hQlongRatInteg"};
-    const std::vector<TString> titleNames = {"Width = 15.87 [MeV]","Width = 23.81 [MeV]","Width = 31.75 [MeV]"};
+    const std::vector<TString> titleNames = {"Old Implementation","New Implementation","MDC min HV #pm 5V","FCH = 75%"};
     const std::vector<TString> sProjName{"out","side","long"};
 
     TFile *inpFile1 = TFile::Open(fileName1);
     TFile *inpFile2 = TFile::Open(fileName2);
     TFile *inpFile3 = TFile::Open(fileName3);
+    TFile *inpFile4 = TFile::Open(fileName4);
     TFile *outFile = TFile::Open(fileNameOut,"RECREATE");
 
-    TLine *line = new TLine(-500,1,500,1);
+    TLine *line = new TLine(0,1,480,1);
     line->SetLineStyle(kDashed);
     line->SetLineColor(kGray);
 
@@ -66,12 +68,21 @@ void compareHists()
         outFile->cd();
         hInp3->Write();
 
+        inpFile4->cd();
+        TH1D *hInp4 = inpFile4->Get<TH1D>(histNames.at(i));
+        hInp4->SetMarkerColor(JJColor::fWutSecondaryColors[5]); // secondary violet WUT
+        hInp4->SetName(TString::Format("%s_4",histNames.at(i).Data()));
+        hInp4->SetTitle(TString::Format("%s;q_{%s} [MeV/c];CF(q_{%s})",titleNames[3].Data(),sProjName[i].Data(),sProjName[i].Data()));
+        outFile->cd();
+        hInp4->Write();
+
         TVirtualPad *tvp = c->cd(i+1);
         tvp->SetMargin(0.2,0.02,0.15,0.02);
         
         hInp1->Draw("hist pe");
         hInp2->Draw("hist pe same");
         hInp3->Draw("hist pe same");
+        hInp4->Draw("hist pe same");
         line->Draw("same");
 
         if (i == 1)

@@ -32,7 +32,7 @@ void drawProton1DJJFM()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_08_21_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_09_27_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
     const int rebin = 1;
 
@@ -57,7 +57,7 @@ void drawProton1DJJFM()
     hRat->Rebin(rebin);
     norm *= rebin;
     hRat->Scale(1./norm);
-    hRat->SetName("hQinvRat");
+    hRat->SetName("hQinvRatInteg");
     hRat->SetTitle(";q_{inv} [MeV/c];CF(q_{inv})");
     hRat->SetMarkerStyle(20);
     hRat->SetMarkerColor(TColor::GetColor(JJColor::navyWut.AsHexString()));

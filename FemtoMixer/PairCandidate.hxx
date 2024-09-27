@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <random>
+#include <iostream>
 
 namespace Selection
 {
@@ -23,7 +24,7 @@ namespace Selection
                 CFKinematics(trck1,trck2);
                 OpeningAngle = CalcOpeningAngle(trck1,trck2);
                 Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;
-                AzimuthalAngle = ConstrainAngle((trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2. - TMath::RadToDeg()*trck1.GetReactionPlane());
+                AzimuthalAngle = (trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2.;
                 DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;
                 DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
                 pairId = trck1.GetID() + trck2.GetID();
@@ -36,17 +37,23 @@ namespace Selection
              */
             ~PairCandidate(){}
             /**
-             * @brief Perform pair selection based on the number of neighbouring wires with certain distance from each other. Allows for a modifiable behaviour of selection
+             * @brief Perform pair selection based on the fraction of neighbouring wires with certain distance from each other. Allows for a modifiable behaviour of selection
              * 
              * @tparam T Behaviour type: OneUnder, Uniform, and Weighted
-             * @param nLayers in how many layers (max 24) the merging can occur
+             * @param fraction in what fraction of the all hits the merging can occur (values between 0 and 1 are allowed)
              * @param cutoff how close the wires are allowed to be
              * @return true 
              * @return false 
              */
-            template<Behaviour T> bool RejectPairByCloseHits(const unsigned &nLayers,const unsigned &cutoff) const
+            template<Behaviour T> bool RejectPairByCloseHits(const float &fraction,const unsigned &cutoff) const
             {
-                return Reject(type<T>{},nLayers,cutoff);
+                if (fraction < 0. || fraction > 1.)
+                {
+                    std::cerr << "error<PairCandidate::RejectPairByCloseHits>: provided fraction is outside the bounds (0,1)" << std::endl;
+                    std::exit(1);
+                }
+
+                return Reject(type<T>{},fraction,cutoff);
             }
             /**
              * @brief Returns unique ID of the pair
@@ -175,7 +182,7 @@ namespace Selection
             unsigned SharedWires, BothLayers, MinWireDistance, SharedMetaCells;
             std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> wireDistances;
             float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
-            template <Behaviour T> struct type {};
+            template <Behaviour T> struct type {}; // helper struct
 
             /**
              * @brief Calculates the pair variables in their centre of mass system (here: LCMS)
@@ -346,40 +353,75 @@ namespace Selection
 
                 return SMC;
             }
-            bool Reject(type<Behaviour::Uniform>,const unsigned &nLayers, const unsigned &cutoff) const
+            bool Reject(type<Behaviour::Uniform>,const float &fraction, const unsigned &cutoff) const
             {
-                return (std::count_if(wireDistances.begin(),wireDistances.end(),[&cutoff](const int &dist){return (dist >= 0 && dist < cutoff) ? true : false;}) > nLayers) ? true : false;
-            }
-            bool Reject(type<Behaviour::OneUnder>,const unsigned &nLayers, const unsigned &cutoff) const
-            {
-                unsigned counter = 0;
+                float closeLayers = 0;
+                float totalLayers = 0;
                 for (const int &dist : wireDistances)
                 {
-                    if (dist >= 0 && dist < cutoff)
+                    if (dist >= 0)
                     {
-                        if (abs(dist - static_cast<int>(cutoff)) > 1)
-                        {    
-                            return true;
-                        }
-                        else
+                        if (dist < cutoff)
                         {
-                            ++counter;
+                            closeLayers += 1.;
                         }
+                        totalLayers += 1.;
+                    }
+                }
+                
+                if (totalLayers > 0)
+                    return ( (closeLayers/totalLayers) > fraction) ? true : false;
+                else
+                    return true;
+            }
+            bool Reject(type<Behaviour::OneUnder>,const float &fraction, const unsigned &cutoff) const
+            {
+                float closeLayers = 0;
+                float totalLayers = 0;
+                for (const int &dist : wireDistances)
+                {
+                    if (dist >= 0)
+                    {
+                        if (dist < cutoff)
+                        {
+                            if (abs(dist - static_cast<int>(cutoff)) > 1) // cast to avoid mismatch type warning, I know it may round up the number, but if you put number big enough for this to happen you already did someting wrong
+                            {    
+                                return true;
+                            }
+                            else
+                            {
+                                closeLayers += 1.;
+                            }
+                        }
+                        totalLayers += 1.;
                     }
                 }
 
-                return (counter > nLayers) ? true : false;
+                if (totalLayers > 0)
+                    return ( (closeLayers/totalLayers) > fraction) ? true : false;
+                else
+                    return true;
             }
-            bool Reject(type<Behaviour::Weighted>,const unsigned &nLayers, const unsigned &cutoff) const
+            bool Reject(type<Behaviour::Weighted>,const float &fraction, const unsigned &cutoff) const
             {
-                unsigned counter = 0;
+                float closeLayers = 0.;
+                float totalLayers = 0.;
                 for (const int &dist : wireDistances)
                 {
-                    if (dist >= 0 && dist < cutoff)
-                        counter += abs(dist - static_cast<int>(cutoff));
+                    if (dist >= 0)
+                    {
+                        if (dist < cutoff)
+                        {
+                            closeLayers += abs(dist - static_cast<int>(cutoff)); // ibid.
+                        }
+                        totalLayers += 1.;
+                    }
                 }
 
-                return (counter > nLayers) ? true : false;
+                if (totalLayers > 0)
+                    return ( (closeLayers/totalLayers) > fraction) ? true : false; // this fraction could be above 1, not sure how to interpret this
+                else
+                    return true;
             }
     };
 }

@@ -31,13 +31,13 @@ user=$(whoami)
 currentDir=$(pwd | xargs -i basename {})
 currentDir=../$currentDir
 
-day="bad"
+day="all"
 submissionbase=/lustre/hades/user/${user}/sub/apr12/
 submissiondir=${submissionbase}/loopDST
- nFilesPerJob=1                                # number of files to be analyzed by 1 job (default==1) ana=50, sim=200
+ nFilesPerJob=200                                # number of files to be analyzed by 1 job (default==1) ana=50, sim=200
     jobscript=${submissiondir}/jobScript_SL.sh     # exec script (full path, call without dot, set it executable!)
     outputdir=/lustre/hades/user/${user}/apr12/ # outputdir for files AND logFiles
-pathoutputlog=${outputdir}/out                  # protocol from batch farm for each file
+pathoutputlog=${outputdir}/newOut                  # protocol from batch farm for each file
      filename=apr12ana_${day}                   # filename of log file if nFilesPerJob > 1 (partnumber will be appended)
 par1=/lustre/hades/user/hadesdst/svn/debian10/6.24.02/hydra2trunk/defall.sh  # optional par1 : environment script
 par2=${submissiondir}/analysis                                 # optional par2 : executable
@@ -49,9 +49,9 @@ par7="no"                                                      # optional par7  
 resources="--mem=2000 --time=0-4:00:00"                        # runtime < 10h, mem < 2GB
 email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs have finished
 
-jobarrayFile="loop_day_${day}_jobarray.dat"
+jobarrayFile="loop_sim_${day}_jobarray.dat"
 
-filelist=${currentDir}/listsApr12/day_${day}.list  # file list in local dir! not in submissiondir!!!
+filelist=${currentDir}/listsApr12/sim_${day}.list  # file list in local dir! not in submissiondir!!!
 ######################################################################
 
 

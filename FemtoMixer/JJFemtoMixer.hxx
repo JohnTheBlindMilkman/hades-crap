@@ -44,14 +44,14 @@
                  * @param tracks tracks vector
                  * @return std::vector<Pair> vector of pairs
                  */
-                std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
+                [[nodiscard]] std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
                 /**
                  * @brief Divide pairs into corresponding category (given by the pair hash)
                  * 
                  * @param pairs pairs vector
                  * @return std::map<std::size_t, std::vector<Pair> > map of sorted vectors (each "branch"/bucket is a single group of similar pairs)
                  */
-                std::map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
+                [[nodiscard]] std::map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
 
             public:
                 /**
@@ -73,51 +73,51 @@
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetEventHashingFunction(const std::function<std::size_t(const Event &)> &func) {fEventHashingFunction = func; fEventHashingFunctionIsDefined = true;}
+                constexpr void SetEventHashingFunction(const std::function<std::size_t(const Event &)> &func) noexcept {fEventHashingFunction = func; fEventHashingFunctionIsDefined = true;}
                 /**
                  * @brief Set the Event Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetEventHashingFunction(std::function<std::size_t(const Event &)> &&func) {fEventHashingFunction = std::move(func);  fEventHashingFunctionIsDefined = true;}
+                constexpr void SetEventHashingFunction(std::function<std::size_t(const Event &)> &&func) noexcept {fEventHashingFunction = std::move(func);  fEventHashingFunctionIsDefined = true;}
                 /**
                  * @brief Get the corresponding hash for given Event object.
                  * 
                  * @param obj Event-type object
                  * @return std::size_t 
                  */
-                constexpr std::size_t GetEventHash(const Event &obj) const {return fEventHashingFunction(obj);}
+                [[nodiscard]] constexpr std::size_t GetEventHash(const Event &obj) const noexcept {return fEventHashingFunction(obj);}
                 /**
                  * @brief Set the Pair Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairHashingFunction(const std::function<std::size_t(const Pair &)> &func) {fPairHashingFunction = func; fPairHashingFunctionIsDefined = true;}
+                constexpr void SetPairHashingFunction(const std::function<std::size_t(const Pair &)> &func) noexcept {fPairHashingFunction = func; fPairHashingFunctionIsDefined = true;}
                 /**
                  * @brief Set the Pair Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairHashingFunction(std::function<std::size_t(const Pair &)> &&func) {fPairHashingFunction = std::move(func); fPairHashingFunctionIsDefined = true;}
+                constexpr void SetPairHashingFunction(std::function<std::size_t(const Pair &)> &&func) noexcept {fPairHashingFunction = std::move(func); fPairHashingFunctionIsDefined = true;}
                 /**
                  * @brief Get the corresponding hash for given Pair object.
                  * 
                  * @param obj Pair-type object.
                  * @return std::size_t 
                  */
-                constexpr std::size_t GetPairHash(const Pair &obj) const {return fPairHashingFunction(obj);}
+                [[nodiscard]] constexpr std::size_t GetPairHash(const Pair &obj) const noexcept {return fPairHashingFunction(obj);}
                 /**
                  * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairCuttingFunction(const std::function<bool(const Pair &)> &func) {fPairCutFunction = func; fPairCutFunctionIsDefined = true;}
+                constexpr void SetPairCuttingFunction(const std::function<bool(const Pair &)> &func) noexcept {fPairCutFunction = func; fPairCutFunctionIsDefined = true;}
                 /**
                  * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairCuttingFunction(std::function<bool(const Pair &)> &&func) {fPairCutFunction = std::move(func); fPairCutFunctionIsDefined = true;}
+                constexpr void SetPairCuttingFunction(std::function<bool(const Pair &)> &&func) noexcept {fPairCutFunction = std::move(func); fPairCutFunctionIsDefined = true;}
                 /**
                  * @brief Get the result of pair selection function for a given Pair object.
                  * 
@@ -125,44 +125,44 @@
                  * @return true Pair is rejected.
                  * @return false Pair is not rejected.
                  */
-                constexpr bool GetPairCutResult(const Pair &obj) const {return fPairCutFunction(obj);}
+                [[nodiscard]] constexpr bool GetPairCutResult(const Pair &obj) const noexcept {return fPairCutFunction(obj);}
                 /**
                  * @brief Set the max mixing buffer size for each "branch".
                  * 
                  * @param buffer Max buffer size.
                  */
-                constexpr void SetMaxBufferSize(const std::size_t &buffer) {fBufferSize = buffer;}
+                constexpr void SetMaxBufferSize(const std::size_t &buffer) noexcept {fBufferSize = buffer;}
                 /**
                  * @brief Set the max mixing buffer size for each "branch".
                  * 
                  * @param buffer Max buffer size.
                  */
-                constexpr void SetMaxBufferSize(std::size_t &&buffer) {fBufferSize = std::move(buffer);}
+                constexpr void SetMaxBufferSize(std::size_t &&buffer) noexcept {fBufferSize = std::move(buffer);}
                 /**
                  * @brief Get the max mixing buffer size.
                  * 
                  * @return std::size_t Max buffer size.
                  */
-                constexpr std::size_t GetMaxBufferSize() const {return fBufferSize;}
+                [[nodiscard]] constexpr std::size_t GetMaxBufferSize() const noexcept {return fBufferSize;}
                 /**
                  * @brief Define whether mixing should occur only for "branches" with size equal (if true) / equal or less than (if flase) the max buffer size.
                  * 
                  * @param isFixed Buffer size usage flag.
                  */
-                constexpr void SetFixedBuffer(const bool &isFixed) {fWaitForBuffer = isFixed;}
+                constexpr void SetFixedBuffer(const bool &isFixed) noexcept {fWaitForBuffer = isFixed;}
                 /**
                  * @brief Define whether mixing should occur only for "branches" with size equal (if true) / equal or less than (if flase) the max buffer size.
                  * 
                  * @param isFixed Buffer size usage flag.
                  */
-                constexpr void SetFixedBuffer(bool &&isFixed) {fWaitForBuffer = std::move(isFixed);}
+                constexpr void SetFixedBuffer(bool &&isFixed) noexcept {fWaitForBuffer = std::move(isFixed);}
                 /**
                  * @brief Get the mixing buffer flag.
                  * 
                  * @return true Mixing with fixed size.
                  * @return false Mixnig with not fixed size.
                  */
-                constexpr bool GetBufferState() const {return fWaitForBuffer;};
+                [[nodiscard]] constexpr bool GetBufferState() const noexcept {return fWaitForBuffer;};
                 /**
                  * @brief Prints to the standard output information about current setup of JJFemtoMixer.
                  * 
@@ -180,14 +180,14 @@
                  * @param tracks Tracks from the current event.
                  * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from provided tracks for given event.
                  */
-                std::map<std::size_t, std::vector<Pair> > AddEvent(const Event &event, const std::vector<Track> &tracks);
+                [[nodiscard]] std::map<std::size_t, std::vector<Pair> > AddEvent(const Event &event, const std::vector<Track> &tracks);
                 /**
                  * @brief Get the sorted pairs which come from similar events, but not from this event.
                  * 
                  * @param event Current event (the event from which we don't want to get tracks).
                  * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from stored tracks for similar events.
                  */
-                std::map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
+                [[nodiscard]] std::map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
         };
 
         template<typename Event, typename Track, typename Pair>

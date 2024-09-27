@@ -11,8 +11,9 @@
 #include "TFile.h"
 #include "TH1F.h"
 
-#include "../newFemtoAnalysis.cc"
+//#include "../newFemtoAnalysis.cc"
 //#include "../newQaAnalysis.cc"
+#include "../newPurityAnalysis.cc"
 #include <iostream>
 
 int main(int argc, char **argv)
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
     {
         case 4:       // just inputfile name + nEvents
             nevts  = argv[3];
-            return newFemtoAnalysis(TString(argv[1]),TString(argv[2]),nevts.Atoi());
+            return newPurityAnalysis(TString(argv[1]),TString(argv[2]),nevts.Atoi());
 
         default:
             cerr<<"ERROR: analysis() : WRONG NUMBER OF ARGUMENTS! TString infile="",TString outfile="", nevents=1000"<<endl;

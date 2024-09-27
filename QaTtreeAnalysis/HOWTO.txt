@@ -1,0 +1,17 @@
+
+1. set your hydra environment (defall.sh of your hydra)
+2. set your input + output file in TreeAnalysis.cc
+   inputfile: root file produced by HQAMaker (contains 
+   a tree of QA objects with informations per file.
+   Multiple file can be merged by using hadd to one file before
+   or added as single files to the chain.
+   outputfile: contains histograms of variables as function
+   of the runid
+3. compile:   
+      a. setup Makefile to fit to the hydra version       
+      b. make clean build install
+4. run:  ./TreeAnalysis
+
+
+
+

@@ -51,8 +51,9 @@ bool PairCut(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair.GetMinWireDistance() < 2 || 
-		pair.GetSharedMetaCells() > 0;
+	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
+		pair.GetBothLayers() < 20 ||
+		pair.GetSharedMetaCells() > 0; 
 }
 
 int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)
@@ -212,6 +213,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
 	
+	std::vector<TH1D*> ktDist,rapDist;
+	constexpr std::array<const char *,7> centString{"overflow","0-10 %","10-20 %","20-30 %","30-40 %","40-50 %","50-60 %"};
+	for (const int i : {0,1,2,3,4,5,6})
+	{
+		ktDist.push_back(new TH1D(TString::Format("ktDist_cent%d",i),TString::Format("k_{T} distribution for %s centrality",centString.at(i)),1000,0,2000));
+		rapDist.push_back(new TH1D(TString::Format("rapDist_cent%d",i),TString::Format("pair rapidity distribution for %s centrality",centString.at(i)),1000,-2,2));
+	}
+
 	// create objects for particle selection
 	Selection::EventCandidate fEvent;	
 	Selection::TrackCandidate fTrack;
@@ -228,7 +237,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	mixer.SetMaxBufferSize(50);
 	mixer.SetEventHashingFunction(EventHashing);
 	mixer.SetPairHashingFunction(PairHashing);
-	//mixer.SetPairCuttingFunction(PairCut);
+	mixer.SetPairCuttingFunction(PairCut);
 	mixer.PrintSettings();
 
     //--------------------------------------------------------------------------------
@@ -394,7 +403,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (!fEvent.SelectEvent()) 
+		if (!fEvent.SelectEvent({1,2,3,4,5,6})) 
 			continue;
 		
 		hCounter->Fill(cNumSelectedEvents);
@@ -495,6 +504,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 					hQinvBL->Fill(elem.GetQinv(),elem.GetBothLayers());
 					hQinvMWD->Fill(elem.GetQinv(),elem.GetMinWireDistance());
 					hQinvSMC->Fill(elem.GetQinv(),elem.GetSharedMetaCells());
+					ktDist.at(fEvent.GetCentrality())->Fill(elem.GetKt());
+					rapDist.at(fEvent.GetCentrality())->Fill(elem.GetRapidity());
 
 					if (pair.first != 0)
 						hCounter->Fill(cNumSelectedPairs);
@@ -543,6 +554,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hQinvBL->Write();
 	hQinvMWD->Write();
 	hQinvSMC->Write();
+
+	for (const int i : {0,1,2,3,4,5,6})
+	{
+		ktDist.at(i)->Write();
+		rapDist.at(i)->Write();
+	}
 
     //--------------------------------------------------------------------------------
     // Closing file and finalization

@@ -8,6 +8,7 @@
 #include <vector>
 #include <deque>
 #include <random>
+#include <type_traits>
 
 // defining a helper function
 template <typename T>
@@ -18,7 +19,6 @@ bool isSim(HParticleCandSim *t) {return true;}
 struct HistogramCollection
 {
 	TH1D hQinvSign,hQinvBckg;
-	TH2D hDphiDthetaSign,hDphiDthetaBckg;
 	TH3D hQoslSign,hQoslBckg;
 };
 
@@ -31,8 +31,8 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 {
 	// collection of slices: (array[n],array[n+1]>
     // make sure this is ordered!
-    constexpr std::array<float,6> ktArr{150,450,750,1050,1350,1650};
-    constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
+    constexpr std::array<float,8> ktArr{200,400,600,800,1000,1200,1400,1600}; // {200,400,600,800,1000,1200,1400,1600} ? (7 bins)
+    constexpr std::array<float,5> yArr{0.16,0.39,0.62,0.86,1.09}; // {0.16,0.39,0.62,0.86,1.09} ? (4 bins)
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
     std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
@@ -50,8 +50,10 @@ bool PairRejection(const Selection::PairCandidate &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(17,2) ||
-		pair.GetSharedMetaCells() > 0;
+	// previous 17/24 is now 0.7
+	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
+		pair.GetBothLayers() < 20 ||
+		pair.GetSharedMetaCells() > 0; 
 }
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
@@ -370,7 +372,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEvent.SelectEvent()) 
+		if (! fEvent.SelectEvent({1},2,2,1)) 
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);
@@ -415,7 +417,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				fEvent.GetReactionPlane(),
 				track,
 				protonPID);
-			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
@@ -463,15 +464,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						HistogramCollection histos{
 						TH1D(TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
 						TH1D(TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH2D(/* TString::Format("hDphiDthetaSign_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",signalEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
 						TH3D(/* TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
 						TH3D(/* TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
 						};
 						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
 					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.GetQinv());
-					//fMapFoHistograms.at(signalEntry.first).hDphiDthetaSign.Fill(entry.DeltaPhi,entry.DeltaTheta);
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong); */
@@ -490,15 +488,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						HistogramCollection histos{
 						TH1D(TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
 						TH1D(TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH2D(/* TString::Format("hDphiDthetaSign_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of signal 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
-						TH2D(/* TString::Format("hDphiDthetaBckg_%lu",backgroundEntry.first), "#Delta#phi vs #Delta#theta distribution of backgound 0-10%%;#Delta#phi [deg]; #Delta#theta [deg]",180,-45,45,180,-45,45 */),
 						TH3D(/* TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
 						TH3D(/* TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
 					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.GetQinv());
-					//fMapFoHistograms.at(backgroundEntry.first).hDphiDthetaBckg.Fill(entry.DeltaPhi,entry.DeltaTheta);
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(qout,qside,qlong); */
@@ -543,8 +538,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	{
 		histos.second.hQinvSign.Write();
 		histos.second.hQinvBckg.Write();
-		//histos.second.hDphiDthetaSign.Write();
-		//histos.second.hDphiDthetaBckg.Write();
 		//histos.second.hQoslSign.Write();
 		//histos.second.hQoslBckg.Write();
 	}

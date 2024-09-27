@@ -32,7 +32,7 @@ namespace Selection
              * @param cent event centrality class (use HParticleEvtChara::getCentralityClass)
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
-            EventCandidate(const std::string &evtId, const float &vertx, const float &verty, const float &vertz, const int &cent, const float &EP)
+            EventCandidate(const std::string &evtId, float vertx, float verty, float vertz, int cent, float EP)
             : EventId(evtId),Centrality(cent),ReactionPlaneAngle(EP),X(vertx),Y(verty),Z(vertz){}
             /**
              * @brief Destroy the Event Candidate object
@@ -42,15 +42,18 @@ namespace Selection
             /**
              * @brief Select event for given centrality and vertex position
              * 
-             * @param centIndex desired centrality class (same layout as from HParticleEvtChara)
-             * @param nSigma how many sigmas from the mean plate position should be accepted for given plate in X,Y, and Z directions
+             * @param centIndex desired centrality classes (same layout as from HParticleEvtChara)
+             * @param nSigmaX how many sigmas from the mean plate position should be accepted for given plate in X direction
+             * @param nSigmaY how many sigmas from the mean plate position should be accepted for given plate in Y direction
+             * @param nSigmaZ how many sigmas from the mean plate position should be accepted for given plate in Z direction
              * @return true if event is accepted
              * @return false otherwise
+             * @throws std::runtime_error if specified nSigmaZ is > 2 
              */
-            bool SelectEvent(const int centIndex = 1, const int nSigma = 1)
+            bool SelectEvent(const std::vector<int> centIndex = {1}, const float nSigmaX = 1, const float nSigmaY = 1, const float nSigmaZ = 1)
             {
-                if (nSigma >= 2)
-                    throw std::runtime_error("nSigma >=2 overlaps between neighbouring plates, please choose smaller value.\n If the specified value was intentional, please evaluate youe life choices...");
+                if (nSigmaZ > 2)
+                    throw std::runtime_error("nSigmaZ >2 overlaps between neighbouring plates, please choose smaller value.\n If the specified value was intentional, please evaluate youe life choices...");
                 
                 // copied from zVertexPeakAndSigma.txt file
                 // first: mean, second: stdev
@@ -58,18 +61,19 @@ namespace Selection
                 static const std::pair<float,float> xPosition = {0.1951,0.619};
                 static const std::pair<float,float> yPosition = {0.7045,0.6187};
 
-                if (Centrality != centIndex)
+                // if this event's centrality is not in the centrality index list, reject
+                if (std::find(centIndex.begin(),centIndex.end(),Centrality) == centIndex.end())
                     return false;
 
-                if ((X < (xPosition.first - nSigma*xPosition.second)) || (X > (xPosition.first + nSigma*xPosition.second)))
+                if ((X < (xPosition.first - nSigmaX*xPosition.second)) || (X > (xPosition.first + nSigmaX*xPosition.second)))
                     return false;
-                if ((Y < (yPosition.first - nSigma*yPosition.second)) || (Y > (yPosition.first + nSigma*yPosition.second)))
+                if ((Y < (yPosition.first - nSigmaY*yPosition.second)) || (Y > (yPosition.first + nSigmaY*yPosition.second)))
                     return false;
 
                 short int plateNo = 0;
                 for(const auto &plate : plateVector)
                 {
-                    if ((Z >= (plate.first - nSigma*plate.second)) && (Z <= (plate.first + nSigma*plate.second)))
+                    if ((Z >= (plate.first - nSigmaZ*plate.second)) && (Z <= (plate.first + nSigmaZ*plate.second)))
                     {
                         TargetPlate = plateNo;
                         return true;

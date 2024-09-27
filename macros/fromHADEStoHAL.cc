@@ -9,8 +9,8 @@ TH1D* ConvertXaxisUnits(TH1D *hInp)
 {
     const double MeVtoGeV = 1./1000.;
     const int nBins = hInp->GetNbinsX();
-    const double newMin = hInp->GetXaxis()->GetXmin() /* * MeVtoGeV */;
-    const double newMax = hInp->GetXaxis()->GetXmax() / 2. /* * MeVtoGeV */; // /2 to convert from qinv to k*
+    const double newMin = hInp->GetXaxis()->GetXmin() * MeVtoGeV;
+    const double newMax = hInp->GetXaxis()->GetXmax() /* / 2. */ * MeVtoGeV; // /2 to convert from qinv to k*
 
     TH1D *hOtp = new TH1D(hInp->GetName(),hInp->GetTitle(),nBins,newMin,newMax);
     //hOtp->GetXaxis()->SetTitle("k* [MeV/c]");
@@ -53,29 +53,29 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/3Dcorr_0_10_cent.root";
-    const TString inpFilePathInteg = "../output/3Dcorr_0_10_cent_Integ.root";
-    const TString inpHistBaseKt = "hQoslRatKt";
-    const TString inpHistBaseRap = "hQoslRatY";
-    const TString inpHistBasePsi = "hQoslRatPsi";
-    const TString inpHitsInteg = "hQoslRatInteg";
-    const std::vector<int> ktBins = {1,2,3,4,5};
-    const std::vector<int> rapBins = {1,2,3};
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent.root";
+    const TString inpFilePathInteg = "../output/1Dcorr_0_10_cent_Integ.root";
+    const TString inpHistBaseKt = "hQinvRatKt";
+    const TString inpHistBaseRap = "hQinvRatY";
+    const TString inpHistBasePsi = "hQinvRatPsi";
+    const TString inpHitsInteg = "hQinvRatInteg";
+    const std::vector<int> ktBins = {1,2,3,4,5,6,7};
+    const std::vector<int> rapBins = {1,2,3,4};
     const std::vector<int> psiBins = {1,2,3,4,5,6,7,8};
     const std::vector<TString> sProjName{"out","side","long"};
 
-    std::vector<TH3D*> histArray;
+    std::vector<TH1D*> histArray;
     std::vector<TH1D*> histProjArray;
     TFile *inpFile,*otpFile;
 
     inpFile = TFile::Open(inpFilePath);
     for (const int &ktval : ktBins)
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH3D>(TString::Format("%s%d",inpHistBaseKt.Data(),ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseKt.Data(),ktval))));
     for (const int &rapval : rapBins)
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH3D>(TString::Format("%s%d",inpHistBaseRap.Data(),rapval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseRap.Data(),rapval))));
     for (const int &psival : psiBins)
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH3D>(TString::Format("%s%d",inpHistBasePsi.Data(),psival))));
-    for (const auto &proj : sProjName)
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBasePsi.Data(),psival))));
+    /* for (const auto &proj : sProjName)
     {
         for (const int &ktval : ktBins)
             histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQ%sRatKt%d",proj.Data(),ktval))));
@@ -83,13 +83,13 @@ void fromHADEStoHAL()
             histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQ%sRatY%d",proj.Data(),rapval))));
         for (const int &psival : psiBins)
             histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQ%sRatPsi%d",proj.Data(),psival))));
-    }
+    } */
 
     inpFile = TFile::Open(inpFilePathInteg);
-    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH3D>(inpHitsInteg)));
-    histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQoutRatInteg")));
-    histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQsideRatInteg")));
-    histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQlongRatInteg")));
+    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(inpHitsInteg)));
+    //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQoutRatInteg")));
+    //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQsideRatInteg")));
+    //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQlongRatInteg")));
 
     // create output file which has "_forHAL" added to its name
     TString otpFilePath = inpFilePath;
@@ -100,6 +100,6 @@ void fromHADEStoHAL()
     for (const auto elem : histArray)
         elem->Write();
 
-    for (const auto elem : histProjArray)
-        elem->Write();
+    /* for (const auto elem : histProjArray)
+        elem->Write(); */
 }

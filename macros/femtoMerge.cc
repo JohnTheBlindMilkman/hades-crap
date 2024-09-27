@@ -3,7 +3,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12sim_all_24_08_20.root", TString signName = "hQoslSign_", TString bckgName = "hQoslBckg_", int ktMax = 5, int yMax = 3, int psiMax = 8)
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_24_09_27.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 7, int yMax = 4, int psiMax = 8)
 {
     const int maxHistos = ktMax * yMax * psiMax * 2;
 
@@ -167,18 +167,27 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12sim_
         TFile *otpFile = TFile::Open(fileName.Insert(fileName.First('.'),"_processed"),"recreate");
         for (int kt = 1; kt <= ktMax; ++kt)
         {
-            hSignKt[kt-1]->Write();
-            hBckgKt[kt-1]->Write();
+            if (hSignKt[kt-1] != nullptr && hBckgKt[kt-1] != nullptr)
+            {
+                hSignKt[kt-1]->Write();
+                hBckgKt[kt-1]->Write();
+            }
         }
         for (int y = 1; y <= yMax; ++y)
         {
-            hSignY[y-1]->Write();
-            hBckgY[y-1]->Write();
+            if (hSignY[y-1] != nullptr && hBckgY[y-1] != nullptr)
+            {
+                hSignY[y-1]->Write();
+                hBckgY[y-1]->Write();
+            }
         }
         for (int psi = 1; psi <= psiMax; ++psi)
         {
-            hSignPsi[psi-1]->Write();
-            hBckgPsi[psi-1]->Write();
+            if (hSignPsi[psi-1] != nullptr && hBckgPsi[psi-1] != nullptr)
+            {
+                hSignPsi[psi-1]->Write();
+                hBckgPsi[psi-1]->Write();
+            }
         }
         hSignInteg->Write();
         hBckgInteg->Write();

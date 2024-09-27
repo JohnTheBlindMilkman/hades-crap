@@ -51,10 +51,10 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_24_08_21_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_09_27_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent.root";
-    const std::vector<std::pair<int,TString> > ktArr{{1,"(150,450)"},{2,"(450,750)"},{3,"(750,1050)"},{4,"(1050,1350)"},{5,"(1350,1650)"}};
-    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.75,-0.25)"},{2,"(-0.25,0.25)"},{3,"(0.25,0.75)"}};
+    const std::vector<std::pair<int,TString> > ktArr{{1,"(200,400)"},{2,"(400,600)"},{3,"(600,800)"},{4,"(800,1000)"},{5,"(1000,1200)"},{6,"(1200,1400)"},{7,"(1400,1600)"}};
+    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.58,-0.35)"},{2,"(-0.35,-0.12)"},{3,"(-0.12,0.12)"},{4,"(0.12,0.35)"}};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
     const int rebin = 1;
 
@@ -86,7 +86,7 @@ void drawProton1DMultiDiff()
             hRat->SetTitle(TString::Format("k_{T} #in %s;q_{inv} [MeV/c];CF(q_{inv})",kt.second.Data()));
             //hRat->SetMarkerStyle(20);
             //hRat->SetMarkerColor(JJColor::fWutAllColors[kt.first-1]);
-            prepareGraph(hRat,JJColor::fWutSecondaryColors[kt.first]);
+            prepareGraph(hRat,JJColor::fWutSecondaryColors11[kt.first-1]);
 
             hRat->GetXaxis()->SetRangeUser(0,490);
             hRat->GetYaxis()->SetRangeUser(0,1.9);

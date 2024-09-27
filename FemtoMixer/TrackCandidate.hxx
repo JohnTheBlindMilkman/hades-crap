@@ -103,6 +103,21 @@ namespace Selection
 
                 return output;
             }
+            /**
+             * @brief Gets rid of the angle wrap when calculating pair azimuthal angle. Used phi range is (-202.5,157.5] (I need this for asHBT, to have a in-plane and out-of-plane bin)
+             * 
+             * @param angle 
+             * @return float 
+             */
+            float ConstrainAngle(const float &angle)
+            {
+                if (angle > 157.5)
+                    return angle -360.;
+                else if (angle <= -202.5)
+                    return angle + 360.;
+                else
+                    return angle;
+            }
 
         public:
             TrackCandidate(){}
@@ -125,13 +140,13 @@ namespace Selection
                 RemoveBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = particleCand->getPhi();
+                AzimuthalAngle = ConstrainAngle(particleCand->getPhi() - TMath::RadToDeg()*ReactionPlaneAngle);
                 Beta = particleCand->getBeta();
                 Charge = particleCand->getCharge();
                 Energy = vecTmp.E();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
                 Mass2 = particleCand->getMass2();
-                PID = pid; // only for simulations
+                PID = pid;
                 PolarAngle = particleCand->getTheta();
                 Px = vecTmp.Px();
                 Py = vecTmp.Py();
@@ -149,10 +164,14 @@ namespace Selection
              * @brief Construct a new Track Candidate object
              * 
              * @param particleCand HParticleCandSim object pointer (contains PID)
+             * @param wires 
              * @param evtId unique ID of the underlying event
+             * @param EP event plane angle of the underlying event
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
+             * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HParticleCandSim* particleCand, const std::string &evtId, const std::size_t &trackId)
+            TrackCandidate(HParticleCandSim* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) : 
+            ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
@@ -188,23 +207,24 @@ namespace Selection
              * 
              * @param rpcCut object pointer to the RPC bannana cut
              * @param tofCut object pointer to the ToF bannana cut
+             * @param checkPID set a flag to additionally select tracks on PID
              * @return true if track is selected
              * @return false otherwise
              */
-            bool SelectTrack(TCutG *rpcCut, TCutG *tofCut)
+            bool SelectTrack(const TCutG *rpcCut, const TCutG *tofCut, bool checkPID = true)
             {
-                if (PID != 14)
+                if (PID != 14 && checkPID)
                     return false;
-                if (IsAtMdcEdge)
-                    return false;
-                if (TotalMomentum > 2000.)
-                    return false;
-                if (TransverseMomentum > 1400.)
-                    return false;
-                if (Beta < 0.2)
-                    return false;
-                if (NBadLayers > 1)
-                    return false;
+                /* if (IsAtMdcEdge)
+                    return false; */
+                /* if (TotalMomentum > 2000.)
+                    return false; */
+                /* if (TransverseMomentum > 1400.)
+                    return false; */
+                /* if (Beta < 0.2)
+                    return false; */
+                /* if (NBadLayers > 1)
+                    return false; */
                 //if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
                     //return false;
 

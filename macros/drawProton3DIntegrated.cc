@@ -1,4 +1,5 @@
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TH3D.h"
 #include "TFile.h"
 #include "TCanvas.h"
@@ -27,6 +28,29 @@ double getNorm(const TH1D *hInp, double xMin, double xMax)
         return 0.;
 }
 
+double getNorm(const TH2D *hInp, double xMin, double xMax, double yMin, double yMax)
+{
+    const int binsX = hInp->GetNbinsX();
+    const int binxY = hInp->GetNbinsY();
+    int div = 0;
+    double sum = 0., xVal, yVal;
+    for (int i = 1; i <= binsX; ++i)
+        for (int j = 1; j < binxY; ++j)
+        {
+            xVal = hInp->GetXaxis()->GetBinCenter(i);
+            yVal = hInp->GetYaxis()->GetBinCenter(j);
+            if (xVal >= xMin && xVal <= xMax && yVal >= yMin && yVal <= yMax)
+            {
+                sum += hInp->GetBinContent(i,j);
+                ++div;
+            } 
+        }
+    if(div > 0)
+        return sum/div;
+    else    
+        return 0.;
+}
+
 double getNorm(const TH3D *num, const TH3D *den)
 {
     return den->GetEntries()/num->GetEntries();
@@ -37,8 +61,8 @@ void drawProton3DIntegrated()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_05_28_processed.root";
-    const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_tmp2.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_09_13_processed.root";
+    const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_tmp3.root";
     const std::vector<TString> sProj{"x","y","z"};
     const std::vector<TString> sProjName{"out","side","long"};
     const int rebin = 2;
@@ -125,5 +149,45 @@ void drawProton3DIntegrated()
         }
 
         canvInteg->Write();
+
+        TCanvas *canv2DInteg = new TCanvas("canv2DInteg","",1800,600);
+        canv2DInteg->Divide(3,1);
+        //JJColor::CreatePrimaryWutGradient();
+        gStyle->SetPalette(kPastel);
+        for (const int &i : {0,1,2})
+        {
+            binc = hRat3D->GetXaxis()->FindFixBin(0.0);
+            binmx = binc + wbin;
+
+            hRat3D->GetXaxis()->SetRange(1, (i == 0 || (i+1)%3 == 0) ? hRat3D->GetNbinsX() : binmx);
+            hRat3D->GetYaxis()->SetRange(1, (i == 1 || (i+1)%3 == 1) ? hRat3D->GetNbinsY() : binmx);
+            hRat3D->GetZaxis()->SetRange(1, (i == 2 || (i+1)%3 == 2) ? hRat3D->GetNbinsZ() : binmx);
+
+            TH2D *hRat = static_cast<TH2D*>(hRat3D->Project3D((sProj[i%3]+sProj[(i+1)%3]).Data()));
+            norm = getNorm(hRat,350,500,350,500);
+            hRat->Rebin2D(rebin,rebin);
+            norm *= rebin*rebin;
+            hRat->Scale(1./norm);
+            hRat->GetZaxis()->SetRangeUser(0.5,1.5);
+            hRat->SetName(TString::Format("hQ%s%sRatInteg",sProjName[i%3].Data(),sProjName[(i+1)%3].Data()));
+            hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];q_{%s} [MeV/c];",sProjName[i].Data(),sProjName[(i+1)%3].Data()));
+            hRat->GetXaxis()->SetTitleOffset();
+            hRat->GetYaxis()->SetTitleOffset(1.8);
+            hRat->GetXaxis()->SetTitleSize(0.06);
+            hRat->GetXaxis()->SetLabelSize(0.06);
+            hRat->GetXaxis()->SetNdivisions(506);
+            hRat->GetYaxis()->SetTitleSize(0.06);
+            hRat->GetYaxis()->SetLabelSize(0.06);
+            hRat->GetYaxis()->SetNdivisions(506);
+            //hRat->SetMarkerStyle(20);
+            //hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
+
+            hRat->Write();
+
+            canv2DInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
+            hRat->Draw("colz");
+        }
+
+        canv2DInteg->Write();
     }
 }
