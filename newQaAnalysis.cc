@@ -56,13 +56,13 @@ bool PairCut(const Selection::PairCandidate &pair)
 		pair.GetSharedMetaCells() > 0; 
 }
 
-int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)
+int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{false};
+	constexpr bool isSimulation{true};
 	constexpr int protonPID{14};
 
 	using HFiredWires = HADES::MDC::HFiredWires;
@@ -145,7 +145,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit";
+	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit,+HGeantKine";
 	if (isCustomDst)
 		inputString += ",+HMdcSeg";
     if (!loop->setInput(inputString.data())) // make sure to use +HMdcSeg if you want the wires
@@ -166,12 +166,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
+    HParticleCandSim*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
+	HGeantKine*       geant_kine;
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
+	HCategory* kine_cand_cat = (HCategory*) HCategoryManager::getCategory(catGeantKine);
 	//HCategory *mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // so... this is my stupid fix for now, without it HFiredWires doesn't work
 
 	/* static_assert((isSimulation && !isSim(particle_cand)),"particle candidate must be of type HParticleCandSim");
@@ -185,7 +187,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		throw std::runtime_error("particle candidate must be of type HParticleCand");
 	}
     
-    if (!particle_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
+    if (!particle_cand_cat || !kine_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
 		exit(1);
 	
     //================================================================================================================================================================
@@ -202,6 +204,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
 	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,0.5,24.5,10,-0.5,9.5);
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
+
+	TH2D *hMomResolution = new TH2D("hMomResolution","Momentum difference of protons;p_{reco} [MeV/c];p_{kin} - p_{reco}  [MeV/c]",80,0,4000,500,-500, 500);
+	TH2D *hPhiResolution = new TH2D("hPhiResolution","#phi angle difference of protons;p_{reco} [MeV/c];#phi_{kin} - #phi_{reco} [deg]",80,0,4000,500,-50, 50);
+	TH2D *hThetaResolution = new TH2D("hThetaResolution","#theta angle difference of protons;p_{reco}  [MeV/c];#theta_{kin} - #theta_{reco} [deg]",80,0,4000,500,-50, 50);
 	
 	TH2D *hQinvSL = new TH2D("hQinvSL","q_{inv} vs Splitting Level for signal of p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
 	TH2D *hQinvSW = new TH2D("hQinvSW","q_{inv} vs Shared Wires for signal of p-p CF;q_{inv} [MeV/c];SW",250,0,3000,24,0,24);
@@ -470,6 +476,16 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//hCounter->Fill(cNumSelectedTracks);
 			hPtRap->Fill(fTrack.GetPt(), fTrack.GetRapidity() - fBeamRapidity);
 			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
+
+
+			geant_kine = static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1));
+			double kineMom = geant_kine->getTotalMomentum();
+			double kinePhi = geant_kine->getPhiDeg();
+			double kineTheta = geant_kine->getThetaDeg();
+
+			hMomResolution->Fill(fTrack.GetP(),kineMom - fTrack.GetP());
+			hPhiResolution->Fill(fTrack.GetP(),kinePhi - fTrack.GetPhi());
+			hThetaResolution->Fill(fTrack.GetP(),kineTheta - fTrack.GetTheta());
 			
 			for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
 				hSegNcells->Fill(layer+1,fTrack.GetWires(layer).size());
@@ -548,6 +564,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hM2momTof->Write();
 	hSegNcells->Write();
 	hPhiTheta->Write();
+
+	hMomResolution->Write();
+	hPhiResolution->Write();
+	hThetaResolution->Write();
 
 	hQinvSL->Write();
 	hQinvSW->Write();

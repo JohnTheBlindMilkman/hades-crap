@@ -8,7 +8,7 @@ void makePurityCorrection1D()
 {
     const TString fileNameExp = "../output/1Dcorr_0_10_cent.root";
     const TString fileNameExpInteg = "../output/1Dcorr_0_10_cent_Integ.root";
-    const TString fileNamePur = "../slurmOutput/apr12pur_all_24_09_26_processed.root";
+    const TString fileNamePur = "../slurmOutput/apr12pur_all_24_10_01_processed.root";
 
     const std::vector<std::pair<int,TString> > ktArr{{1,"(200,400)"},{2,"(400,600)"},{3,"(600,800)"},{4,"(800,1000)"},{5,"(1000,1200)"},{6,"(1200,1400)"},{7,"(1400,1600)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.58,-0.35)"},{2,"(-0.35,-0.12)"},{3,"(-0.12,0.12)"},{4,"(0.12,0.35)"}};

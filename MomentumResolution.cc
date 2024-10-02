@@ -41,14 +41,13 @@ struct DParticle {
 // 3. Amount of events to process (-1 means all events)
 // 4. If not -1 amount of random files to read instead of files from file list parameter
 //================================================================================
-Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1){
+Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1){
     //--------------------------------------------------------------------------------
     // Initialization of the global ROOT object and the Hades Loop
     // The Hades Loop used as an interface to the DST data (Basically a container of a TChain).
     // kTRUE - The global HADES object is being created if not existing
     //--------------------------------------------------------------------------------
 	
-    gROOT -> SetBatch(kTRUE);
     gStyle -> SetOptStat(111111);
     TROOT dst_analysis("DstAnalysisMacro", "Simple DST analysis Macro");
     HLoop* loop = new HLoop(kTRUE);
@@ -99,23 +98,21 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
     HCategory* particleInfoCat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particleCandCat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
     HCategory* kineCandCat = (HCategory*) HCategoryManager::getCategory(catGeantKine);
-    // HCategory* emcClusterCat = (HCategory *)  HCategoryManager::getCategory(catEmcCluster);
     
-    if (!particleCandCat || !kineCandCat)//|| !emcClusterCat) // If the category for the reconstructed trackes does not exist the macro makes no sense
+    if (!particleCandCat || !kineCandCat)// If the category for the reconstructed trackes does not exist the macro makes no sense
     exit(1);
 	
     //================================================================================================================================================================
     // Object declatarions (histograms, trees ect.)
     //================================================================================================================================================================
-    TFile* outFile = new TFile(outfile.Data(), "RECREATE");
 
-    TH2D* hMomResolution_Lambda = new TH2D("hMomResolution","Mom difference; Mom(reco); #DeltaMom(kine-reco)",20,0,1000,200,-100, 100);
-    TH2D* hPhiResolution_Lambda = new TH2D("hPhiResolution","#phi difference; E(reco); #Delta#phi(kine-reco)",20,0,1000,200,-0.2, 0.2);
-    TH2D* hThetaResolution_Lambda = new TH2D("hThetaResolution","#theta difference; E(reco); #Delta#theta(kine-reco)",20,0,1000,200,-0.053, 0.053);
+    TH2D* hMomResolution_Lambda = new TH2D("hMomResolution_Lambda","Mom difference; Mom(reco); #DeltaMom(kine-reco)",60,0,3000,600,-300, 300);
+    TH2D* hPhiResolution_Lambda = new TH2D("hPhiResolution_Lambda","#phi difference; Mom(reco); #Delta#phi(kine-reco)",60,0,3000,600,-0.3, 0.3);
+    TH2D* hThetaResolution_Lambda = new TH2D("hThetaResolution_Lambda","#theta difference; Mom(reco); #Delta#theta(kine-reco)",60,0,3000,600,-0.3, 0.3);
 
-    TH2D* hMomResolution_Deuteron = new TH2D("hMomResolution_deuteron","Mom difference deuteron; Mom(reco); #DeltaMom(kine-reco)",20,0,1000,200,-100, 100);
-    TH2D* hPhiResolution_Deuteron = new TH2D("hPhiResolution_deuteron","#phi difference deuteron; E(reco); #Delta#phi(kine-reco)",20,0,1000,200,-0.2, 0.2);
-    TH2D* hThetaResolution_Deuteron = new TH2D("hThetaResolution_deuteron","#theta difference deuteron; E(reco); #Delta#theta(kine-reco)",20,0,1000,200,-0.053, 0.053);
+    TH2D* hMomResolution_Deuteron = new TH2D("hMomResolution_Deuteron","Mom difference deuteron; Mom(reco); #DeltaMom(kine-reco)",60,0,3000,600,-300, 300);
+    TH2D* hPhiResolution_Deuteron = new TH2D("hPhiResolution_Deuteron","#phi difference deuteron; Mom(reco); #Delta#phi(kine-reco)",60,0,3000,600,-0.3, 0.3);
+    TH2D* hThetaResolution_Deuteron = new TH2D("hThetaResolution_Deuteron","#theta difference deuteron; Mom(reco); #Delta#theta(kine-reco)",60,0,3000,600,-0.3, 0.3);
  
     //------------------------------------------------------------------------------------------------------
     // Loading & setting Cut files
@@ -124,24 +121,22 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
     //energy loss correction
     HEnergyLossCorrPar enLossCorr;
     enLossCorr.setDefaultPar("mar19");
+    
+    //----------------2-Sigma----------------------------------
+    TFile *file = new TFile("/lustre/hades/user/mstefan/sub/loopDST/Mar19AgAg1580.root","open");
+    TCutG *protonRPCCut = (TCutG*)file->Get("tcgPBetaProtonRPC2Sig");
+    TCutG *protonToFCut = (TCutG*)file->Get("tcgPBetaProtonToF2Sig");
+    TCutG *piNRPCCut = (TCutG*)file->Get("tcgPBetaPiMRPC2Sig");
+    TCutG *piNToFCut = (TCutG*)file->Get("tcgPBetaPiMToF2Sig");
 
-    TFile *file = new TFile("/lustre/hades/user/mstefan/sub/loopDST/Mar19AgAg1580.root");
-  //----------------2-Sigma----------------------------------
-  TCutG *protonRPCCut = (TCutG*)file->Get("tcgPBetaProtonRPC2Sig");
-  TCutG *protonToFCut = (TCutG*)file->Get("tcgPBetaProtonToF2Sig");
-  TCutG *piNRPCCut = (TCutG*)file->Get("tcgPBetaPiMRPC2Sig");
-  TCutG *piNToFCut = (TCutG*)file->Get("tcgPBetaPiMToF2Sig");
+    TFile *file2 = new TFile("/lustre/hades/user/mstefan/sub/loopDST/Mar19AgAg1580_Gen5.root");
+    TCutG *dRPCCut = (TCutG*)file2 -> Get("tcgPdEdxMDCDeuteronRPC2Sig");
+    TCutG *dToFCut = (TCutG*)file2 -> Get("tcgPdEdxMDCDeuteronTOF2Sig");
 
-  TFile *file2 = new TFile("/lustre/hades/user/mstefan/sub/loopDST/Mar19AgAg1580_Gen5.root");
-  TCutG *dRPCCut = (TCutG*)file2 -> Get("tcgPdEdxMDCDeuteronRPC2Sig");
-  TCutG *dToFCut = (TCutG*)file2 -> Get("tcgPdEdxMDCDeuteronTOF2Sig");
+    vector<DParticle> LambdaVector;
 
-  vector<DParticle> LambdaVector;
-
-  vector<TLorentzVector> usedProtonRPC;
-  vector<TLorentzVector> usedpionNRPC;
-  vector<TLorentzVector> HBTLambdaRPC;
-  vector<TLorentzVector> HBTProtonRPC;
+    vector<TLorentzVector> usedProton;
+    vector<TLorentzVector> usedPion;
 
     vector<HParticleCandSim*> protons;
     vector<HParticleCandSim*> pions;
@@ -244,13 +239,6 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
         sorter.fill(HParticleTrackSorter::selectHadrons);
 
         sorter.selectBest(Particle::kIsBestRKSorter, Particle::kIsHadronSorter);  
-        // sorter.resetFlags(kTRUE,kTRUE,kTRUE,kTRUE); // reset all flags for flags (0-28) ,reject,used,lepton
-        // sorter.fill(HParticleTrackSorter::selectLeptons); // fill only good leptons
-
-        // sorter.selectBest(Particle::kIsBestRKSorter, Particle::kIsLeptonSorter);
-        // sorter.fill(HParticleTrackSorter::selectHadrons); // fill only good hadrons (already marked good leptons will be skipped)
-
-        // sorter.selectBest(Particle::kIsBestRKSorter, Particle::kIsHadronSorter);
 
         //----------------------------------------
         // Event variables
@@ -276,9 +264,9 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
             Float_t mass     = particleCand->getMass();
             Short_t sysCand    = particleCand -> getSystemUsed(); // detector: 0 RPC, 1 ToF
 
-            //--------------------------------------------------------------------------------
-            // Discarding all tracks that have been discarded by the track sorter and counting all / good tracks
-            //--------------------------------------------------------------------------------
+            // //--------------------------------------------------------------------------------
+            // // Discarding all tracks that have been discarded by the track sorter and counting all / good tracks
+            // //--------------------------------------------------------------------------------
             hCounter->Fill(cNumAllTracks);
             if (!particleCand->isFlagBit(Particle::kIsUsed))
             continue;
@@ -294,7 +282,7 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
                 particleCand->setMomentum(momCandproton);
                 protons.push_back(particleCand);
             }
-            else if (piNRPCCut->IsInside(chargeCand*momCand, betaCand) || piNToFCut->IsInside(chargeCand*momCand, betaCand)) { // RPC+ToF
+           else if (piNRPCCut->IsInside(chargeCand*momCand, betaCand) || piNToFCut->IsInside(chargeCand*momCand, betaCand)) { // RPC+ToF
 
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(9));
                 Double_t momCandpion = enLossCorr.getCorrMom(9,momCand,theta);
@@ -310,44 +298,11 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
                 particleCand -> calc4vectorProperties(HPhysicsConstants::mass(45)); // d
 
                 if (particleCand->getGeantPID() == 45)
+                {
                     deuterons.push_back(particleCand);
-            }
-
-            //calcSegVector() for pi- & proton, check their ID and parent geant track number, get their TLorentz's, add them
-		
-            // //Geant addition
-            // geantTrack=particleCand->getGeantTrack(); 
-            // kineCand = (HGeantKine*)kineCandCat->getObject(geantTrack -1); //because geant numbering scheme it need -1 here...
-            // idKine = kineCand->getGeantPID();
-
-            // HGeantKine* kineParent = kineCand->getgeantParentTrackNum(geantTrack);
-            // if(kineParent!=NULL){
-            //     idParent = kineParent ->getGeantPID();   
-            //     trackParent = kineParent -> getGeantTrack();
-            // }
-
-
-            // if (idParent!=18) continue; //18 = lambda ID?
-
-            // Double_t energyReco, energyGen;
-            // Double_t phiReco, phiGen;
-            // Double_t thetaReco, thetaGen;
-
-
-            // energyReco = particleCand->getEnergy();
-            // phiReco = particleCand->getPhi() * TMath::DegToRad(); //0-360 degrees
-            // thetaReco = particleCand->getTheta() * TMath::DegToRad();
-            // energyGen = kineCand -> getE();
-            // phiGen = kineCand -> getPhiDeg() * TMath::DegToRad();
-            // thetaGen = kineCand -> getThetaDeg() * TMath::DegToRad();
-
-            // if(phiGen>TMath::Pi()) phiGen -= 2 * TMath::Pi();
-
-            // hEnergyResolution_Lambda -> Fill(energyReco, energyGen - energyReco);
-            // hPhiResolution_Lambda -> Fill(energyReco, phiGen - phiReco);
-            // hThetaResolution_Lambda -> Fill(energyReco, thetaGen - thetaReco);
-
-                        
+                }
+                   
+            }             
         } // End of particleCand track loop
 
         for (vector<HParticleCandSim*>::iterator itDau1 = protons.begin(); itDau1 != protons.end(); itDau1++) {
@@ -391,8 +346,8 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
                         if(hpcDau1->getGeantParentPID()==18 && hpcDau2->getGeantParentPID()==18 && (hpcDau1->getGeantParentTrackNum()==hpcDau2->getGeantParentTrackNum())){
                             
                             if(LambdaMass > 1110 && LambdaMass < 1120){
-                                usedProtonRPC.push_back(tlvMot1);
-                                usedpionNRPC.push_back(tlvMot2);
+                                usedProton.push_back(tlvMot1);
+                                usedPion.push_back(tlvMot2);
 
                                 Lambda.vec = tlvMot;
                                 Lambda.geantTrackNum = hpcDau1->getGeantParentTrackNum();
@@ -404,6 +359,10 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
                 } // DCA cuts
             } // End of second dauther track loop
         } // first daugther track loop
+
+        usedProton.clear();
+        usedPion.clear();
+
 
         for (std::size_t i = 0; i< LambdaVector.size(); i++)
         {
@@ -421,28 +380,30 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
             if(phiKine>TMath::Pi()) phiKine-=2*TMath::Pi();
 
             hMomResolution_Lambda -> Fill(momReco, momKine - momReco);
-            hPhiResolution_Lambda -> Fill(phiReco, phiKine - phiReco);
-            hThetaResolution_Lambda -> Fill(thetaReco, thetaKine - thetaReco);
+            hPhiResolution_Lambda -> Fill(momReco, phiKine - phiReco);
+            hThetaResolution_Lambda -> Fill(momReco, thetaKine - thetaReco);
 
         }
 
         for(vector<HParticleCandSim*>::iterator itDeut = deuterons.begin(); itDeut != deuterons.end(); itDeut++) {
           HParticleCandSim* hpcDeut = *itDeut;
 
-          Int_t geantTrack=particleCand->getGeantTrack(); 
-          HGeantKine* kine = (HGeantKine*)kineCandCat->getObject(geantTrack -1); //because geant numbering scheme it need -1 here...
+          Int_t geantTrack=hpcDeut->getGeantTrack(); 
+          HGeantKine* kine = (HGeantKine*)kineCandCat->getObject(geantTrack-1); //because geant numbering scheme it need -1 here...
 
           Double_t momReco = hpcDeut->getMomentum();
           Double_t phiReco = hpcDeut->getPhi()*TMath::DegToRad();
+          if(phiReco>TMath::Pi()) phiReco-=2*TMath::Pi();
           Double_t thetaReco = hpcDeut->getTheta()*TMath::DegToRad();
 
           Double_t momKine = kine->getTotalMomentum();
-          Double_t phiKine = kine->getPhiDeg()*TMath::DegToRad(); //0-2pi
+          Double_t phiKine = kine->getPhiDeg()*TMath::DegToRad();
+          if(phiKine>TMath::Pi()) phiKine-=2*TMath::Pi();
           Double_t thetaKine = kine->getThetaDeg()*TMath::DegToRad();
 
           hMomResolution_Deuteron -> Fill(momReco, momKine - momReco);
-          hPhiResolution_Deuteron -> Fill(phiReco, phiKine - phiReco);
-          hThetaResolution_Deuteron -> Fill(thetaReco, thetaKine - thetaReco);
+          hPhiResolution_Deuteron -> Fill(momReco, phiKine - phiReco);
+          hThetaResolution_Deuteron -> Fill(momReco, thetaKine - thetaReco);
           
         } // end for for Deuterons
 
@@ -463,6 +424,7 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
     // storing results
     //--------------------------------------------------------------------------------
     
+    TFile* outFile = new TFile(outfile.Data(), "RECREATE");
     outFile->cd();
 
     hMomResolution_Lambda -> Write();
@@ -479,6 +441,8 @@ Int_t MomentumResolution(TString inputlist = "", TString outfile = "test.root", 
     //--------------------------------------------------------------------------------
     // Closing file and finalization
     //--------------------------------------------------------------------------------
+    delete file;
+    delete file2;
 
     cout << "####################################################" << endl;
     cout << "  Analyse finished succesfully! Go back to work!" << endl;

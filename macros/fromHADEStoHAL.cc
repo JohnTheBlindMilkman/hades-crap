@@ -9,8 +9,8 @@ TH1D* ConvertXaxisUnits(TH1D *hInp)
 {
     const double MeVtoGeV = 1./1000.;
     const int nBins = hInp->GetNbinsX();
-    const double newMin = hInp->GetXaxis()->GetXmin() * MeVtoGeV;
-    const double newMax = hInp->GetXaxis()->GetXmax() /* / 2. */ * MeVtoGeV; // /2 to convert from qinv to k*
+    const double newMin = hInp->GetXaxis()->GetXmin() /* * MeVtoGeV */;
+    const double newMax = hInp->GetXaxis()->GetXmax() / 2. /* * MeVtoGeV */; // /2 to convert from qinv to k*
 
     TH1D *hOtp = new TH1D(hInp->GetName(),hInp->GetTitle(),nBins,newMin,newMax);
     //hOtp->GetXaxis()->SetTitle("k* [MeV/c]");
@@ -70,11 +70,23 @@ void fromHADEStoHAL()
 
     inpFile = TFile::Open(inpFilePath);
     for (const int &ktval : ktBins)
+    {
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseKt.Data(),ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%d",ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%d",ktval))));
+    }
     for (const int &rapval : rapBins)
+    {
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseRap.Data(),rapval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignY%d",rapval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgY%d",rapval))));
+    }
     for (const int &psival : psiBins)
+    {
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBasePsi.Data(),psival))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignPsi%d",psival))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgPsi%d",psival))));
+    }
     /* for (const auto &proj : sProjName)
     {
         for (const int &ktval : ktBins)
@@ -87,6 +99,8 @@ void fromHADEStoHAL()
 
     inpFile = TFile::Open(inpFilePathInteg);
     histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(inpHitsInteg)));
+    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvSignInteg")));
+    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvBckgInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQoutRatInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQsideRatInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQlongRatInteg")));

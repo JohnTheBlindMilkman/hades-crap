@@ -215,18 +215,18 @@ namespace Selection
             {
                 if (PID != 14 && checkPID)
                     return false;
-                /* if (IsAtMdcEdge)
-                    return false; */
+                if (IsAtMdcEdge)
+                    return false;
                 /* if (TotalMomentum > 2000.)
                     return false; */
                 /* if (TransverseMomentum > 1400.)
                     return false; */
                 /* if (Beta < 0.2)
                     return false; */
-                /* if (NBadLayers > 1)
+                if (NBadLayers > 1)
+                    return false;
+                /* if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
                     return false; */
-                //if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
-                    //return false;
 
                 switch (System)
                 {

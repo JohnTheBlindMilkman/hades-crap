@@ -96,6 +96,9 @@ void drawProton1DMultiDiff()
                 hRat->Draw("hist pe");
             else
                 hRat->Draw("same hist pe");
+
+            hSign->Write();
+            hBckg->Write();
         }
     }
     
@@ -133,6 +136,9 @@ void drawProton1DMultiDiff()
                 hRat->Draw("hist pe");
             else
                 hRat->Draw("same hist pe");
+
+            hSign->Write();
+            hBckg->Write();
         }
     }
     
@@ -170,6 +176,9 @@ void drawProton1DMultiDiff()
                 hRat->Draw("hist pe");
             else
                 hRat->Draw("same hist pe");
+
+            hSign->Write();
+            hBckg->Write();
         }
     }
     
