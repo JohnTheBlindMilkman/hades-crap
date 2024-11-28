@@ -206,8 +206,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
 
 	TH2D *hMomResolution = new TH2D("hMomResolution","Momentum difference of protons;p_{reco} [MeV/c];p_{kin} - p_{reco}  [MeV/c]",80,0,4000,500,-500, 500);
-	TH2D *hPhiResolution = new TH2D("hPhiResolution","#phi angle difference of protons;p_{reco} [MeV/c];#phi_{kin} - #phi_{reco} [deg]",80,0,4000,500,-50, 50);
-	TH2D *hThetaResolution = new TH2D("hThetaResolution","#theta angle difference of protons;p_{reco}  [MeV/c];#theta_{kin} - #theta_{reco} [deg]",80,0,4000,500,-50, 50);
+	TH2D *hPhiResolution = new TH2D("hPhiResolution","#phi angle difference of protons;p_{reco} [MeV/c];#phi_{kin} - #phi_{reco} [deg]",80,0,4000,500,-20, 20);
+	TH2D *hThetaResolution = new TH2D("hThetaResolution","#theta angle difference of protons;p_{reco}  [MeV/c];#theta_{kin} - #theta_{reco} [deg]",80,0,4000,500,-10, 10);
 	
 	TH2D *hQinvSL = new TH2D("hQinvSL","q_{inv} vs Splitting Level for signal of p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
 	TH2D *hQinvSW = new TH2D("hQinvSW","q_{inv} vs Shared Wires for signal of p-p CF;q_{inv} [MeV/c];SW",250,0,3000,24,0,24);

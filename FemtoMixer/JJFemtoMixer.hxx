@@ -25,7 +25,7 @@
         {
             static_assert(std::is_class<Event>::value,"Provided event-type template parameter is not a class or a struct!");
             static_assert(std::is_class<Track>::value,"Provided track-type template parameter is not a class or a struct!");
-            static_assert(std::is_class<Pair>::value,"Prowided pair-type template parameter is not a class or a struct!");
+            static_assert(std::is_class<Pair>::value,"Provided pair-type template parameter is not a class or a struct!");
 
             private:
                 std::size_t fBufferSize;

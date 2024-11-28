@@ -51,12 +51,12 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_24_09_27_processed.root";
-    const TString outputFile = "../output/1Dcorr_0_10_cent.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_24_10_24_processed.root";
+    const TString outputFile = "../output/1Dcorr_50_60_cent.root";
     const std::vector<std::pair<int,TString> > ktArr{{1,"(200,400)"},{2,"(400,600)"},{3,"(600,800)"},{4,"(800,1000)"},{5,"(1000,1200)"},{6,"(1200,1400)"},{7,"(1400,1600)"}};
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.58,-0.35)"},{2,"(-0.35,-0.12)"},{3,"(-0.12,0.12)"},{4,"(0.12,0.35)"}};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
-    const int rebin = 1;
+    const int rebin = 5;
 
     float norm;    
     TLine *line = new TLine(0,1,3000,1);

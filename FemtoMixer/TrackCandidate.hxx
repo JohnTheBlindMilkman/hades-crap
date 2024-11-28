@@ -103,6 +103,34 @@ namespace Selection
 
                 return output;
             }
+            std::vector<unsigned> GetMetaHits(HGeantKine* part)
+            {
+                std::vector<unsigned> output;
+                std::vector<HGeantTof*> tofCells;
+                std::vector<HGeantRpc*> rpcCells;
+                unsigned hit;
+
+                if (part->getTofHits(tofCells))
+                {
+                    for (const auto elem : tofCells)
+                    {
+                        hit = static_cast<unsigned>(elem->getModule());
+                        if (hit >= 0)
+                            output.push_back(hit);
+                    }
+                }
+                else if (part->getRpcHits(rpcCells))
+                {
+                    for (const auto elem: rpcCells)
+                    {
+                        hit = static_cast<unsigned>(elem->getCell());
+                        if (hit >= 0)
+                            output.push_back(hit);
+                    }
+                }
+
+                return output;
+            }
             /**
              * @brief Gets rid of the angle wrap when calculating pair azimuthal angle. Used phi range is (-202.5,157.5] (I need this for asHBT, to have a in-plane and out-of-plane bin)
              * 
@@ -195,6 +223,38 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
+                metaCells = GetMetaHits(particleCand);
+            }
+            /**
+             * @brief Construct a new Track Candidate object
+             * 
+             * @param particleCand HGeantKine object pointer (contains PID)
+             * @param wires 
+             * @param evtId unique ID of the underlying event
+             * @param EP event plane angle of the underlying event
+             * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
+             * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
+             */
+            TrackCandidate(HGeantKine* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) : 
+            ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
+            {
+                TrackId = evtId + std::to_string(trackId);
+                AzimuthalAngle = particleCand->getPhiDeg();
+                Energy = particleCand->getE();
+                IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                Mass2 = particleCand->getM()*particleCand->getM();
+                PID = particleCand->getID(); // only for simulations
+                Charge = HPhysicsConstants::charge(PID);
+                PolarAngle = particleCand->getThetaDeg();
+                particleCand->getMomentum(Px,Py,Pz);
+                Rapidity = particleCand->getRapidity();
+                if (particleCand->getSystem() == 0)
+                    System = Detector::RPC;
+                else if (particleCand->getSystem() == 1)
+                    System = Detector::ToF;
+                TotalMomentum = particleCand->getTotalMomentum();
+                TransverseMomentum = particleCand->getTransverseMomentum();
+                Beta = 1 - (1/(1+(TotalMomentum*TotalMomentum/Mass2))); // beta = 1 - 1/(1+p^2/m_0^2) if my calculations are correct
                 metaCells = GetMetaHits(particleCand);
             }
             /**
@@ -349,6 +409,21 @@ namespace Selection
             float GetP() const
             {
                 return TotalMomentum;
+            }
+            /**
+             * @brief Set the 4-momentum
+             * 
+             * @param px x component
+             * @param py y component
+             * @param pz z component
+             * @param ene energy
+             */
+            void SetMomentum(float px, float py, float pz, float ene)
+            {
+                Px = px;
+                Py = py;
+                Pz = pz;
+                Energy = ene;
             }
             /**
              * @brief Get the Beta of the track

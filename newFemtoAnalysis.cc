@@ -2,6 +2,7 @@
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
 #include "FemtoMixer/JJFemtoMixer.hxx"
+#include "FemtoMixer/TrackSmearer.hxx"
 #include "../HFiredWires/HFiredWires.hxx"
 #include <iostream>
 #include <string>
@@ -190,6 +191,16 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
+
+	/* TFile *momentumSmearingFile = TFile::Open("/lustre/hades/user/kjedrzej/apr12/Corrections/momentum_resolution.root");
+	Correction::TrackSmearer fSmearer(
+		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fMomMuFit")),
+		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fMomSigFit")),
+		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fPhiMuFit")),
+		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fPhiSigFit")),
+		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fThetaMuFit")),
+		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fThetaSigFit"))
+	); */
 	
 	// create objects for particle selection and mixing
 	Selection::EventCandidate fEvent;	
@@ -372,7 +383,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEvent.SelectEvent({1},2,2,1)) 
+		if (! fEvent.SelectEvent({6},2,2,2))
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);
@@ -432,6 +443,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
+
+			//fSmearer.SmearMomenta(fTrack); // this will smear your momenta
 
 			fEvent.AddTrack(fTrack);
 			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());

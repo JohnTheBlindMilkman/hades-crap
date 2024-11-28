@@ -169,13 +169,13 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 	mixerNum.SetMaxBufferSize(mixerBuffer);
 	mixerNum.SetEventHashingFunction(EventHashing);
 	mixerNum.SetPairHashingFunction(PairHashing);
-	//mixerNum.SetPairCuttingFunction(PairRejection);
+	mixerNum.SetPairCuttingFunction(PairRejection);
 	mixerNum.PrintSettings();
 
 	mixerDen.SetMaxBufferSize(mixerBuffer);
 	mixerDen.SetEventHashingFunction(EventHashing);
 	mixerDen.SetPairHashingFunction(PairHashing);
-	//mixerDen.SetPairCuttingFunction(PairRejection);
+	mixerDen.SetPairCuttingFunction(PairRejection);
 	mixerDen.PrintSettings();
 	
     //--------------------------------------------------------------------------------
@@ -334,7 +334,7 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEventNum.SelectEvent({1},2,2,2) || ! fEventDen.SelectEvent({1},2,2,2)) 
+		if (! fEventNum.SelectEvent({4},2,2,2) || ! fEventDen.SelectEvent({4},2,2,2))
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);

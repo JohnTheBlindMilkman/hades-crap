@@ -53,8 +53,8 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_0_10_cent.root";
-    const TString inpFilePathInteg = "../output/1Dcorr_0_10_cent_Integ.root";
+    const TString inpFilePath = "../output/1Dcorr_40_50_cent.root";
+    const TString inpFilePathInteg = "../output/1Dcorr_40_50_cent_Integ.root";
     const TString inpHistBaseKt = "hQinvRatKt";
     const TString inpHistBaseRap = "hQinvRatY";
     const TString inpHistBasePsi = "hQinvRatPsi";
