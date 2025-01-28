@@ -17,6 +17,7 @@
     #include <functional>
     #include <random>
     #include <type_traits>
+    #include "JJUtils.hxx"
 
     namespace Mixing
     {
@@ -29,33 +30,37 @@
 
             private:
                 std::size_t fBufferSize;
-                bool fWaitForBuffer,fEventHashingFunctionIsDefined,fPairHashingFunctionIsDefined,fPairCutFunctionIsDefined;
-                std::size_t fDimensions;
-                std::random_device fRandomDevice;
-                std::mt19937 fGenerator;
-                //map of similar events (of maximal size give by fBufferSize); each event has a single track (randomly chosen from the collection)
-                std::map<std::size_t, std::deque<std::pair<Event, Track> > > fSimilarityMap;
-                std::function<std::size_t(const Event &)> fEventHashingFunction;
-                std::function<std::size_t(const Pair &)> fPairHashingFunction;
-                std::function<bool(const Pair &)> fPairCutFunction;
+                bool fWaitForBuffer,fEventHashingFunctionIsDefined,fTrackHashingFunctionIsDefined,fPairHashingFunctionIsDefined,fPairCutFunctionIsDefined;
+                std::map<std::size_t, std::deque<std::pair<std::shared_ptr<Event>, std::map<std::size_t, std::vector<std::shared_ptr<Track> > > > > > fSimilarityMap;
+                std::function<std::size_t(const std::shared_ptr<Event> &)> fEventHashingFunction;
+                std::function<std::size_t(const std::shared_ptr<Track> &)> fTrackHashingFunction;
+                std::function<std::size_t(const std::shared_ptr<Pair> &)> fPairHashingFunction;
+                std::function<bool(const std::shared_ptr<Pair> &)> fPairCutFunction;
                 /**
                  * @brief Create pairs of identical particles from given tracks
                  * 
                  * @param tracks tracks vector
                  * @return std::vector<Pair> vector of pairs
                  */
-                [[nodiscard]] std::vector<Pair> MakePairs(const std::vector<Track> &tracks);
+                [[nodiscard]] std::vector<std::shared_ptr<Pair> > MakePairs(const std::map<std::size_t, std::vector<std::shared_ptr<Track> > > &tracks);
                 /**
                  * @brief Divide pairs into corresponding category (given by the pair hash)
                  * 
                  * @param pairs pairs vector
                  * @return std::map<std::size_t, std::vector<Pair> > map of sorted vectors (each "branch"/bucket is a single group of similar pairs)
                  */
-                [[nodiscard]] std::map<std::size_t, std::vector<Pair> > SortPairs(const std::vector<Pair> &pairs);
+                [[nodiscard]] std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > SortPairs(const std::vector<std::shared_ptr<Pair> > &pairs);
+                /**
+                 * @brief Divide tracks into corresponding category (given by the track hash)
+                 * 
+                 * @param tracks tracks vector
+                 * @return std::map<std::size_t, std::vector<Track> > map of sorted vectors (each "branch"/bucket is a single group of similar tracks)
+                 */
+                [[nodiscard]] std::map<std::size_t, std::vector<std::shared_ptr<Track> > > SortTracks(const std::vector<std::shared_ptr<Track> > &tracks);
 
             public:
                 /**
-                 * @brief Default constructor. Create mixer object with: buffer size 10, no wait for full buffer, no hashing in event and pair, and no pair cut
+                 * @brief Default constructor. Create mixer object with: buffer size 10, don't wait for full buffer, no hashing in event, track, and pair, no pair cut
                  * 
                  */
                 constexpr JJFemtoMixer() : fBufferSize(10), 
@@ -63,61 +68,80 @@
                                 fEventHashingFunctionIsDefined(false),
                                 fPairHashingFunctionIsDefined(false),
                                 fPairCutFunctionIsDefined(false),
-                                fGenerator(fRandomDevice()),
-                                fEventHashingFunction([](const Event &){return 0;}),
-                                fPairHashingFunction([](const Pair &){return 0;}),
-                                fPairCutFunction([](const Pair &){return false;}) {}
+                                fEventHashingFunction([](const std::shared_ptr<Event> &){return 0;}),
+                                fTrackHashingFunction([](const std::shared_ptr<Track> &){return 0;}),
+                                fPairHashingFunction([](const std::shared_ptr<Pair> &){return 0;}),
+                                fPairCutFunction([](const std::shared_ptr<Pair> &){return false;}) {}
 
                 /**
                  * @brief Set the Event Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetEventHashingFunction(const std::function<std::size_t(const Event &)> &func) noexcept {fEventHashingFunction = func; fEventHashingFunctionIsDefined = true;}
+                constexpr void SetEventHashingFunction(const std::function<std::size_t(const std::shared_ptr<Event> &)> &func) noexcept {fEventHashingFunction = func; fEventHashingFunctionIsDefined = true;}
                 /**
                  * @brief Set the Event Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetEventHashingFunction(std::function<std::size_t(const Event &)> &&func) noexcept {fEventHashingFunction = std::move(func);  fEventHashingFunctionIsDefined = true;}
+                constexpr void SetEventHashingFunction(std::function<std::size_t(const std::shared_ptr<Event> &)> &&func) noexcept {fEventHashingFunction = std::move(func);  fEventHashingFunctionIsDefined = true;}
                 /**
                  * @brief Get the corresponding hash for given Event object.
                  * 
                  * @param obj Event-type object
                  * @return std::size_t 
                  */
-                [[nodiscard]] constexpr std::size_t GetEventHash(const Event &obj) const noexcept {return fEventHashingFunction(obj);}
+                [[nodiscard]] constexpr std::size_t GetEventHash(const std::shared_ptr<Event> &obj) const noexcept {return fEventHashingFunction(obj);}
+                /**
+                 * @brief Set the Track Hashing Function object.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
+                constexpr void SetTrackHashingFunction(const std::function<std::size_t(const std::shared_ptr<Track> &)> &func) noexcept {fTrackHashingFunction = func; fTrackHashingFunctionIsDefined = true;}
+                /**
+                 * @brief Set the Track Hashing Function object.
+                 * 
+                 * @param func Function object, can be lambda, standard function or std::function object.
+                 */
+                constexpr void SetTrackHashingFunction(std::function<std::size_t(const std::shared_ptr<Track> &)> &&func) noexcept {fTrackHashingFunction = std::move(func);  fTrackHashingFunctionIsDefined = true;}
+                /**
+                 * @brief Get the corresponding hash for given Track object.
+                 * 
+                 * @param obj Track-type object
+                 * @return std::size_t 
+                 */
+                [[nodiscard]] constexpr std::size_t GetTrackHash(const std::shared_ptr<Track> &obj) const noexcept {return fTrackHashingFunction(obj);}
                 /**
                  * @brief Set the Pair Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairHashingFunction(const std::function<std::size_t(const Pair &)> &func) noexcept {fPairHashingFunction = func; fPairHashingFunctionIsDefined = true;}
+                constexpr void SetPairHashingFunction(const std::function<std::size_t(const std::shared_ptr<Pair> &)> &func) noexcept {fPairHashingFunction = func; fPairHashingFunctionIsDefined = true;}
                 /**
                  * @brief Set the Pair Hashing Function object.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairHashingFunction(std::function<std::size_t(const Pair &)> &&func) noexcept {fPairHashingFunction = std::move(func); fPairHashingFunctionIsDefined = true;}
+                constexpr void SetPairHashingFunction(std::function<std::size_t(const std::shared_ptr<Pair> &)> &&func) noexcept {fPairHashingFunction = std::move(func); fPairHashingFunctionIsDefined = true;}
                 /**
                  * @brief Get the corresponding hash for given Pair object.
                  * 
                  * @param obj Pair-type object.
                  * @return std::size_t 
                  */
-                [[nodiscard]] constexpr std::size_t GetPairHash(const Pair &obj) const noexcept {return fPairHashingFunction(obj);}
+                [[nodiscard]] constexpr std::size_t GetPairHash(const std::shared_ptr<Pair> &obj) const noexcept {return fPairHashingFunction(obj);}
                 /**
                  * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairCuttingFunction(const std::function<bool(const Pair &)> &func) noexcept {fPairCutFunction = func; fPairCutFunctionIsDefined = true;}
+                constexpr void SetPairCuttingFunction(const std::function<bool(const std::shared_ptr<Pair> &)> &func) noexcept {fPairCutFunction = func; fPairCutFunctionIsDefined = true;}
                 /**
                  * @brief Set the Pair Cutting Function object. The function should return true if pair should be rejected and false if accepted.
                  * 
                  * @param func Function object, can be lambda, standard function or std::function object.
                  */
-                constexpr void SetPairCuttingFunction(std::function<bool(const Pair &)> &&func) noexcept {fPairCutFunction = std::move(func); fPairCutFunctionIsDefined = true;}
+                constexpr void SetPairCuttingFunction(std::function<bool(const std::shared_ptr<Pair> &)> &&func) noexcept {fPairCutFunction = std::move(func); fPairCutFunctionIsDefined = true;}
                 /**
                  * @brief Get the result of pair selection function for a given Pair object.
                  * 
@@ -125,7 +149,7 @@
                  * @return true Pair is rejected.
                  * @return false Pair is not rejected.
                  */
-                [[nodiscard]] constexpr bool GetPairCutResult(const Pair &obj) const noexcept {return fPairCutFunction(obj);}
+                [[nodiscard]] constexpr bool GetPairCutResult(const std::shared_ptr<Pair> &obj) const noexcept {return fPairCutFunction(obj);}
                 /**
                  * @brief Set the max mixing buffer size for each "branch".
                  * 
@@ -180,44 +204,68 @@
                  * @param tracks Tracks from the current event.
                  * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from provided tracks for given event.
                  */
-                [[nodiscard]] std::map<std::size_t, std::vector<Pair> > AddEvent(const Event &event, const std::vector<Track> &tracks);
+                [[nodiscard]] std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > AddEvent(const std::shared_ptr<Event> &event, const std::vector<std::shared_ptr<Track> > &tracks);
                 /**
                  * @brief Get the sorted pairs which come from similar events, but not from this event.
                  * 
                  * @param event Current event (the event from which we don't want to get tracks).
                  * @return std::map<std::size_t, std::vector<Pair> > Sorted pairs from stored tracks for similar events.
                  */
-                [[nodiscard]] std::map<std::size_t, std::vector<Pair> > GetSimilarPairs(const Event &event);
+                [[nodiscard]] std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > GetSimilarPairs(const std::shared_ptr<Event> &event);
         };
 
         template<typename Event, typename Track, typename Pair>
-        std::vector<Pair> JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::vector<Track> &tracks)
+        std::vector<std::shared_ptr<Pair> > JJFemtoMixer<Event,Track,Pair>::MakePairs(const std::map<std::size_t, std::vector<std::shared_ptr<Track> > > &tracks)
         {
             bool reverse = false;
             const std::size_t trackVecSize = tracks.size();
 
-            std::vector<Pair> tmpVector;
-            tmpVector.reserve((1 + trackVecSize) * trackVecSize / 2); // reserve the expected vector size (arithmetic sum, from 1 to N)
+            std::vector<std::shared_ptr<Pair> > tmpVector;
+            tmpVector.reserve(trackVecSize); // reserve the minimial expected size (number of individual buckets)
 
-            for (std::size_t iter1 = 0; iter1 < trackVecSize; ++iter1)
-                for (std::size_t iter2 = iter1 + 1; iter2 < trackVecSize; ++iter2)
-                {
-                    if (reverse)
-                        tmpVector.push_back(Pair(tracks.at(iter2),tracks.at(iter1)));
-                    else
-                        tmpVector.push_back(Pair(tracks.at(iter1),tracks.at(iter2)));
+            for (const auto &[key,trckVec] : tracks)
+                for (std::size_t iter1 = 0; iter1 < trckVec.size(); ++iter1)
+                    for (std::size_t iter2 = iter1 + 1; iter2 < trckVec.size(); ++iter2)
+                    {
+                        if (reverse)
+                            tmpVector.emplace_back(new Pair(trckVec.at(iter2),trckVec.at(iter1)));
+                        else
+                            tmpVector.emplace_back(new Pair(trckVec.at(iter1),trckVec.at(iter2)));
 
-                    reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
-                }
+                        reverse = !reverse; // reverse the order of tracks every other time (get rid of the bias from the track sorter)
+                    }
 
             return tmpVector;
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<Pair> &pairs)
+        std::map<std::size_t,std::vector<std::shared_ptr<Track> > > JJFemtoMixer<Event,Track,Pair>::SortTracks(const std::vector<std::shared_ptr<Track> > &tracks)
+        {
+            std::size_t currentTrackHash = 0;
+            std::map<std::size_t,std::vector<std::shared_ptr<Track> > > trackMap;
+
+            for (const auto& track : tracks)
+            {
+                currentTrackHash = fTrackHashingFunction(track);
+
+                // an entry for given currentTrackHash may already exist so we must check if that's the case
+                if (trackMap.find(currentTrackHash) != trackMap.end())
+                {
+                    trackMap.at(currentTrackHash).push_back(track);
+                }
+                else
+                {
+                    trackMap.emplace(currentTrackHash,std::vector<std::shared_ptr<Track> >(1,track));
+                }
+            }
+            return trackMap;
+        }
+
+        template<typename Event, typename Track, typename Pair>
+        std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > JJFemtoMixer<Event,Track,Pair>::SortPairs(const std::vector<std::shared_ptr<Pair> > &pairs)
         {
             std::size_t currentPairHash = 0;
-            std::map<std::size_t, std::vector<Pair> > pairMap;
+            std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > pairMap;
 
             for (const auto &pair : pairs)
             {
@@ -233,7 +281,7 @@
                 }
                 else
                 {
-                    pairMap.emplace(currentPairHash,std::vector<Pair>(1,pair));
+                    pairMap.emplace(currentPairHash,std::vector<std::shared_ptr<Pair> >(1,pair));
                 }
             }
 
@@ -246,6 +294,7 @@
             std::cout << "\n------=========== JJFemtoMixer Settings ===========------\n";
             std::cout << "Max Background Mixing Buffer Size: " << fBufferSize << ((fWaitForBuffer) ? " (FIXED)\n" : " (LOOSE)\n");
             std::cout << "Event Hashing Function: " << ((fEventHashingFunctionIsDefined) ? " User-defined\n" : " Not set\n");
+            std::cout << "Track Hashing Function: " << ((fTrackHashingFunctionIsDefined) ? " User-defined\n" : " Not set\n");
             std::cout << "Pair Hashing Function: " << ((fPairHashingFunctionIsDefined) ? " User-defined\n" : " Not set\n");
             std::cout << "Pair Rejection Function: " << ((fPairCutFunctionIsDefined) ? " User-defined\n" : " Not set\n");
             std::cout << "------==============================================------\n" << std::endl;
@@ -262,16 +311,16 @@
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::AddEvent(const Event &event, const std::vector<Track> &tracks)
+        std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > JJFemtoMixer<Event,Track,Pair>::AddEvent(const std::shared_ptr<Event> &event, const std::vector<std::shared_ptr<Track> > &tracks)
         {
             std::uniform_int_distribution<int> dist(0,tracks.size()-1);
             std::size_t evtHash = fEventHashingFunction(event);
-            std::pair<Event, Track> trackPair{event,tracks.at(dist(fGenerator))};
+            std::pair<std::shared_ptr<Event>, std::map<std::size_t,std::vector<std::shared_ptr<Track> > > > trackPair{event,SortTracks(tracks)};
 
             // an entry for given evtHash may not exist, so we must check if that's the case
             if (fSimilarityMap.find(evtHash) == fSimilarityMap.end())
             {
-                fSimilarityMap.emplace(evtHash,std::deque<std::pair<Event, Track> >(1,trackPair));
+                fSimilarityMap.emplace(evtHash,std::deque<std::pair<std::shared_ptr<Event>, std::map<std::size_t,std::vector<std::shared_ptr<Track> > > > >(1,trackPair));
             }
             else
             {
@@ -280,23 +329,37 @@
                     fSimilarityMap.at(evtHash).pop_front(); 
             }
 
-            return SortPairs(MakePairs(tracks));
+            return SortPairs(MakePairs(trackPair.second));
         }
 
         template<typename Event, typename Track, typename Pair>
-        std::map<std::size_t, std::vector<Pair> > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const Event &event)
+        std::map<std::size_t, std::vector<std::shared_ptr<Pair> > > JJFemtoMixer<Event,Track,Pair>::GetSimilarPairs(const std::shared_ptr<Event> &event)
         {
-            std::vector<Track> outputVector;
+            std::map<std::size_t,std::vector<std::shared_ptr<Track> > > outputMap;
             std::size_t evtHash = fEventHashingFunction(event);
 
             if (fSimilarityMap.at(evtHash).size() == fBufferSize || fWaitForBuffer == false)
             {
-                for (const auto &[evt,trck] : fSimilarityMap.at(evtHash))
+                for (const auto &[evt,trckMap] : fSimilarityMap.at(evtHash))
+                {
                     if (evt != event)
-                        outputVector.push_back(trck);
+                    {
+                        for (const auto &[key,trckVec] : trckMap)
+                        {
+                            if (outputMap.find(key) == outputMap.end())
+                            {
+                                outputMap.emplace(key,std::vector<std::shared_ptr<Track> >(1,*JJUtils::select_randomly(trckVec.begin(),trckVec.end())));
+                            }
+                            else
+                            {
+                                outputMap.at(key).push_back(*JJUtils::select_randomly(trckVec.begin(),trckVec.end()));
+                            }
+                        }
+                    }
+                }
             }
 
-            return SortPairs(MakePairs(outputVector));
+            return SortPairs(MakePairs(outputMap));
         }
     } // namespace Mixing
     

@@ -28,12 +28,17 @@ std::size_t EventHashing(const Selection::EventCandidate &evt)
     return evt.GetCentrality()*1e1 + evt.GetPlate();
 }
 
+std::size_t TrackHashing(const Selection::TrackCandidate &trck)
+{
+	return static_cast<std::size_t>(trck.GetPt()/100)*1e2 + static_cast<std::size_t>(trck.GetRapidity()*10);
+}
+
 std::size_t PairHashing(const Selection::PairCandidate &pair)
 {
 	// collection of slices: (array[n],array[n+1]>
     // make sure this is ordered!
-    constexpr std::array<float,6> ktArr{150,450,750,1050,1350,1650};
-    constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
+    constexpr std::array<float,8> ktArr{200,400,600,800,1000,1200,1400,1600}; // {200,400,600,800,1000,1200,1400,1600} ? (7 bins)
+    constexpr std::array<float,5> yArr{0.16,0.39,0.62,0.86,1.09}; // {0.16,0.39,0.62,0.86,1.09} ? (4 bins)
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
     std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
@@ -56,13 +61,13 @@ bool PairCut(const Selection::PairCandidate &pair)
 		pair.GetSharedMetaCells() > 0; 
 }
 
-int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
+int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{true};
+	constexpr bool isSimulation{false};
 	constexpr int protonPID{14};
 
 	using HFiredWires = HADES::MDC::HFiredWires;
@@ -145,9 +150,11 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit,+HGeantKine";
+	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit";
 	if (isCustomDst)
 		inputString += ",+HMdcSeg";
+	if (isSimulation)
+		inputString += ",+HGeantKine";
     if (!loop->setInput(inputString.data())) // make sure to use +HMdcSeg if you want the wires
 		exit(1);
 
@@ -166,14 +173,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCandSim*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
+    HParticleCand*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
 	HGeantKine*       geant_kine;
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
-	HCategory* kine_cand_cat = (HCategory*) HCategoryManager::getCategory(catGeantKine);
+	//HCategory* kine_cand_cat = (HCategory*) HCategoryManager::getCategory(catGeantKine);
 	//HCategory *mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // so... this is my stupid fix for now, without it HFiredWires doesn't work
 
 	/* static_assert((isSimulation && !isSim(particle_cand)),"particle candidate must be of type HParticleCandSim");
@@ -187,7 +194,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		throw std::runtime_error("particle candidate must be of type HParticleCand");
 	}
     
-    if (!particle_cand_cat || !kine_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
+    //if (!particle_cand_cat || !kine_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
+	if (!particle_cand_cat)
 		exit(1);
 	
     //================================================================================================================================================================
@@ -197,11 +205,15 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	constexpr float fBeamRapidity = 0.74f; // God I hope this is correct
 	constexpr float fMeVtoGeV = 1.f/1000.f;
 
+	TH1D *hFemtoMixerTest = new TH1D("hFemtoMixerTest","",9999,0,9999);
+
 	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
 	TH2D *hBetaMomRpc = new TH2D("hBetaMomRpc","#beta vs p of accepted protons (RPC);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
 	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",2000,0,2000,121,-1.15,1.25);
 	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
 	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
+	TH1D *hMinvTof = new TH1D("hMinvTof","m_{inv} of accepted protons (ToF);m_{inv} [GeV/c^{2}];N",600,0.4,1.6);
+	TH1D *hMinvRpc = new TH1D("hMinvRpc","m_{inv} of accepted protons (RPC);m_{inv} [GeV/c^{2}];N",600,0.4,1.6);
 	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,0.5,24.5,10,-0.5,9.5);
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
 
@@ -242,6 +254,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
 	mixer.SetMaxBufferSize(50);
 	mixer.SetEventHashingFunction(EventHashing);
+	mixer.SetTrackHashingFunction(TrackHashing);
 	mixer.SetPairHashingFunction(PairHashing);
 	mixer.SetPairCuttingFunction(PairCut);
 	mixer.PrintSettings();
@@ -476,16 +489,16 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//hCounter->Fill(cNumSelectedTracks);
 			hPtRap->Fill(fTrack.GetPt(), fTrack.GetRapidity() - fBeamRapidity);
 			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
+			hFemtoMixerTest->Fill(mixer.GetTrackHash(fTrack));
 
-
-			geant_kine = static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1));
+			/* geant_kine = static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1));
 			double kineMom = geant_kine->getTotalMomentum();
 			double kinePhi = geant_kine->getPhiDeg();
 			double kineTheta = geant_kine->getThetaDeg();
 
 			hMomResolution->Fill(fTrack.GetP(),kineMom - fTrack.GetP());
 			hPhiResolution->Fill(fTrack.GetP(),kinePhi - fTrack.GetPhi());
-			hThetaResolution->Fill(fTrack.GetP(),kineTheta - fTrack.GetTheta());
+			hThetaResolution->Fill(fTrack.GetP(),kineTheta - fTrack.GetTheta()); */
 			
 			for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
 				hSegNcells->Fill(layer+1,fTrack.GetWires(layer).size());
@@ -496,11 +509,13 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			{
 				hBetaMomRpc->Fill(fTrack.GetP()*fTrack.GetCharge(),fTrack.GetBeta());
 				hM2momRpc->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
+				hMinvRpc->Fill(fTrack.GetM()*fMeVtoGeV);
 			}
 			else
 			{
 				hBetaMomTof->Fill(fTrack.GetP()*fTrack.GetCharge(),fTrack.GetBeta());
 				hM2momTof->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
+				hMinvTof->Fill(fTrack.GetM()*fMeVtoGeV);
 			}
 		} // End of track loop
 
@@ -557,11 +572,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // Remember to write your results to the output file here
     //================================================================================================================================================================
 
+	hFemtoMixerTest->Write();
 	hPtRap->Write();
 	hBetaMomRpc->Write();
 	hBetaMomTof->Write();
 	hM2momRpc->Write();
 	hM2momTof->Write();
+	hMinvTof->Write();
+	hMinvRpc->Write();
 	hSegNcells->Write();
 	hPhiTheta->Write();
 

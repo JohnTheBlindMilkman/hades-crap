@@ -5,16 +5,20 @@
 
 #include <vector>
 
+#include "heventheader.h"
+#include "hparticleevtinfo.h"
+#include "hparticleevtchara.h"
+
 namespace Selection
 {
     class EventCandidate
     {
         private:
             std::string EventId;
-            short int Centrality,TargetPlate;
+            short int Centrality, TargetPlate, ChargedTracks;
             float ReactionPlaneAngle;
             float X, Y, Z;
-            std::vector<TrackCandidate> trackList;
+            std::vector<std::shared_ptr<TrackCandidate> > trackList;
 
         public:
             /**
@@ -33,7 +37,23 @@ namespace Selection
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
             EventCandidate(const std::string &evtId, float vertx, float verty, float vertz, int cent, float EP)
-            : EventId(evtId),Centrality(cent),ReactionPlaneAngle(EP),X(vertx),Y(verty),Z(vertz){}
+            : EventId(evtId),Centrality(cent),ChargedTracks(0),ReactionPlaneAngle(TMath::RadToDeg() * EP),X(vertx),Y(verty),Z(vertz) {}
+            /**
+             * @brief Construct a new Event Candidate object
+             * 
+             * @param evtHeader pointer to HEventHeader object
+             * @param evtInfo pointer to HParticleEvtInfo object
+             * @param cent event centrality class (use HParticleEvtChara::getCentralityClass)
+             * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
+             */
+            EventCandidate(HEventHeader* evtHeader, const HParticleEvtInfo* evtInfo,  int cent, float EP)
+                : EventId(std::to_string(evtHeader->getEventRunNumber()) + std::to_string(evtHeader->getEventSeqNumber())),
+                Centrality(cent),
+                ChargedTracks(evtInfo->getSumRpcMultHitCut() + evtInfo->getSumTofMultCut()),
+                ReactionPlaneAngle(TMath::RadToDeg() * EP),
+                X(evtHeader->getVertexReco().getPos().X()),
+                Y(evtHeader->getVertexReco().getPos().Y()),
+                Z(evtHeader->getVertexReco().getPos().Z()) {}
             /**
              * @brief Destroy the Event Candidate object
              * 
@@ -122,11 +142,20 @@ namespace Selection
                 return TargetPlate;
             }
             /**
+             * @brief Get the total number of chaged tracks (nToF + nRPC)
+             * 
+             * @return int 
+             */
+            int GetNCharged() const
+            {
+                return ChargedTracks;
+            }
+            /**
              * @brief Get the list of tracks assigned th this EventCandidate
              * 
              * @return std::vector<TrackCandidate> 
              */
-            std::vector<TrackCandidate> GetTrackList() const
+            std::vector<std::shared_ptr<TrackCandidate> > GetTrackList() const
             {
                 return trackList;
             }
@@ -135,7 +164,7 @@ namespace Selection
              * 
              * @return std::vector<TrackCandidate> 
              */
-            std::vector<TrackCandidate> GetTrackList()
+            std::vector<std::shared_ptr<TrackCandidate> > GetTrackList()
             {
                 return trackList;
             }
@@ -158,11 +187,38 @@ namespace Selection
                 return ReactionPlaneAngle;
             }
             /**
+             * @brief Get the X component of the event vertex
+             * 
+             * @return float 
+             */
+            float GetX() const
+            {
+                return X;
+            }
+            /**
+             * @brief Get the Y component of the event vertex
+             * 
+             * @return float 
+             */
+            float GetY() const
+            {
+                return Y;
+            }
+            /**
+             * @brief Get the Z component of the event vertex
+             * 
+             * @return float 
+             */
+            float GetZ() const
+            {
+                return Z;
+            }
+            /**
              * @brief Add new TrackCandidate to this EventCandidate
              * 
              * @param trck 
              */
-            void AddTrack(const TrackCandidate &trck)
+            void AddTrack(const std::shared_ptr<TrackCandidate> &trck)
             {
                 trackList.push_back(trck);
             }

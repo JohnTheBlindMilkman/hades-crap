@@ -19,15 +19,18 @@ namespace Selection
              * @param trck1 
              * @param trck2 
              */
-            PairCandidate(const TrackCandidate &trck1, const TrackCandidate &trck2) : Particle1(trck1), Particle2(trck2),SplittingLevel(0.),SharedWires(0)
+            PairCandidate(const std::shared_ptr<TrackCandidate> &trck1, const std::shared_ptr<TrackCandidate> &trck2) : 
+            Particle1(trck1), Particle2(trck2), 
+            GeantKinePair((trck1->GeantKineTrack == nullptr || trck1->GeantKineTrack == nullptr) ? nullptr : new PairCandidate(trck1->GeantKineTrack,trck2->GeantKineTrack)), 
+            SplittingLevel(0.), SharedWires(0)
             {
                 CFKinematics(trck1,trck2);
                 OpeningAngle = CalcOpeningAngle(trck1,trck2);
-                Rapidity = (trck1.Rapidity + trck2.Rapidity) / 2.;
-                AzimuthalAngle = (trck1.AzimuthalAngle + trck2.AzimuthalAngle) / 2.;
-                DeltaPhi = trck1.AzimuthalAngle - trck2.AzimuthalAngle;
-                DeltaTheta = trck1.PolarAngle - trck2.PolarAngle;
-                pairId = trck1.GetID() + trck2.GetID();
+                Rapidity = (trck1->Rapidity + trck2->Rapidity) / 2.;
+                AzimuthalAngle = (trck1->AzimuthalAngle + trck2->AzimuthalAngle) / 2.;
+                DeltaPhi = trck1->AzimuthalAngle - trck2->AzimuthalAngle;
+                DeltaTheta = trck1->PolarAngle - trck2->PolarAngle;
+                pairId = trck1->GetID() + trck2->GetID();
                 std::tie(SplittingLevel,SharedWires,BothLayers,MinWireDistance,wireDistances) = CalcSplittingLevelAndSharedWires(trck1,trck2);
                 SharedMetaCells = CalcSharedMetaCells(trck1,trck2);
             }
@@ -39,13 +42,14 @@ namespace Selection
             /**
              * @brief Perform pair selection based on the fraction of neighbouring wires with certain distance from each other. Allows for a modifiable behaviour of selection
              * 
-             * @tparam T Behaviour type: OneUnder, Uniform, and Weighted
+             * @tparam T Behaviour type
              * @param fraction in what fraction of the all hits the merging can occur (values between 0 and 1 are allowed)
              * @param cutoff how close the wires are allowed to be
              * @return true 
              * @return false 
              */
-            template<Behaviour T> bool RejectPairByCloseHits(const float &fraction,const unsigned &cutoff) const
+            template<Behaviour T> 
+            bool RejectPairByCloseHits(const float &fraction, const unsigned &cutoff) const
             {
                 if (fraction < 0. || fraction > 1.)
                 {
@@ -176,9 +180,19 @@ namespace Selection
             {
                 return std::make_tuple(QOut,QSide,QLong);
             }
+            /**
+             * @brief Get the Geant Kine Pair object
+             * 
+             * @return std::shared_ptr<PairCandidate> 
+             */
+            std::shared_ptr<PairCandidate> GetGeantKinePair() const
+            {
+                return GeantKinePair;
+            }
         private:
             std::string pairId;
-            TrackCandidate Particle1,Particle2;
+            std::shared_ptr<TrackCandidate> Particle1,Particle2;
+            std::shared_ptr<PairCandidate> GeantKinePair;
             unsigned SharedWires, BothLayers, MinWireDistance, SharedMetaCells;
             std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> wireDistances;
             float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
@@ -190,13 +204,13 @@ namespace Selection
              * @param part1 
              * @param part2 
              */
-            void CFKinematics(const TrackCandidate &part1, const TrackCandidate &part2)
+            void CFKinematics(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2)
             {
                 // adapted from https://github.com/DanielWielanek/HAL/blob/main/analysis/femto/base/FemtoPairKinematics.cxx
-                Double_t tPx = part1.Px + part2.Px;
-                Double_t tPy = part1.Py + part2.Py;
-                Double_t tPz = part1.Pz + part2.Pz;
-                Double_t tE = part1.Energy + part2.Energy;
+                Double_t tPx = part1->Px + part2->Px;
+                Double_t tPy = part1->Py + part2->Py;
+                Double_t tPz = part1->Pz + part2->Pz;
+                Double_t tE = part1->Energy + part2->Energy;
                 Double_t tPt = tPx * tPx + tPy * tPy;
                 Double_t tMt = tE * tE - tPz * tPz;  // mCVK;
                 tMt = TMath::Sqrt(tMt);
@@ -206,18 +220,18 @@ namespace Selection
 
                 // Transform to LCMS
 
-                Double_t particle1lcms_pz = tGamma * (part1.Pz - tBeta * part1.Energy);
-                Double_t particle1lcms_e  = tGamma * (part1.Energy - tBeta * part1.Pz);
-                Double_t particle2lcms_pz = tGamma * (part2.Pz - tBeta * part2.Energy);
-                Double_t particle2lcms_e  = tGamma * (part2.Energy - tBeta * part2.Pz);
+                Double_t particle1lcms_pz = tGamma * (part1->Pz - tBeta * part1->Energy);
+                Double_t particle1lcms_e  = tGamma * (part1->Energy - tBeta * part1->Pz);
+                Double_t particle2lcms_pz = tGamma * (part2->Pz - tBeta * part2->Energy);
+                Double_t particle2lcms_e  = tGamma * (part2->Energy - tBeta * part2->Pz);
 
                 // Rotate in transverse plane
 
-                Double_t particle1lcms_px = (part1.Px * tPx + part1.Py * tPy) / Kt;
-                Double_t particle1lcms_py = (-part1.Px * tPy + part1.Py * tPx) / Kt;
+                Double_t particle1lcms_px = (part1->Px * tPx + part1->Py * tPy) / Kt;
+                Double_t particle1lcms_py = (-part1->Px * tPy + part1->Py * tPx) / Kt;
 
-                Double_t particle2lcms_px = (part2.Px * tPx + part2.Py * tPy) / Kt;
-                Double_t particle2lcms_py = (-part2.Px * tPy + part2.Py * tPx) / Kt;
+                Double_t particle2lcms_px = (part2->Px * tPx + part2->Py * tPy) / Kt;
+                Double_t particle2lcms_py = (-part2->Px * tPy + part2->Py * tPx) / Kt;
 
                 QOut = abs(particle1lcms_px - particle2lcms_px);
                 QSide = abs(particle1lcms_py - particle2lcms_py);
@@ -232,16 +246,16 @@ namespace Selection
              * @param part2 
              * @return float 
              */
-            float CalcOpeningAngle(const TrackCandidate &part1, const TrackCandidate &part2) const
+            float CalcOpeningAngle(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2) const
             {
-                float ptot = sqrt((part1.Px*part1.Px + part1.Py*part1.Py + part1.Pz*part1.Pz) * (part2.Px*part2.Px + part2.Py*part2.Py + part2.Pz*part2.Pz));
+                float ptot = sqrt((part1->Px*part1->Px + part1->Py*part1->Py + part1->Pz*part1->Pz) * (part2->Px*part2->Px + part2->Py*part2->Py + part2->Pz*part2->Pz));
                 if (ptot <= 0.)
                 {	
                     return 0.;
                 }
                 else
                 {
-                    float arg = (part1.Px*part2.Px + part1.Py*part2.Py + part1.Pz*part2.Pz) / ptot;
+                    float arg = (part1->Px*part2->Px + part1->Py*part2->Py + part1->Pz*part2->Pz) / ptot;
                     if (arg > 1.) return 1.;
                     if (arg < -1.) return -1.;
                     return acos(arg);
@@ -269,7 +283,7 @@ namespace Selection
              * @param part2 
              * @return std::pair<float,unsigned int> first = SL, second = SW
              */
-            std::tuple<float,unsigned,unsigned,unsigned,std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> > CalcSplittingLevelAndSharedWires(const TrackCandidate &part1, const TrackCandidate &part2) const
+            std::tuple<float,unsigned,unsigned,unsigned,std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> > CalcSplittingLevelAndSharedWires(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2) const
             {
                 float SL = 0;
                 unsigned int SW = 0, MWD = 1000;
@@ -278,8 +292,8 @@ namespace Selection
                 int n0 = 0, n1 = 0, n2 = 0;
                 for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
                 {
-                    auto wires1 = part1.GetWires(layer);
-                    auto wires2 = part2.GetWires(layer);
+                    auto wires1 = part1->GetWires(layer);
+                    auto wires2 = part2->GetWires(layer);
                     const std::size_t wires1Size = wires1.size();
                     const std::size_t wires2Size = wires2.size();
 
@@ -323,12 +337,12 @@ namespace Selection
                 SL /= (n1 + n2);
                 return std::make_tuple(SL,SW,n0,MWD,allWD); // this should be a struct at this point...
             }
-            unsigned CalcSharedMetaCells(const TrackCandidate &part1, const TrackCandidate &part2) const
+            unsigned CalcSharedMetaCells(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2) const
             {
                 unsigned SMC = 0;
                 std::size_t i = 0, j = 0;
-                auto meta1 = part1.GetMetaCells();
-                auto meta2 = part2.GetMetaCells();
+                auto meta1 = part1->GetMetaCells();
+                auto meta2 = part2->GetMetaCells();
                 std::size_t meta1size = meta1.size();
                 std::size_t meta2size = meta2.size();
 

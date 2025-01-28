@@ -18,12 +18,13 @@ namespace Selection
         friend class PairCandidate; // this is here because I have a badly structured code
 
         private:
+            std::shared_ptr<TrackCandidate> GeantKineTrack;
             std::string TrackId;
             Detector System;
             bool IsAtMdcEdge;
             short int PID, Charge;
             unsigned int NBadLayers;
-            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass2, Beta, PolarAngle, AzimuthalAngle, ReactionPlaneAngle;
+            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass, Mass2, Beta, PolarAngle, AzimuthalAngle, ReactionPlaneAngle;
             std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> firedWiresCollection;
             std::vector<unsigned> goodLayers,metaCells;
 
@@ -160,7 +161,7 @@ namespace Selection
              * @param pid PID of the particle we want (when using DSTs put here whatever, just make sure the same PID is in the TrackCandidate::SelectTrack method)
              */
             TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid)
-            : ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
+            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
@@ -173,6 +174,7 @@ namespace Selection
                 Charge = particleCand->getCharge();
                 Energy = vecTmp.E();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                Mass = particleCand->getMass();
                 Mass2 = particleCand->getMass2();
                 PID = pid;
                 PolarAngle = particleCand->getTheta();
@@ -198,7 +200,8 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HParticleCandSim* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) : 
+            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) 
+            : GeantKineTrack((geantKine == nullptr) ? nullptr : new TrackCandidate(geantKine,evtId,EP,trackId,pid)), 
             ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
@@ -210,6 +213,7 @@ namespace Selection
                 Charge = particleCand->getCharge();
                 Energy = vecTmp.E();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                Mass = particleCand->getMass();
                 Mass2 = particleCand->getMass2();
                 PID = particleCand->getGeantPID(); // only for simulations
                 PolarAngle = particleCand->getTheta();
@@ -235,14 +239,15 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HGeantKine* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) : 
-            ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
+            TrackCandidate(HGeantKine* particleCand, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) 
+            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection({}),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 TrackId = evtId + std::to_string(trackId);
                 AzimuthalAngle = particleCand->getPhiDeg();
                 Energy = particleCand->getE();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
-                Mass2 = particleCand->getM()*particleCand->getM();
+                Mass = particleCand->getM();
+                Mass2 = Mass * Mass;
                 PID = particleCand->getID(); // only for simulations
                 Charge = HPhysicsConstants::charge(PID);
                 PolarAngle = particleCand->getThetaDeg();
@@ -435,6 +440,15 @@ namespace Selection
                 return Beta;
             }
             /**
+             * @brief Get mass of the track
+             * 
+             * @return float 
+             */
+            float GetM() const
+            {
+                return Mass;
+            }
+            /**
              * @brief Get squared mass of the track
              * 
              * @return float 
@@ -444,7 +458,7 @@ namespace Selection
                 return Mass2;
             }
             /**
-             * @brief Get the Reaction Plane object
+             * @brief Get the Reaction Plane (in deg)
              * 
              * @return float 
              */

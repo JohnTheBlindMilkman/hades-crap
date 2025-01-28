@@ -7,8 +7,6 @@
 #include "../Externals/Palettes.hxx"
 #include "TLine.h"
 
-#include "hadesifyPlot.cc"
-
 double getNorm(TH1D *hInp, double xMin, double xMax)
 {
     int nBins = 0;
@@ -32,8 +30,8 @@ void drawProton1DJJFM()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_10_24_processed.root";
-    const TString outputFile = "../output/1Dcorr_50_60_cent_Integ.root";
+    const TString fileName = "../slurmOutput/apr12ana_quarter_25_01_27_processed.root";
+    const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
     const int rebin = 1;
 
     float norm;

@@ -23,12 +23,18 @@ struct HistogramCollection
 	TH3D hQoslSign,hQoslBckg;
 };
 
-std::size_t EventHashing(const Selection::EventCandidate &evt)
+std::size_t EventHashing(const std::shared_ptr<Selection::EventCandidate> &evt)
 {
-    return evt.GetCentrality()*1e2 + evt.GetPlate();
+	//return evt.GetCentrality()*1e1 + evt.GetPlate();
+	return static_cast<std::size_t>(evt->GetNCharged()/10)*1e4 + static_cast<std::size_t>(evt->GetReactionPlane()/10)*1e2 + static_cast<std::size_t>(evt->GetPlate());
 }
 
-std::size_t PairHashing(const Selection::PairCandidate &pair)
+std::size_t TrackHashing(const std::shared_ptr<Selection::TrackCandidate> &trck)
+{
+	return static_cast<std::size_t>(trck->GetPt()/10)*1e2 + static_cast<std::size_t>(trck->GetRapidity()*10);
+}
+
+std::size_t PairHashing(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	// collection of slices: (array[n],array[n+1]>
     // make sure this is ordered!
@@ -36,9 +42,9 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     constexpr std::array<float,5> yArr{0.16,0.39,0.62,0.86,1.09}; // {0.16,0.39,0.62,0.86,1.09} ? (4 bins)
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.GetRapidity()) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.GetPhi()) - EpArr.begin();
+    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair->GetKt()) - ktArr.begin();
+    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair->GetRapidity()) - yArr.begin();
+    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair->GetPhi()) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
 	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
@@ -47,14 +53,14 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
     	return ktCut*1e2 + yCut*1e1 + EpCut;
 }
 
-bool PairRejection(const Selection::PairCandidate &pair)
+bool PairRejection(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
 	// previous 17/24 is now 0.7
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
-		pair.GetBothLayers() < 20 ||
-		pair.GetSharedMetaCells() > 0; 
+	return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
+		pair->GetBothLayers() < 20 ||
+		pair->GetSharedMetaCells() > 0;
 }
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
@@ -203,17 +209,18 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	); */
 	
 	// create objects for particle selection and mixing
-	Selection::EventCandidate fEvent;	
-	Selection::TrackCandidate fTrack;
+	std::shared_ptr<Selection::EventCandidate> fEvent;	
+	std::shared_ptr<Selection::TrackCandidate> fTrack;
 
 	// create object for getting MDC wires
 	HParticleWireInfo fWireInfo;
 
-	std::map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
+	std::map<std::size_t,std::vector<std::shared_ptr<Selection::PairCandidate> > > fSignMap, fBckgMap;
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
 	mixer.SetMaxBufferSize(50); // ana=50, sim=200
 	mixer.SetEventHashingFunction(EventHashing);
+	mixer.SetTrackHashingFunction(TrackHashing);
 	mixer.SetPairHashingFunction(PairHashing);
 	mixer.SetPairCuttingFunction(PairRejection);
 	
@@ -356,19 +363,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				continue;
 		}
 		
-		fEvent = Selection::EventCandidate(
-			std::to_string(event_header->getEventRunNumber()) + std::to_string(event_header->getEventSeqNumber()),
-			vertX,
-			vertY,
-			vertZ,
-			centClassIndex,
-			EventPlane);
+		fEvent = std::make_shared<Selection::EventCandidate>(event_header,particle_info,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
 		//--------------------------------------------------------------------------------
         
-		// remove first two to get vortex x,y,z
 		if (   !particle_info->isGoodEvent(Particle::kGoodVertexClust)
 			|| !particle_info->isGoodEvent(Particle::kGoodVertexCand)
 			|| !particle_info->isGoodEvent(Particle::kGoodSTART)
@@ -383,7 +383,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEvent.SelectEvent({6},2,2,2))
+		if (! fEvent->SelectEvent({1},2,2,2))
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);
@@ -421,18 +421,18 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrack = Selection::TrackCandidate(
+			fTrack = std::make_shared<Selection::TrackCandidate>(
 				particle_cand,
 				Selection::TrackCandidate::CreateWireArray(fWireInfo),
-				fEvent.GetID(),
-				fEvent.GetReactionPlane(),
+				fEvent->GetID(),
+				fEvent->GetReactionPlane(),
 				track,
 				protonPID);
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
 			
-			if (fTrack.GetSystem() == Selection::Detector::RPC)
+			if (fTrack->GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for all tracks
 			}
@@ -441,16 +441,16 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				// fill ToF monitors for all tracks
 			}
 
-			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
+			if (!fTrack->SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
 			//fSmearer.SmearMomenta(fTrack); // this will smear your momenta
 
-			fEvent.AddTrack(fTrack);
-			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
+			fEvent->AddTrack(fTrack);
+			hPhiTheta->Fill(fTrack->GetPhi(),fTrack->GetTheta());
 			hCounter->Fill(cNumSelectedTracks);
 
-			if (fTrack.GetSystem() == Selection::Detector::RPC)
+			if (fTrack->GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for accepted tracks
 			}
@@ -461,11 +461,11 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		} // End of track loop
 
-		if (fEvent.GetTrackListSize()) // if track vector has entries
+		if (fEvent->GetTrackListSize()) // if track vector has entries
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
+			hCounter->Fill(cNumAllPairs,fEvent->GetTrackListSize()*(fEvent->GetTrackListSize()-1)/2); // all combinations w/o repetitions
 
-            fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
+            fSignMap = mixer.AddEvent(fEvent,fEvent->GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
 			for (const auto &signalEntry : fSignMap)
@@ -482,7 +482,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						};
 						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
-					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.GetQinv());
+					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry->GetQinv());
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong); */
@@ -506,7 +506,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
-					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.GetQinv());
+					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry->GetQinv());
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(qout,qside,qlong); */

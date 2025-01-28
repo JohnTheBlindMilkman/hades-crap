@@ -31,8 +31,8 @@ std::size_t PairHashing(const Selection::PairCandidate &pair)
 {
 	// collection of slices: (array[n],array[n+1]>
     // make sure this is ordered!
-    constexpr std::array<float,6> ktArr{150,450,750,1050,1350,1650};
-    constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
+    constexpr std::array<float,8> ktArr{200,400,600,800,1000,1200,1400,1600}; // {200,400,600,800,1000,1200,1400,1600} ? (7 bins)
+    constexpr std::array<float,5> yArr{0.16,0.39,0.62,0.86,1.09}; // {0.16,0.39,0.62,0.86,1.09} ? (4 bins)
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
     std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
@@ -158,25 +158,19 @@ int newMomentumResolutionAnalysis(TString inputlist = "", TString outfile = "mom
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
 
 	// create objects for particle selection
-	Selection::EventCandidate fEventGeantKine, fEventPartCand;
-	Selection::TrackCandidate fTrackGeantKine, fTrackPartCand;
+	Selection::EventCandidate fEvent;
+	Selection::TrackCandidate fTrack;
 	HParticleWireInfo fWireInfo;
 	std::size_t tracks;
 
-	std::map<std::size_t,std::vector<Selection::PairCandidate> > fSignMapGeantKine, fBckgMapGeantKine, fSignMapPartCand, fBckgMapPartCand;
+	std::map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
 
-    Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixerGeantKine, mixerPartCand;
-	mixerGeantKine.SetMaxBufferSize(mixerBuffer);
-	mixerGeantKine.SetEventHashingFunction(EventHashing);
-	mixerGeantKine.SetPairHashingFunction(PairHashing);
-	mixerGeantKine.SetPairCuttingFunction(PairCut);
-	mixerGeantKine.PrintSettings();
-
-	mixerPartCand.SetMaxBufferSize(mixerBuffer);
-	mixerPartCand.SetEventHashingFunction(EventHashing);
-	mixerPartCand.SetPairHashingFunction(PairHashing);
-	mixerPartCand.SetPairCuttingFunction(PairCut);
-	mixerPartCand.PrintSettings();
+    Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
+	mixer.SetMaxBufferSize(mixerBuffer);
+	mixer.SetEventHashingFunction(EventHashing);
+	mixer.SetPairHashingFunction(PairHashing);
+	mixer.SetPairCuttingFunction(PairCut);
+	mixer.PrintSettings();
 
     //--------------------------------------------------------------------------------
     // The following counter histogram is used to gather some basic information on the analysis
@@ -295,15 +289,7 @@ int newMomentumResolutionAnalysis(TString inputlist = "", TString outfile = "mom
 		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
 		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
 
-		fEventGeantKine = Selection::EventCandidate(
-			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
-			vertX,
-			vertY,
-			vertZ,
-			centClassIndex,
-			EventPlane);
-
-		fEventPartCand = Selection::EventCandidate(
+		fEvent = Selection::EventCandidate(
 			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
 			vertX,
 			vertY,
@@ -330,7 +316,7 @@ int newMomentumResolutionAnalysis(TString inputlist = "", TString outfile = "mom
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (!fEventGeantKine.SelectEvent({1,2,3,4,5,6},2,2,2) || !fEventPartCand.SelectEvent({1,2,3,4,5,6},2,2,2)) 
+		if (!fEvent.SelectEvent({1,2,3,4,5,6},2,2,2)) 
 			continue;
 		
 		hCounter->Fill(cNumSelectedEvents);
@@ -370,92 +356,36 @@ int newMomentumResolutionAnalysis(TString inputlist = "", TString outfile = "mom
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrackGeantKine = Selection::TrackCandidate(
-				static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
-				{},
-				fEventGeantKine.GetID(),
-				fEventGeantKine.GetReactionPlane(),
-				track,
-				14);
-			fTrackPartCand = Selection::TrackCandidate(
+			fTrack = Selection::TrackCandidate(
 				particle_cand,
+				static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
 				Selection::TrackCandidate::CreateWireArray(fWireInfo),
-				fEventPartCand.GetID(),
-				fEventPartCand.GetReactionPlane(),
+				fEvent.GetID(),
+				fEvent.GetReactionPlane(),
 				track,
 				14);
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
-			
-			if (fTrackGeantKine.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
-				fEventGeantKine.AddTrack(fTrackGeantKine);
-			if (fTrackPartCand.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
-				fEventPartCand.AddTrack(fTrackPartCand);
+		
+			// select HParticleCandSim object and get the underlying HParticleCandSim and HGeantKine
+			if (fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
+				fEvent.AddTrack(fTrack);
 
 		} // End of track loop
 
 		/* tracks = fEvent.GetTrackListSize();
 		hCounter->Fill(cNumSelectedTracks,tracks); */
 
-		if (fEventGeantKine.GetTrackListSize())
+		if (fEvent.GetTrackListSize())
 		{
 			hCounter->Fill(cNumAllPairs,tracks*(tracks-1)/2); // all combinations w/o repetitions
 
-			fSignMapGeantKine = mixerGeantKine.AddEvent(fEventGeantKine,fEventGeantKine.GetTrackList());
-			fBckgMapGeantKine = mixerGeantKine.GetSimilarPairs(fEventGeantKine);
+			fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
+			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
-			for (const auto &pair : fSignMapGeantKine)
-				for (const auto &elem : pair.second)
-				{
-					if (fHistogramsGeantKine.find(pair.first) == fHistogramsGeantKine.end())
-					{
-						HistogramCollection histos{
-						TH1D(TString::Format("hQinvSignGK_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH1D(TString::Format("hQinvBckgGK_%lu",pair.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH3D(/* TString::Format("hQoslSign_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
-						TH3D(/* TString::Format("hQoslBckg_%lu",pair.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
-						};
-						fHistogramsGeantKine.emplace(pair.first,std::move(histos));
-					}
-					fHistogramsGeantKine.at(pair.first).hQinvSign.Fill(elem.GetQinv());
-					/* float qout,qside,qlong;
-					std::tie(qout,qside,qlong) = entry.GetOSL();
-					fMapFoHistograms.at(pair.first).hQoslSign.Fill(qout,qside,qlong); */
-
-					if (pair.first != 0)
-						hCounter->Fill(cNumSelectedPairs);
-				}
-
-			for (const auto &pair : fBckgMapGeantKine)
-				for (const auto &elem : pair.second)
-				{
-					if (fHistogramsGeantKine.find(pair.first) == fHistogramsGeantKine.end())
-					{
-						HistogramCollection histos{
-						TH1D(TString::Format("hQinvSignGK_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH1D(TString::Format("hQinvBckgGK_%lu",pair.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH3D(/* TString::Format("hQoslSign_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
-						TH3D(/* TString::Format("hQoslBckg_%lu",pair.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
-						};
-						fHistogramsGeantKine.emplace(pair.first,std::move(histos));
-					}
-					fHistogramsGeantKine.at(pair.first).hQinvBckg.Fill(elem.GetQinv());
-					/* float qout,qside,qlong;
-					std::tie(qout,qside,qlong) = entry.GetOSL();
-					fMapFoHistograms.at(pair.first).hQoslSign.Fill(qout,qside,qlong); */
-				}
-		}
-
-		if (fEventPartCand.GetTrackListSize())
-		{
-			hCounter->Fill(cNumAllPairs,tracks*(tracks-1)/2); // all combinations w/o repetitions
-
-			fSignMapPartCand = mixerPartCand.AddEvent(fEventPartCand,fEventPartCand.GetTrackList());
-			fBckgMapPartCand = mixerPartCand.GetSimilarPairs(fEventPartCand);
-
-			for (const auto &pair : fSignMapPartCand)
+			for (const auto &pair : fSignMap)
 				for (const auto &elem : pair.second)
 				{
 					if (fHistogramsPartCand.find(pair.first) == fHistogramsPartCand.end())
@@ -473,11 +403,26 @@ int newMomentumResolutionAnalysis(TString inputlist = "", TString outfile = "mom
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(pair.first).hQoslSign.Fill(qout,qside,qlong); */
 
+					if (fHistogramsGeantKine.find(pair.first) == fHistogramsGeantKine.end())
+					{
+						HistogramCollection histos{
+						TH1D(TString::Format("hQinvSignGK_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH1D(TString::Format("hQinvBckgGK_%lu",pair.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH3D(/* TString::Format("hQoslSign_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
+						TH3D(/* TString::Format("hQoslBckg_%lu",pair.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
+						};
+						fHistogramsGeantKine.emplace(pair.first,std::move(histos));
+					}
+					fHistogramsGeantKine.at(pair.first).hQinvSign.Fill(elem.GetGeantKinePair()->GetQinv());
+					/* float qout,qside,qlong;
+					std::tie(qout,qside,qlong) = entry.GetOSL();
+					fMapFoHistograms.at(pair.first).hQoslSign.Fill(qout,qside,qlong); */
+
 					if (pair.first != 0)
 						hCounter->Fill(cNumSelectedPairs);
 				}
 
-			for (const auto &pair : fBckgMapPartCand)
+			for (const auto &pair : fBckgMap)
 				for (const auto &elem : pair.second)
 				{
 					if (fHistogramsPartCand.find(pair.first) == fHistogramsPartCand.end())
@@ -494,9 +439,23 @@ int newMomentumResolutionAnalysis(TString inputlist = "", TString outfile = "mom
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(pair.first).hQoslSign.Fill(qout,qside,qlong); */
+
+					if (fHistogramsGeantKine.find(pair.first) == fHistogramsGeantKine.end())
+					{
+						HistogramCollection histos{
+						TH1D(TString::Format("hQinvSignGK_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH1D(TString::Format("hQinvBckgGK_%lu",pair.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH3D(/* TString::Format("hQoslSign_%lu",pair.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
+						TH3D(/* TString::Format("hQoslBckg_%lu",pair.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
+						};
+						fHistogramsGeantKine.emplace(pair.first,std::move(histos));
+					}
+					fHistogramsGeantKine.at(pair.first).hQinvBckg.Fill(elem.GetGeantKinePair()->GetQinv());
+					/* float qout,qside,qlong;
+					std::tie(qout,qside,qlong) = entry.GetOSL();
+					fMapFoHistograms.at(pair.first).hQoslSign.Fill(qout,qside,qlong); */
 				}
 		}
-
 	} // End of event loop
 	
 	// printing some info about the RAM I'm using to know how much memory each job should be given

@@ -92,11 +92,11 @@ void compareHists()
     outFile->cd();
     c->Write(); */
 
-    const TString fileName1 = "../output/1Dcorr_0_10_cent.root";
-    const TString fileName2 = "../output/1Dcorr_0_10_cent_Purity.root";
-    const TString fileNameOut = "../output/1Dcorr_0_10_cent_Integ_Comp.root";
-    const std::vector<TString> histNames = {"hQinvRatKt1","hQinvRatKt1"};
-    const std::vector<TString> titleNames = {"Raw","Purity Corrected"};
+    const TString fileName1 = "../output/1Dcorr_0_10_cent_Purity.root";
+    const TString fileName2 = "../output/1Dcorr_0_10_cent_Purity_MomRes.root";
+    const TString fileNameOut = "../output/1Dcorr_0_10_cent_Purity_MomRes_Comp.root";
+    const std::vector<TString> histNames = {"hQinvRatInteg","hQinvRatInteg"};
+    const std::vector<TString> titleNames = {"Before correction","After correction"};
 
     TFile *inpFile1 = TFile::Open(fileName1);
     TFile *inpFile2 = TFile::Open(fileName2);

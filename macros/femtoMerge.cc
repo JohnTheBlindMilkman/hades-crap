@@ -3,7 +3,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_all_24_11_20_1.root", TString signName = "hQinvNum_", TString bckgName = "hQinvDen_", int ktMax = 7, int yMax = 4, int psiMax = 8)
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_quarter_25_01_27.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 7, int yMax = 4, int psiMax = 8)
 {
     const int maxHistos = ktMax * yMax * psiMax * 2;
 
@@ -28,8 +28,8 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_
     if (signName.Contains("inv") && bckgName.Contains("inv"))
     {
         std::vector<std::vector<std::vector<TH1D*> > > 
-        hSign(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr))), 
-        hBckg(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr)));
+            hSign(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr))), 
+            hBckg(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr)));
 
         auto job1 = [&bar]()
         {
