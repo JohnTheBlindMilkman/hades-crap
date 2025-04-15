@@ -160,7 +160,7 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (when using DSTs put here whatever, just make sure the same PID is in the TrackCandidate::SelectTrack method)
              */
-            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid)
+            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid)
             : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
@@ -169,7 +169,7 @@ namespace Selection
                 RemoveBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = ConstrainAngle(particleCand->getPhi() - TMath::RadToDeg()*ReactionPlaneAngle);
+                AzimuthalAngle = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
                 Beta = particleCand->getBeta();
                 Charge = particleCand->getCharge();
                 Energy = vecTmp.E();
@@ -200,15 +200,15 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) 
+            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid) 
             : GeantKineTrack((geantKine == nullptr) ? nullptr : new TrackCandidate(geantKine,evtId,EP,trackId,pid)), 
             ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
             {
-                particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
+                particleCand->calc4vectorProperties(HPhysicsConstants::mass(particleCand->getGeantPID()));
                 TLorentzVector vecTmp = *particleCand;
 
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = particleCand->getPhi();
+                AzimuthalAngle = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
                 Beta = particleCand->getBeta();
                 Charge = particleCand->getCharge();
                 Energy = vecTmp.E();
@@ -239,11 +239,11 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HGeantKine* particleCand, const std::string &evtId, const float &EP, const std::size_t &trackId, const short int &pid) 
+            TrackCandidate(HGeantKine* particleCand, const std::string &evtId, float EP, std::size_t trackId, short pid) 
             : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection({}),NBadLayers(0),goodLayers({}),metaCells({})
             {
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = particleCand->getPhiDeg();
+                AzimuthalAngle = ConstrainAngle(particleCand->getPhiDeg() - ReactionPlaneAngle);
                 Energy = particleCand->getE();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
                 Mass = particleCand->getM();
@@ -284,8 +284,10 @@ namespace Selection
                     return false;
                 /* if (TotalMomentum > 2000.)
                     return false; */
-                /* if (TransverseMomentum > 1400.)
-                    return false; */
+                /*if (TransverseMomentum < 300. || TransverseMomentum > 1000.)
+                    return false;
+                if (Rapidity < 0.14 || Rapidity > 1.34) // (-0.6,0.6) in c.m.
+                    return false;*/
                 /* if (Beta < 0.2)
                     return false; */
                 if (NBadLayers > 1)
@@ -362,7 +364,7 @@ namespace Selection
                 return NBadLayers;
             }
             /**
-             * @brief Get the azimuthan angle of the track (in deg)
+             * @brief Get the azimuthan angle of the track with respect to the Event Plane (in deg). Ranging from -202.5 to 157.5
              * 
              * @return float 
              */
@@ -414,6 +416,33 @@ namespace Selection
             float GetP() const
             {
                 return TotalMomentum;
+            }
+            /**
+             * @brief Get momentum  of the track along X-axis
+             * 
+             * @return float 
+             */
+            float GetPx() const
+            {
+                return Px;
+            }
+            /**
+             * @brief Get momentum  of the track along Y-axis
+             * 
+             * @return float 
+             */
+            float GetPy() const
+            {
+                return Py;
+            }
+            /**
+             * @brief Get momentum  of the track along Z-axis
+             * 
+             * @return float 
+             */
+            float GetPz() const
+            {
+                return Pz;
             }
             /**
              * @brief Set the 4-momentum

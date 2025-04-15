@@ -53,14 +53,14 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_0_10_cent_Integ.root";
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent.root";
     const TString inpFilePathInteg = "../output/1Dcorr_0_10_cent_Integ.root";
     const TString inpHistBaseKt = "hQinvRatKt";
     const TString inpHistBaseRap = "hQinvRatY";
     const TString inpHistBasePsi = "hQinvRatPsi";
     const TString inpHitsInteg = "hQinvRatInteg";
-    const std::vector<int> ktBins = {1,2,3,4,5,6,7};
-    const std::vector<int> rapBins = {1,2,3,4};
+    const std::vector<int> ktBins = {1,2,3,4,5,6,7,8,9,10};
+    const std::vector<int> rapBins = {1,2,3,4,5,6,7,8,9,10,11,12,13};
     const std::vector<int> psiBins = {1,2,3,4,5,6,7,8};
     const std::vector<TString> sProjName{"out","side","long"};
 
@@ -68,7 +68,7 @@ void fromHADEStoHAL()
     std::vector<TH1D*> histProjArray;
     TFile *inpFile,*otpFile;
 
-    /* inpFile = TFile::Open(inpFilePath);
+    inpFile = TFile::Open(inpFilePath);
     for (const int &ktval : ktBins)
     {
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseKt.Data(),ktval))));
@@ -86,7 +86,7 @@ void fromHADEStoHAL()
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBasePsi.Data(),psival))));
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignPsi%d",psival))));
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgPsi%d",psival))));
-    } */
+    }
     /* for (const auto &proj : sProjName)
     {
         for (const int &ktval : ktBins)

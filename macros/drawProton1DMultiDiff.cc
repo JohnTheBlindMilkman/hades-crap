@@ -9,6 +9,7 @@
 #include "TStyle.h"
 #include "TLine.h"
 #include "../Externals/Palettes.hxx"
+#include "MacroUtils.hxx"
 
 double getNorm(const TH1D *hInp, double xMin, double xMax)
 {
@@ -51,12 +52,12 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_24_10_24_processed.root";
-    const TString outputFile = "../output/1Dcorr_50_60_cent.root";
-    const std::vector<std::pair<int,TString> > ktArr{{1,"(200,400)"},{2,"(400,600)"},{3,"(600,800)"},{4,"(800,1000)"},{5,"(1000,1200)"},{6,"(1200,1400)"},{7,"(1400,1600)"}};
-    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.58,-0.35)"},{2,"(-0.35,-0.12)"},{3,"(-0.12,0.12)"},{4,"(0.12,0.35)"}};
+    const TString fileName = "../slurmOutput/apr12ana_all_25_03_25_processed.root";
+    const TString outputFile = "../output/1Dcorr_0_10_cent.root";
+    const std::vector<std::pair<int,TString> > ktArr{/* {1,"(0,200)"}, */{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
+    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"}/* ,{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"} */};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
-    const int rebin = 5;
+    const int rebin = 1;
 
     float norm;    
     TLine *line = new TLine(0,1,3000,1);
@@ -78,7 +79,7 @@ void drawProton1DMultiDiff()
         {
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
-            norm = getNorm(hRat,300,600);
+            norm = JJUtils::CF::GetNormByRange(hRat,300,500);
             hRat->Rebin(rebin);
             norm *= rebin;
             hRat->Scale(1./norm);
@@ -118,7 +119,7 @@ void drawProton1DMultiDiff()
         {
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
-            norm = getNorm(hRat,300,900);
+            norm = JJUtils::CF::GetNormByRange(hRat,300,900);
             hRat->Rebin(rebin);
             norm *= rebin;
             hRat->Scale(1./norm);
@@ -126,7 +127,7 @@ void drawProton1DMultiDiff()
             hRat->SetTitle(TString::Format("y #in %s",y.second.Data()));
             //hRat->SetMarkerStyle(20);
             //hRat->SetMarkerColor(JJColor::fWutAllColors[y.first-1]);
-            prepareGraph(hRat,JJColor::fWutSecondaryColors[y.first]);
+            prepareGraph(hRat,JJColor::fWutSecondaryColors11[y.first]);
 
             hRat->GetXaxis()->SetRangeUser(0,490);
             hRat->GetYaxis()->SetRangeUser(0,1.9);
@@ -158,7 +159,7 @@ void drawProton1DMultiDiff()
         {
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
-            norm = getNorm(hRat,300,900);
+            norm = JJUtils::CF::GetNormByRange(hRat,300,900);
             hRat->Rebin(rebin);
             norm *= rebin;
             hRat->Scale(1./norm);

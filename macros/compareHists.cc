@@ -92,14 +92,27 @@ void compareHists()
     outFile->cd();
     c->Write(); */
 
-    const TString fileName1 = "../output/1Dcorr_0_10_cent_Purity.root";
-    const TString fileName2 = "../output/1Dcorr_0_10_cent_Purity_MomRes.root";
-    const TString fileNameOut = "../output/1Dcorr_0_10_cent_Purity_MomRes_Comp.root";
-    const std::vector<TString> histNames = {"hQinvRatInteg","hQinvRatInteg"};
-    const std::vector<TString> titleNames = {"Before correction","After correction"};
+    const TString fileName1 = "../output/1Dcorr_0_10_cent_Integ.root";
+    const TString fileName2 = "../output/1Dcorr_0_10_cent_Integ_tmp.root";
+    /* const TString fileName3 = "../output/1Dcorr_0_10_cent_Integ_tmp2.root";
+    const TString fileName4 = "../output/1Dcorr_0_10_cent_Integ_tmp3.root";
+    const TString fileName5 = "../output/1Dcorr_0_10_cent_Integ_tmp4.root"; */
+    const TString fileNameOut = "../output/1Dcorr_0_10_cent_Integ_Comp.root";
+    const std::vector<TString> histNames = {"hQinvRatInteg","hQinvRatInteg","hQinvRatInteg","hQinvRatInteg","hQinvRatInteg"};
+    const std::vector<TString> titleNames = 
+    {
+        "Bannana Cut",
+        "Bannana Cut + p_{T} #in (300,1000) MeV/c + y_{c.m.} #in (-0.6,0.6)",
+        "MWD >= 0",
+        "#splitline{Event: 10 tracks & 10deg in EP & 1 target plate}{Track: 100 MeV/c in pt & 0.1 in y}",
+        "#splitline{Event: 10 tracks & 10deg in EP & 1 target plate}{Track: 100 MeV/c in px & 100 MeV/c in py & 100 MeV/c in pz}"
+    };
 
     TFile *inpFile1 = TFile::Open(fileName1);
     TFile *inpFile2 = TFile::Open(fileName2);
+    /* TFile *inpFile3 = TFile::Open(fileName3);
+    TFile *inpFile4 = TFile::Open(fileName4);
+    TFile *inpFile5 = TFile::Open(fileName5); */
     TFile *outFile = TFile::Open(fileNameOut,"RECREATE");
 
     TLine *line = new TLine(0,1,480,1);
@@ -137,8 +150,35 @@ void compareHists()
     outFile->cd();
     hInp2->Write();
 
+    /* inpFile3->cd();
+    TH1D *hInp3 = inpFile3->Get<TH1D>(histNames.at(2));
+    hInp3->SetMarkerColor(JJColor::fWutSecondaryColors[3]);
+    hInp3->SetLineColor(JJColor::fWutSecondaryColors[3]);
+    hInp3->SetTitle(titleNames.at(2));
+    outFile->cd();
+    hInp3->Write(); */
+
+    /* inpFile4->cd();
+    TH1D *hInp4 = inpFile4->Get<TH1D>(histNames.at(3));
+    hInp4->SetMarkerColor(JJColor::fWutSecondaryColors[4]);
+    hInp4->SetLineColor(JJColor::fWutSecondaryColors[4]);
+    hInp4->SetTitle(titleNames.at(3));
+    outFile->cd();
+    hInp4->Write();
+
+    inpFile5->cd();
+    TH1D *hInp5 = inpFile5->Get<TH1D>(histNames.at(4));
+    hInp5->SetMarkerColor(JJColor::fWutSecondaryColors[5]);
+    hInp5->SetLineColor(JJColor::fWutSecondaryColors[5]);
+    hInp5->SetTitle(titleNames.at(4));
+    outFile->cd();
+    hInp5->Write(); */
+
     hInp1->Draw("pe");
     hInp2->Draw("pe same");
+    /* hInp3->Draw("pe same");
+    hInp4->Draw("pe same");
+    hInp5->Draw("pe same"); */
 
     c->BuildLegend(0.2,0.2,0.5,0.5,"","p");
 

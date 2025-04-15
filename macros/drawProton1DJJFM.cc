@@ -1,3 +1,4 @@
+#include <iostream>
 #include "TFile.h"
 #include "TCanvas.h"
 #include "TH1D.h"
@@ -5,32 +6,14 @@
 #include "TString.h"
 #include "TLegend.h"
 #include "../Externals/Palettes.hxx"
+#include "MacroUtils.hxx"
 #include "TLine.h"
-
-double getNorm(TH1D *hInp, double xMin, double xMax)
-{
-    int nBins = 0;
-    double val = 0., xVal;
-    for (int i = 1; i < hInp->GetNbinsX(); i++)
-    {
-        xVal = hInp->GetBinCenter(i);
-        if (xVal >= xMin && xVal <= xMax)
-        {
-            val += hInp->GetBinContent(i);
-            nBins++;
-        } 
-    }
-    if(nBins > 0)
-        return val/nBins;
-    else    
-        return 0.;
-}
 
 void drawProton1DJJFM()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_quarter_25_01_27_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_25_03_25_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
     const int rebin = 1;
 
@@ -51,7 +34,8 @@ void drawProton1DJJFM()
 
     hRat->Divide(hBckg);
     hRat->Sumw2();
-    norm = getNorm(hRat,200,600);
+    //JJUtils::Generic::SetErrors(hRat,hSign,hBckg); // not sure if this should bwe applied and in what form exactly
+    norm = JJUtils::CF::GetNormByRange(hRat,200,600);
     hRat->Rebin(rebin);
     norm *= rebin;
     hRat->Scale(1./norm);

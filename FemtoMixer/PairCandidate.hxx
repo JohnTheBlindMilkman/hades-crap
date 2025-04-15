@@ -87,7 +87,7 @@ namespace Selection
                 return Rapidity;
             }
             /**
-             * @brief Get the pair average azimuthal angle w.r.t. the EP (if specified in the constructor)
+             * @brief Get the pair average azimuthal angle
              * 
              * @return float 
              */
@@ -127,7 +127,7 @@ namespace Selection
              * 
              * @return unsigned int 
              */
-            unsigned int GetSharedWires() const
+            unsigned GetSharedWires() const
             {
                 return SharedWires;
             }

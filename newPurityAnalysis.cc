@@ -402,7 +402,7 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 
 		} // End of track loop
 
-		if (fEventNum.GetTrackListSize()) // if track vector has entries
+		if (fEventNum.GetTrackListSize() > 2) // if track vector has entries
 		{
             fSignMapNum = mixerNum.AddEvent(fEventNum,fEventNum.GetTrackList());
 

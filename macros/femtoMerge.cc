@@ -3,9 +3,9 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_quarter_25_01_27.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 7, int yMax = 4, int psiMax = 8)
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_25_03_25.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 10, int yMax = 13, int psiMax = 8)
 {
-    const int maxHistos = ktMax * yMax * psiMax * 2;
+    const int maxHistos = ktMax * yMax * psiMax * 2; // times 2, because we have signal and background histograms
 
     TFile *inpFile = TFile::Open(fileName);
 
@@ -132,6 +132,7 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_
                 {
                     if (hSignPsi[psi-1] == nullptr && hSign[kt-1][y-1][psi-1] != nullptr && hBckgPsi[psi-1] == nullptr && hBckg[kt-1][y-1][psi-1] != nullptr)
                     {
+                        //std::cout << "kT:" << kt << " y:" << y << " psi:" << psi << "\n";
                         hSignPsi[psi-1] = new TH1D(*hSign[kt-1][y-1][psi-1]);
                         hSignPsi[psi-1]->SetName(TString::Format("hQinvSignPsi%d",psi));
                         hBckgPsi[psi-1] = new TH1D(*hBckg[kt-1][y-1][psi-1]);
@@ -139,6 +140,7 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_
                     }
                     else if(hSign[kt-1][y-1][psi-1] != nullptr && hBckg[kt-1][y-1][psi-1] != nullptr)
                     {
+                        //std::cout << "kT:" << kt << " y:" << y << " psi:" << psi << "\n";
                         hSignPsi[psi-1]->Add(hSign[kt-1][y-1][psi-1]);
                         hBckgPsi[psi-1]->Add(hBckg[kt-1][y-1][psi-1]);
                     }
@@ -185,6 +187,7 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_
         {
             if (hSignPsi[psi-1] != nullptr && hBckgPsi[psi-1] != nullptr)
             {
+                //std::cout << "psi:" << psi << " written\n";
                 hSignPsi[psi-1]->Write();
                 hBckgPsi[psi-1]->Write();
             }

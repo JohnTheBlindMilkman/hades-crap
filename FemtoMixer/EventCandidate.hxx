@@ -37,7 +37,7 @@ namespace Selection
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
             EventCandidate(const std::string &evtId, float vertx, float verty, float vertz, int cent, float EP)
-            : EventId(evtId),Centrality(cent),ChargedTracks(0),ReactionPlaneAngle(TMath::RadToDeg() * EP),X(vertx),Y(verty),Z(vertz) {}
+            : EventId(evtId),Centrality(cent),ChargedTracks(0),ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),X(vertx),Y(verty),Z(vertz) {}
             /**
              * @brief Construct a new Event Candidate object
              * 
@@ -50,7 +50,7 @@ namespace Selection
                 : EventId(std::to_string(evtHeader->getEventRunNumber()) + std::to_string(evtHeader->getEventSeqNumber())),
                 Centrality(cent),
                 ChargedTracks(evtInfo->getSumRpcMultHitCut() + evtInfo->getSumTofMultCut()),
-                ReactionPlaneAngle(TMath::RadToDeg() * EP),
+                ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),
                 X(evtHeader->getVertexReco().getPos().X()),
                 Y(evtHeader->getVertexReco().getPos().Y()),
                 Z(evtHeader->getVertexReco().getPos().Z()) {}
@@ -160,15 +160,6 @@ namespace Selection
                 return trackList;
             }
             /**
-             * @brief Get the list of tracks assigned th this EventCandidate
-             * 
-             * @return std::vector<TrackCandidate> 
-             */
-            std::vector<std::shared_ptr<TrackCandidate> > GetTrackList()
-            {
-                return trackList;
-            }
-            /**
              * @brief Get the size of the list of tracks assigned th this EventCandidate
              * 
              * @return std::size_t 
@@ -212,6 +203,20 @@ namespace Selection
             float GetZ() const
             {
                 return Z;
+            }
+            /**
+             * @brief Calcluate average pT of all tracks currently stored in this event
+             * 
+             * @return average pT or 0 if event is empty
+             */
+            double GetAveragePt() const
+            {
+                if (trackList.empty())
+                    return 0.;
+                
+                double avgPt = 0.;
+                std::for_each(trackList.begin(),trackList.end(),[&avgPt](const std::shared_ptr<TrackCandidate> &track){avgPt += track->GetPt();});
+                return  avgPt / trackList.size();
             }
             /**
              * @brief Add new TrackCandidate to this EventCandidate
