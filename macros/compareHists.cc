@@ -92,20 +92,17 @@ void compareHists()
     outFile->cd();
     c->Write(); */
 
-    const TString fileName1 = "../output/1Dcorr_0_10_cent_Integ.root";
-    const TString fileName2 = "../output/1Dcorr_0_10_cent_Integ_tmp.root";
+    const TString fileName1 = "../output/1Dcorr_0_10_cent_Purity.root";
+    const TString fileName2 = "../output/1Dcorr_0_10_cent_Purity_MomRes.root";
     /* const TString fileName3 = "../output/1Dcorr_0_10_cent_Integ_tmp2.root";
     const TString fileName4 = "../output/1Dcorr_0_10_cent_Integ_tmp3.root";
     const TString fileName5 = "../output/1Dcorr_0_10_cent_Integ_tmp4.root"; */
-    const TString fileNameOut = "../output/1Dcorr_0_10_cent_Integ_Comp.root";
-    const std::vector<TString> histNames = {"hQinvRatInteg","hQinvRatInteg","hQinvRatInteg","hQinvRatInteg","hQinvRatInteg"};
+    const TString fileNameOut = "../output/1Dcorr_0_10_cent_Purity_MomRes_Comp.root";
+    const std::vector<TString> histNames = {"hQinvRatInteg","hQinvRatInteg"};
     const std::vector<TString> titleNames = 
     {
-        "Bannana Cut",
-        "Bannana Cut + p_{T} #in (300,1000) MeV/c + y_{c.m.} #in (-0.6,0.6)",
-        "MWD >= 0",
-        "#splitline{Event: 10 tracks & 10deg in EP & 1 target plate}{Track: 100 MeV/c in pt & 0.1 in y}",
-        "#splitline{Event: 10 tracks & 10deg in EP & 1 target plate}{Track: 100 MeV/c in px & 100 MeV/c in py & 100 MeV/c in pz}"
+        "Uncorrected",
+        "Corrected for momentum smearing"
     };
 
     TFile *inpFile1 = TFile::Open(fileName1);
@@ -144,8 +141,8 @@ void compareHists()
 
     inpFile2->cd();
     TH1D *hInp2 = inpFile2->Get<TH1D>(histNames.at(1));
-    hInp2->SetMarkerColor(JJColor::fWutSecondaryColors[2]); // secondary gold WUT
-    hInp2->SetLineColor(JJColor::fWutSecondaryColors[2]); // secondary gold WUT
+    hInp2->SetMarkerColor(JJColor::fWutSecondaryColors[3]); // secondary red WUT
+    hInp2->SetLineColor(JJColor::fWutSecondaryColors[3]); // secondary red WUT
     hInp2->SetTitle(titleNames.at(1));
     outFile->cd();
     hInp2->Write();

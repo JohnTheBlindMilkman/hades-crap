@@ -22,12 +22,12 @@ namespace Selection
             PairCandidate(const std::shared_ptr<TrackCandidate> &trck1, const std::shared_ptr<TrackCandidate> &trck2) : 
             Particle1(trck1), Particle2(trck2), 
             GeantKinePair((trck1->GeantKineTrack == nullptr || trck1->GeantKineTrack == nullptr) ? nullptr : new PairCandidate(trck1->GeantKineTrack,trck2->GeantKineTrack)), 
-            SplittingLevel(0.), SharedWires(0)
+            SplittingLevel(0.), SharedWires(0), areSameSector(trck1->GetSector() == trck2->GetSector())
             {
                 CFKinematics(trck1,trck2);
                 OpeningAngle = CalcOpeningAngle(trck1,trck2);
                 Rapidity = (trck1->Rapidity + trck2->Rapidity) / 2.;
-                AzimuthalAngle = (trck1->AzimuthalAngle + trck2->AzimuthalAngle) / 2.;
+                AzimuthalAngle = ConstrainAngle(trck1->AzimuthalAngle + trck2->AzimuthalAngle) / 2.;
                 DeltaPhi = trck1->AzimuthalAngle - trck2->AzimuthalAngle;
                 DeltaTheta = trck1->PolarAngle - trck2->PolarAngle;
                 pairId = trck1->GetID() + trck2->GetID();
@@ -189,6 +189,15 @@ namespace Selection
             {
                 return GeantKinePair;
             }
+            /**
+             * @brief Check if the tracks are in thew same sector
+             * 
+             * @return true if they are and false otherwise
+             */
+            [[nodiscard]] bool AreTracksFromTheSameSector() const noexcept
+            {
+                return areSameSector;
+            }
         private:
             std::string pairId;
             std::shared_ptr<TrackCandidate> Particle1,Particle2;
@@ -196,6 +205,7 @@ namespace Selection
             unsigned SharedWires, BothLayers, MinWireDistance, SharedMetaCells;
             std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> wireDistances;
             float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
+            bool areSameSector;
             template <Behaviour T> struct type {}; // helper struct
 
             /**
@@ -270,11 +280,17 @@ namespace Selection
             float ConstrainAngle(const float &angle)
             {
                 if (angle > 157.5)
+                {
                     return angle -360.;
+                }
                 else if (angle <= -202.5)
+                {
                     return angle + 360.;
+                }
                 else
+                {
                     return angle;
+                }
             }
             /**
              * @brief Calculates the splitting level (SL) and number of shared wires (SW) between two tracks. Those values are a measure of track merging and splitting
@@ -290,7 +306,7 @@ namespace Selection
                 std::array<int,HADES::MDC::WireInfo::numberOfAllLayers> allWD;
                 std::fill(allWD.begin(),allWD.end(),-999); // we don't want to initialise with zeros, because it would mean that the unpopulated fields are sharing a wire
                 int n0 = 0, n1 = 0, n2 = 0;
-                for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
+                for (const auto &layer : HADES::MDC::WireInfo::allLayerIndexing)
                 {
                     auto wires1 = part1->GetWires(layer);
                     auto wires2 = part2->GetWires(layer);
@@ -313,8 +329,9 @@ namespace Selection
                                     SL -= 1.;
                                 }
 
-                                if (abs(wire1 - wire2) < MWD)
-                                    MWD = abs(wire1 - wire2);
+                                long wireDist = std::abs(static_cast<long>(wire1) - static_cast<long>(wire2));
+                                if (wireDist < MWD)
+                                    MWD = wireDist;
                             }
 
                         allWD.at(layer) = MWD;
@@ -341,29 +358,14 @@ namespace Selection
             {
                 unsigned SMC = 0;
                 std::size_t i = 0, j = 0;
-                auto meta1 = part1->GetMetaCells();
-                auto meta2 = part2->GetMetaCells();
-                std::size_t meta1size = meta1.size();
-                std::size_t meta2size = meta2.size();
-
-                // iterate over all elements in both of the containers
-                while (i < meta1size && j < meta2size) // this method gives me O(NlogN) complexity, but is probably overengineered (I have max 2 entries in vector)
-                {
-                    if (meta1[i] == meta2[j])
+                auto meta1 = part1->GetMetaHits();
+                auto meta2 = part2->GetMetaHits();
+                
+                for (const auto &hit1 : meta1)
+                    for (const auto &hit2 : meta2)
                     {
-                        ++i;
-                        ++j;
-                        ++SMC;
+                        if (hit1 == hit2) ++SMC;
                     }
-                    else if (meta1[i] < meta2[j])
-                    {
-                        ++i;
-                    }
-                    else
-                    {
-                        ++j;
-                    }
-                }
 
                 return SMC;
             }

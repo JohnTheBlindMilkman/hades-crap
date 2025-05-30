@@ -1,7 +1,18 @@
+/**
+ * @file EventCandidate.hxx
+ * @author Jędrzej Kołaś (jedrzej.kolas.dokt@pw.edu.pl)
+ * @brief Custom event-like object. Stores information about the event and the list of tracks assigned to it.
+ * @version 0.1.0
+ * @date 2025-05-13
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 #ifndef EventCandidate_hxx
     #define EventCandidate_hxx
 
 #include "TrackCandidate.hxx"
+#include "Target.hxx"
 
 #include <vector>
 
@@ -62,36 +73,33 @@ namespace Selection
             /**
              * @brief Select event for given centrality and vertex position
              * 
+             * @tparam T HADES target setup
              * @param centIndex desired centrality classes (same layout as from HParticleEvtChara)
              * @param nSigmaX how many sigmas from the mean plate position should be accepted for given plate in X direction
              * @param nSigmaY how many sigmas from the mean plate position should be accepted for given plate in Y direction
              * @param nSigmaZ how many sigmas from the mean plate position should be accepted for given plate in Z direction
-             * @return true if event is accepted
-             * @return false otherwise
+             * @return true if event is accepted or false otherwise
              * @throws std::runtime_error if specified nSigmaZ is > 2 
              */
+            template <HADES::Target::Setup T>
             bool SelectEvent(const std::vector<int> centIndex = {1}, const float nSigmaX = 1, const float nSigmaY = 1, const float nSigmaZ = 1)
             {
                 if (nSigmaZ > 2)
                     throw std::runtime_error("nSigmaZ >2 overlaps between neighbouring plates, please choose smaller value.\n If the specified value was intentional, please evaluate youe life choices...");
-                
-                // copied from zVertexPeakAndSigma.txt file
-                // first: mean, second: stdev
-                static const std::vector<std::pair<float,float>> plateVector = {{-54.7598,0.755846},{-51.6971,0.783591},{-47.7996,0.763387},{-44.5473,0.769386},{-40.569,0.781312},{-37.2151,0.762538},{-33.2948,0.76901},{-30.3726,0.742618},{-26.648,0.748409},{-22.5492,0.738462},{-18.9649,0.747727},{-15.5259,0.749724},{-11.8726,0.740386},{-8.45083,0.742672},{-4.58076,0.712394}};
-                static const std::pair<float,float> xPosition = {0.1951,0.619};
-                static const std::pair<float,float> yPosition = {0.7045,0.6187};
 
                 // if this event's centrality is not in the centrality index list, reject
                 if (std::find(centIndex.begin(),centIndex.end(),Centrality) == centIndex.end())
                     return false;
 
-                if ((X < (xPosition.first - nSigmaX*xPosition.second)) || (X > (xPosition.first + nSigmaX*xPosition.second)))
+                if ((X < (HADES::Target::GetXTargetPosition<T>().first - nSigmaX*HADES::Target::GetXTargetPosition<T>().second)) || 
+                    (X > (HADES::Target::GetXTargetPosition<T>().first + nSigmaX*HADES::Target::GetXTargetPosition<T>().second)))
                     return false;
-                if ((Y < (yPosition.first - nSigmaY*yPosition.second)) || (Y > (yPosition.first + nSigmaY*yPosition.second)))
+                if ((Y < (HADES::Target::GetYTargetPosition<T>().first - nSigmaY*HADES::Target::GetYTargetPosition<T>().second)) || 
+                    (Y > (HADES::Target::GetYTargetPosition<T>().first + nSigmaY*HADES::Target::GetYTargetPosition<T>().second)))
                     return false;
 
-                short int plateNo = 0;
-                for(const auto &plate : plateVector)
+                std::size_t plateNo = 0;
+                for(const auto &plate : HADES::Target::GetZPlatePositions<T>())
                 {
                     if ((Z >= (plate.first - nSigmaZ*plate.second)) && (Z <= (plate.first + nSigmaZ*plate.second)))
                     {

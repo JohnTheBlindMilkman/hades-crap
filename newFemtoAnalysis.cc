@@ -1,7 +1,7 @@
 #include "Includes.h"
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
-#include "FemtoMixer/JJFemtoMixer.hxx"
+#include "../JJFemtoMixer/JJFemtoMixer.hxx"
 #include "FemtoMixer/TrackSmearer.hxx"
 #include "../HFiredWires/HFiredWires.hxx"
 #include <iostream>
@@ -63,12 +63,12 @@ bool PairRejection(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
+	return (pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) && pair->AreTracksFromTheSameSector()) ||
 		pair->GetBothLayers() < 20 ||
 		pair->GetSharedMetaCells() > 0;
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 1)
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
@@ -103,6 +103,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	{
 		//rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root"; //gen9
 		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen10_16122024.root"; //gen10
+		//rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/feb24/allParam_feb24_gen0_16042024.root"; // Au+Au 800 MeV
 	}
 	TString paramSource      = "root"; // root, ascii, oracle
 	TString paramrelease     = "APR12_dst_gen10"; 
@@ -122,7 +123,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		if (isSimulation) // simulation
 		{
 			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen9
+			inputFolder = "/lustre/hades/dstsim/apr12/au1230au/gen10/bmax10/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen10
 		}
 		else // data
 		{
@@ -132,7 +134,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			}
 			else
 			{
-				//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
+				//inputFolder = "/lustre/hades/dst/feb24/gen0c/060/01/root"; // Au+Au 800 MeV
 				//inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV gen9
 				inputFolder = "/lustre/hades/dst/apr12/gen10/122/root"; // Au+Au 2.4 GeV gen10
 			}
@@ -158,7 +160,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit"))
+    std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit";
+	if (isCustomDst)
+		inputString += ",+HMdcSeg";
+	if (isSimulation)
+		inputString += ",+HGeantKine";
+    if (!loop->setInput(inputString.data()))
 		exit(1);
 
 	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
@@ -214,11 +221,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	// create object for getting MDC wires
 	HParticleWireInfo fWireInfo;
 	HGeantHeader *geantHeader;
-
-	// create RNG for EP calculation
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dist(0.,2 * M_PI);
 
 	std::map<std::string,std::vector<std::shared_ptr<Selection::PairCandidate> > > fSignMap, fBckgMap;
 
@@ -414,7 +416,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEvent->SelectEvent({1},2,2,2))
+		if (! fEvent->SelectEvent<HADES::Target::Setup::Apr12>({1},2,2,2))
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);
@@ -439,6 +441,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			//fWireManager.getWireInfo(track,fWireInfo,particle_cand);
 			
 			// I have no freakin idea if this is how it should be done
+			// for Feb24 there is no ene loss correction (yet?)
 			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
 
 			//--------------------------------------------------------------------------------
@@ -532,7 +535,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong); */
 
-					if (signalEntry.first != 0)
+					if (signalEntry.first != "bad" || signalEntry.first != "0")
 						hCounter->Fill(cNumSelectedPairs);
 				}
 			}

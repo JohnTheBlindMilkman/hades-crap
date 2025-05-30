@@ -66,25 +66,30 @@
                 {
                     int nBinsX = hX->GetNbinsX();
                     int nBinsY = hY->GetNbinsX();
+                    double xMean = hX->GetMean();
+                    double xStdDev = hX->GetStdDev();
+                    double yMean = hY->GetMean();
+                    double yStdDev = hY->GetStdDev();
 
                     TH2D hNew("hNew","",nBinsX,hX->GetXaxis()->GetXmin(),hX->GetXaxis()->GetXmax(),nBinsY,hY->GetXaxis()->GetXmin(),hY->GetXaxis()->GetXmax());
 
                     for (int i = 1; i <= nBinsX; ++i)
                         for (int j = 1; j <= nBinsY; ++j)
-                            hNew.SetBinContent(i,j,hX->GetBinContent(i) + hY->GetBinContent(j));
+                            hNew.SetBinContent(i,j,((hX->GetBinContent(i) - xMean) / xStdDev) * ((hY->GetBinContent(j) - yMean) / yStdDev));
 
-                    return hNew.GetCovariance() / (hX->GetStdDev()*hY->GetStdDev());
+                    //return hNew.GetCovariance() / (hX->GetStdDev()*hY->GetStdDev());
+                    return hNew.GetCorrelationFactor();
                 }
             } // namespace Detail
 
             /**
-             * @brief Set the errors of hout to include correlation between the numerator and denominator for any distribution such that hout = hNum / hDen. Yes, hNum and hDen should be const but for some reason the method TH1::FindBin is not const...
+             * @brief Set the errors of hout to include correlation between the numerator and denominator for any distribution such that hout = hNum / hDen. Yes, hNum and hDen both should be const but for some reason the method TH1::FindBin is not const...
              * 
              * @param hout 
              * @param hNum 
              * @param hDen 
              */
-            void SetErrors(TH1 *hout, TH1 *hNum, TH1 *hDen)
+            void SetErrorsDivide(TH1 *hout, const TH1 *hNum, TH1 *hDen)
             {
                 const int iterMax = hout->GetNbinsX();
                 double vErr = 0, vNum = 0, vDen = 0, eNum = 0, eDen = 0;
@@ -102,13 +107,38 @@
                     hout->SetBinError(i,vErr);
                 }
             }
+
+            /**
+             * @brief Set the errors of hout to include correlation between the multiplicaton for any distribution such that hout = hLhs * hRhs. Yes, hLhs and hRhs both should be const but for some reason the method TH1::FindBin is not const...
+             * 
+             * @param hout 
+             * @param hLhs 
+             * @param hRhs 
+             */
+            void SetErrorsMultiply(TH1 *hout, const TH1 *hLhs, TH1 *hRhs)
+            {
+                const int iterMax = hout->GetNbinsX();
+                double vErr = 0, vLhs = 0, vRhs = 0, eLhs = 0, eRhs = 0;
+                for (int i = 1; i <= iterMax; i++)
+                {
+                    vErr = 0;
+                    vLhs = hLhs->GetBinContent(i);
+                    eLhs = hLhs->GetBinError(i);
+                    vRhs = hRhs->GetBinContent(hRhs->FindBin(hLhs->GetBinCenter(i)));
+                    eRhs = hRhs->GetBinError(hRhs->FindBin(hLhs->GetBinCenter(i)));
+
+                    // propagation of uncertainty for a function lhs*rhs with inclusion of the correlation between the constituents
+                    vErr = std::sqrt(std::pow(vRhs * eLhs,2) + std::pow(vLhs * eRhs,2) + (2 * Detail::GetPCC(hLhs,hRhs) * vLhs * vRhs * eLhs * eRhs));
+                    hout->SetBinError(i,vErr);
+                }
+            }
             
         } // namespace Generic
 
         namespace Drawing
         {
             /**
-             * @brief Struct representing the size and position of rectangle with diagonal between (x1,y1) and (x2,y2)
+             * @brief Struct representing the size and position of rectangle with a diagonal between (x1,y1) and (x2,y2)
              * 
              */
             struct Position
@@ -125,7 +155,7 @@
              */
             TPaveText* AddTextBox(const TString &text, Position &&pos = {0.2,0.8,0.5,0.9})
             {
-                TPaveText *pt = new TPaveText(0.2,0.8,0.5,0.9,"NB");
+                TPaveText *pt = new TPaveText(pos.x1,pos.y1,pos.x2,pos.y2,"NB");
                 pt->AddText(text);
                 pt->SetTextAlign(kHAlignCenter+kVAlignCenter);
                 pt->SetFillStyle(1);

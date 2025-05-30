@@ -22,19 +22,20 @@ namespace Selection
             std::string TrackId;
             Detector System;
             bool IsAtMdcEdge;
-            short int PID, Charge;
-            unsigned int NBadLayers;
-            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass, Mass2, Beta, PolarAngle, AzimuthalAngle, ReactionPlaneAngle;
-            std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> firedWiresCollection;
-            std::vector<unsigned> goodLayers,metaCells;
+            short int PID, Charge, Sector;
+            unsigned NBadLayers;
+            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass, Mass2, Beta, PolarAngle, AzimuthalAngle, AzimuthalAngleWrtEP, ReactionPlaneAngle;
+            std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> firedWiresCollection;
+            std::array<short unsigned,HADES::MDC::WireInfo::numberOfPlanes> goodLayers;
+            std::vector<unsigned> metaHits;
 
             /**
              * @brief Remove and mark MDC layers which are considered "bad", i.e. the track has fired too many wires in it
              * 
-             * @param list 
-             * @param cutoff 
+             * @param list collection of wires
+             * @param cutoff lower bound of acceptable number of fired wires in each MDC layer 
              */
-            void RemoveBadLayers(std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &list, short int cutoff)
+            void RemoveBadLayers(std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &list, std::size_t cutoff)
             {
                 for (auto &layer : firedWiresCollection)
                     if (layer.size() > cutoff)
@@ -45,21 +46,21 @@ namespace Selection
                     }
             }
             /**
-             * @brief calculate in how many layers a hit has been registered for this track
+             * @brief calculate in how many layers a hit has been registered for each plane
              * 
              * @param list 
              */
-            void CalculateLayersPerPlane(const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &list)
+            void CalculateLayersPerPlane(const std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &list)
             {
-                for (const auto &plane : HADES::MDC::WireInfo::allLayerPerPlaneIndexing)
+                for (const auto &plane : HADES::MDC::WireInfo::planeIndexing)
                 {
-                    unsigned counter = 0;
-                    for (const auto &layer : plane)
+                    short unsigned counter = 0;
+                    for (const auto &layer : HADES::MDC::WireInfo::allLayerPerPlaneIndexing.at(plane))
                     {
                         if (list[layer].size() > 0)
                             ++counter;
                     }
-                    goodLayers.push_back(counter);
+                    goodLayers.at(plane) = counter;
                 }
             }
             /**
@@ -68,18 +69,40 @@ namespace Selection
              * @param part 
              * @return std::vector<unsigned> 
              */
-            std::vector<unsigned> GetMetaHits(HParticleCand* part)
+            [[nodiscard]] std::vector<unsigned> CalcMetaHits(HParticleCand* part) const
             {
                 std::vector<unsigned> output;
-                unsigned hit;
+                int mod,cell;
 
-                hit = part->getMetaModule(0);
-                if (hit != -1)
-                    output.push_back(hit);
+                switch (System)
+                {
+                    case Detector::RPC:
+                        //mod = part->getMetaModule(0);
+                        cell = part->getMetaCell(0);
+                        if (cell > -1)
+                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
 
-                hit = part->getMetaModule(1);
-                if (hit != -1)
-                    output.push_back(hit);
+                        //mod = part->getMetaModule(1);
+                        cell = part->getMetaCell(1);
+                        if (cell > -1)
+                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
+                        break;
+
+                    case Detector::ToF:
+                        mod = part->getMetaModule(0);
+                        cell = part->getMetaCell(0);
+                        if (mod > -1 && cell > -1)
+                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
+
+                        mod = part->getMetaModule(1);
+                        cell = part->getMetaCell(1);
+                        if (mod > -1 && cell > -1)
+                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
+                        break;
+                    
+                    default:
+                        break;
+                }
 
                 return output;
             }
@@ -89,45 +112,77 @@ namespace Selection
              * @param part 
              * @return std::vector<unsigned> 
              */
-            std::vector<unsigned> GetMetaHits(HParticleCandSim* part)
+            [[nodiscard]] std::vector<unsigned> CalcMetaHits(HParticleCandSim* part) const
             {
                 std::vector<unsigned> output;
-                unsigned hit;
+                int mod,cell;
 
-                hit = part->getMetaModule(0);
-                if (hit != -1)
-                    output.push_back(hit);
+                switch (System)
+                {
+                    case Detector::RPC:
+                        //mod = part->getMetaModule(0);
+                        cell = part->getMetaCell(0);
+                        if (cell > -1)
+                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
 
-                hit = part->getMetaModule(1);
-                if (hit != -1)
-                    output.push_back(hit);
+                        //mod = part->getMetaModule(1);
+                        cell = part->getMetaCell(1);
+                        if (cell > -1)
+                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
+                        break;
 
-                return output;
+                    case Detector::ToF:
+                        mod = part->getMetaModule(0);
+                        cell = part->getMetaCell(0);
+                        if (mod > -1 && cell > -1)
+                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
+
+                        mod = part->getMetaModule(1);
+                        cell = part->getMetaCell(1);
+                        if (mod > -1 && cell > -1)
+                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
+                        break;
+                    
+                    default:
+                        break;
+                }
             }
-            std::vector<unsigned> GetMetaHits(HGeantKine* part)
+            [[nodiscard]] std::vector<unsigned> CalcMetaHits(HGeantKine* part) const
             {
                 std::vector<unsigned> output;
-                std::vector<HGeantTof*> tofCells;
                 std::vector<HGeantRpc*> rpcCells;
-                unsigned hit;
+                std::vector<HGeantTof*> tofCells;
+                int mod,cell;
 
-                if (part->getTofHits(tofCells))
+                switch (System)
                 {
-                    for (const auto elem : tofCells)
-                    {
-                        hit = static_cast<unsigned>(elem->getModule());
-                        if (hit >= 0)
-                            output.push_back(hit);
-                    }
-                }
-                else if (part->getRpcHits(rpcCells))
-                {
-                    for (const auto elem: rpcCells)
-                    {
-                        hit = static_cast<unsigned>(elem->getCell());
-                        if (hit >= 0)
-                            output.push_back(hit);
-                    }
+                    case Detector::RPC:
+                        if (part->getRpcHits(rpcCells))
+                        {
+                            for (const auto elem : rpcCells)
+                            {
+                                cell = elem->getCell();
+                                if (cell > -1)
+                                    output.push_back(static_cast<unsigned>(64 + (31 - cell)));
+                            }
+                        }
+                        break;
+
+                    case Detector::ToF:
+                        if (part->getTofHits(tofCells))
+                        {
+                            for (const auto elem : tofCells)
+                            {
+                                mod = elem->getModule();
+                                cell = elem->getCell();
+                                if (mod > -1 && cell > -1)
+                                    output.push_back(static_cast<unsigned>(mod * 8 + cell));
+                            }
+                        }
+                        break;
+                    
+                    default:
+                        break;
                 }
 
                 return output;
@@ -138,7 +193,7 @@ namespace Selection
              * @param angle 
              * @return float 
              */
-            float ConstrainAngle(const float &angle)
+            [[nodiscard]] float ConstrainAngle(const float &angle)
             {
                 if (angle > 157.5)
                     return angle -360.;
@@ -160,8 +215,8 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (when using DSTs put here whatever, just make sure the same PID is in the TrackCandidate::SelectTrack method)
              */
-            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid)
-            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
+            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid)
+            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaHits({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
@@ -169,9 +224,11 @@ namespace Selection
                 RemoveBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
+                AzimuthalAngle = particleCand->getPhi();
+                AzimuthalAngleWrtEP = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
                 Beta = particleCand->getBeta();
                 Charge = particleCand->getCharge();
+                Sector = particleCand->getSector();
                 Energy = vecTmp.E();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
                 Mass = particleCand->getMass();
@@ -188,7 +245,7 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
-                metaCells = GetMetaHits(particleCand);
+                metaHits = CalcMetaHits(particleCand);
             }
             /**
              * @brief Construct a new Track Candidate object
@@ -200,17 +257,21 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid) 
+            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid) 
             : GeantKineTrack((geantKine == nullptr) ? nullptr : new TrackCandidate(geantKine,evtId,EP,trackId,pid)), 
-            ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaCells({})
+            ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaHits({})
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(particleCand->getGeantPID()));
                 TLorentzVector vecTmp = *particleCand;
+                CalculateLayersPerPlane(firedWiresCollection);
+                RemoveBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
+                AzimuthalAngle = particleCand->getPhi();
+                AzimuthalAngleWrtEP = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
                 Beta = particleCand->getBeta();
                 Charge = particleCand->getCharge();
+                Sector = particleCand->getSector();
                 Energy = vecTmp.E();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
                 Mass = particleCand->getMass();
@@ -227,7 +288,7 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
-                metaCells = GetMetaHits(particleCand);
+                metaHits = CalcMetaHits(particleCand);
             }
             /**
              * @brief Construct a new Track Candidate object
@@ -240,16 +301,18 @@ namespace Selection
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
             TrackCandidate(HGeantKine* particleCand, const std::string &evtId, float EP, std::size_t trackId, short pid) 
-            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection({}),NBadLayers(0),goodLayers({}),metaCells({})
+            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection({}),NBadLayers(0),goodLayers({}),metaHits({})
             {
                 TrackId = evtId + std::to_string(trackId);
-                AzimuthalAngle = ConstrainAngle(particleCand->getPhiDeg() - ReactionPlaneAngle);
+                AzimuthalAngle = particleCand->getPhiDeg();
+                AzimuthalAngleWrtEP = ConstrainAngle(particleCand->getPhiDeg() - ReactionPlaneAngle);
                 Energy = particleCand->getE();
                 IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
                 Mass = particleCand->getM();
                 Mass2 = Mass * Mass;
                 PID = particleCand->getID(); // only for simulations
                 Charge = HPhysicsConstants::charge(PID);
+                Sector = particleCand->getSector();
                 PolarAngle = particleCand->getThetaDeg();
                 particleCand->getMomentum(Px,Py,Pz);
                 Rapidity = particleCand->getRapidity();
@@ -260,7 +323,7 @@ namespace Selection
                 TotalMomentum = particleCand->getTotalMomentum();
                 TransverseMomentum = particleCand->getTransverseMomentum();
                 Beta = 1 - (1/(1+(TotalMomentum*TotalMomentum/Mass2))); // beta = 1 - 1/(1+p^2/m_0^2) if my calculations are correct
-                metaCells = GetMetaHits(particleCand);
+                metaHits = CalcMetaHits(particleCand);
             }
             /**
              * @brief Destroy the Track Candidate object
@@ -282,7 +345,7 @@ namespace Selection
                     return false;
                 if (IsAtMdcEdge)
                     return false;
-                /* if (TotalMomentum > 2000.)
+                /* if (TotalMomentum < 500. || TotalMomentum > 1500.)
                     return false; */
                 /*if (TransverseMomentum < 300. || TransverseMomentum > 1000.)
                     return false;
@@ -292,8 +355,8 @@ namespace Selection
                     return false; */
                 if (NBadLayers > 1)
                     return false;
-                /* if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
-                    return false; */
+                if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
+                    return false;
 
                 switch (System)
                 {
@@ -310,22 +373,27 @@ namespace Selection
                 
                 return false;
             }
-            static std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> CreateWireArray(const HParticleWireInfo &wi)
+            /**
+             * @brief Create a modernised wire collection object
+             * 
+             * @param wi HParticleWireInfo object, obtained from HParticleMetaMatcher
+             * @return std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> 
+             */
+            [[nodiscard]] static std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> CreateWireArray(const HParticleWireInfo &wi)
             {
-                static constexpr std::size_t nLayers{6}, nModules{4};
-                std::array<std::vector<int>,HADES::MDC::WireInfo::numberOfAllLayers> array;
+                std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> array;
 
-                for (std::size_t mod = 0; mod < nModules; ++mod)
-                    for (std::size_t lay = 0; lay < nLayers; ++lay)
+                for (std::size_t mod = 0; mod < HADES::MDC::WireInfo::numberOfPlanes; ++mod)
+                    for (std::size_t lay = 0; lay < HADES::MDC::WireInfo::numberOfLayersInPlane; ++lay)
                     {
-                        std::vector<int> tmpVec;
+                        std::vector<unsigned> tmpVec;
 
-                        if (wi.ar[mod][lay][0] != -1)
-                            tmpVec.push_back(wi.ar[mod][lay][0]);
-                        if (wi.ar[mod][lay][1] != -1)
-                            tmpVec.push_back(wi.ar[mod][lay][1]);
+                        if (wi.ar[mod][lay][0] > -1)
+                            tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][0]));
+                        if (wi.ar[mod][lay][1] > -1)
+                            tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][1]));
 
-                        array[mod*nLayers + lay] = tmpVec;
+                        array[mod * HADES::MDC::WireInfo::numberOfLayersInPlane + lay] = tmpVec;
                     }
 
                 return array;
@@ -334,14 +402,14 @@ namespace Selection
              * @brief Get the indexes of wires at given layer
              * 
              * @param layer 
-             * @return std::vector<int> 
+             * @return std::vector<unsigned> 
              * @throw std::out_of_range is thrown when layer value exceeds the HADES::MDC::WireInfo::numberOfAllLayers-1 value
              */
-            std::vector<int> GetWires(std::size_t layer) const
+            [[nodiscard]] std::vector<unsigned> GetWires(std::size_t layer) const
             {
                 return firedWiresCollection.at(layer);
             }
-            std::string GetID() const
+            [[nodiscard]] std::string GetID() const noexcept
             {
                 return TrackId;
             }
@@ -350,34 +418,43 @@ namespace Selection
              * 
              * @return Detector 
              */
-            Detector GetSystem() const
+            [[nodiscard]] Detector GetSystem() const noexcept
             {
                 return System;
             }
             /**
              * @brief Get the Number Of Bad Layers object
              * 
-             * @return unsigned int 
+             * @return unsigned
              */
-            unsigned int GetNumberOfBadLayers() const
+            [[nodiscard]] unsigned GetNumberOfBadLayers() const noexcept
             {
                 return NBadLayers;
             }
             /**
-             * @brief Get the azimuthan angle of the track with respect to the Event Plane (in deg). Ranging from -202.5 to 157.5
+             * @brief Get the azimuthan angle of the track (in deg).
              * 
              * @return float 
              */
-            float GetPhi() const
+            [[nodiscard]] float GetPhi() const noexcept
             {
                 return AzimuthalAngle;
+            }
+            /**
+             * @brief Get the azimuthal angle of the track with respect to the Event Plane (in deg). Ranging from -202.5 to 157.5
+             * 
+             * @return float 
+             */
+            [[nodiscard]] float GetPhiWrtEP() const noexcept
+            {
+                return AzimuthalAngleWrtEP;
             }
             /**
              * @brief Get the polar angle of the track (in deg)
              * 
              * @return float 
              */
-            float GetTheta() const
+            [[nodiscard]] float GetTheta() const noexcept
             {
                 return PolarAngle;
             }
@@ -386,7 +463,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetPt() const
+            [[nodiscard]] float GetPt() const noexcept
             {
                 return TransverseMomentum;
             }
@@ -395,7 +472,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetRapidity() const 
+            [[nodiscard]] float GetRapidity() const noexcept
             {
                 return Rapidity;
             }
@@ -404,16 +481,25 @@ namespace Selection
              * 
              * @return short int 
              */
-            short int GetCharge() const
+            [[nodiscard]] short int GetCharge() const noexcept
             {
                 return Charge;
+            }
+            /**
+             * @brief Get the assigned sector for this track 
+             * 
+             * @return short int 
+             */
+            [[nodiscard]] short int GetSector() const noexcept
+            {
+                return Sector;
             }
             /**
              * @brief Get momentum  of the track
              * 
              * @return float 
              */
-            float GetP() const
+            [[nodiscard]] float GetP() const noexcept
             {
                 return TotalMomentum;
             }
@@ -422,7 +508,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetPx() const
+            [[nodiscard]] float GetPx() const noexcept
             {
                 return Px;
             }
@@ -431,7 +517,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetPy() const
+            [[nodiscard]] float GetPy() const noexcept
             {
                 return Py;
             }
@@ -440,7 +526,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetPz() const
+            [[nodiscard]] float GetPz() const noexcept
             {
                 return Pz;
             }
@@ -452,7 +538,7 @@ namespace Selection
              * @param pz z component
              * @param ene energy
              */
-            void SetMomentum(float px, float py, float pz, float ene)
+            void SetMomentum(float px, float py, float pz, float ene) noexcept
             {
                 Px = px;
                 Py = py;
@@ -464,7 +550,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetBeta() const
+            [[nodiscard]] float GetBeta() const noexcept
             {
                 return Beta;
             }
@@ -473,7 +559,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetM() const
+            [[nodiscard]] float GetM() const noexcept
             {
                 return Mass;
             }
@@ -482,7 +568,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetM2() const
+            [[nodiscard]] float GetM2() const noexcept
             {
                 return Mass2;
             }
@@ -491,18 +577,18 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetReactionPlane() const
+            [[nodiscard]] float GetReactionPlane() const noexcept
             {
                 return ReactionPlaneAngle;
             }
             /**
-             * @brief Get the Meta Cells object
+             * @brief Get all META hits
              * 
              * @return std::vector<unsigned> 
              */
-            std::vector<unsigned> GetMetaCells() const
+            [[nodiscard]] std::vector<unsigned> GetMetaHits() const noexcept
             {
-                return metaCells;
+                return metaHits;
             }
     };
 } // namespace Selection
