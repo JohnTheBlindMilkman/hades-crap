@@ -79,6 +79,7 @@ void drawProton1DMultiDiff()
         {
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
+            hRat->Sumw2();
             norm = JJUtils::CF::GetNormByRange(hRat,300,500);
             hRat->Rebin(rebin);
             norm *= rebin;
@@ -119,6 +120,7 @@ void drawProton1DMultiDiff()
         {
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
+            hRat->Sumw2();
             norm = JJUtils::CF::GetNormByRange(hRat,300,900);
             hRat->Rebin(rebin);
             norm *= rebin;
@@ -159,6 +161,7 @@ void drawProton1DMultiDiff()
         {
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
+            hRat->Sumw2();
             norm = JJUtils::CF::GetNormByRange(hRat,300,900);
             hRat->Rebin(rebin);
             norm *= rebin;

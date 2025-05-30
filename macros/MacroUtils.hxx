@@ -53,37 +53,8 @@
 
         namespace Generic
         {
-            namespace Detail
-            {
-                /**
-                 * @brief Returns Pearson's Correlation Coefficient. Implemented from here:  https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
-                 * 
-                 * @param hX Histogram of data from one sample
-                 * @param hY Histogram of data from another sample
-                 * @return Value of the PCC
-                 */
-                double GetPCC(const TH1 *hX, const TH1 *hY)
-                {
-                    int nBinsX = hX->GetNbinsX();
-                    int nBinsY = hY->GetNbinsX();
-                    double xMean = hX->GetMean();
-                    double xStdDev = hX->GetStdDev();
-                    double yMean = hY->GetMean();
-                    double yStdDev = hY->GetStdDev();
-
-                    TH2D hNew("hNew","",nBinsX,hX->GetXaxis()->GetXmin(),hX->GetXaxis()->GetXmax(),nBinsY,hY->GetXaxis()->GetXmin(),hY->GetXaxis()->GetXmax());
-
-                    for (int i = 1; i <= nBinsX; ++i)
-                        for (int j = 1; j <= nBinsY; ++j)
-                            hNew.SetBinContent(i,j,((hX->GetBinContent(i) - xMean) / xStdDev) * ((hY->GetBinContent(j) - yMean) / yStdDev));
-
-                    //return hNew.GetCovariance() / (hX->GetStdDev()*hY->GetStdDev());
-                    return hNew.GetCorrelationFactor();
-                }
-            } // namespace Detail
-
             /**
-             * @brief Set the errors of hout to include correlation between the numerator and denominator for any distribution such that hout = hNum / hDen. Yes, hNum and hDen both should be const but for some reason the method TH1::FindBin is not const...
+             * @brief Set the errors of hout to include full correlation between the numerator and denominator for any distribution such that hout = hNum / hDen. Yes, hNum and hDen both should be const but for some reason the method TH1::FindBin is not const...
              * 
              * @param hout 
              * @param hNum 
@@ -103,13 +74,13 @@
 
                     // propagation of uncertainty for a function num/den with inclusion of the correlation between the constituents
                     if (fabs(vDen) > 0.)
-                        vErr = std::sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - Detail::GetPCC(hNum,hDen)*(2*vNum*eNum*eDen)/(vDen*vDen*vDen));
+                        vErr = std::sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - (2*vNum*eNum*eDen)/(vDen*vDen*vDen));
                     hout->SetBinError(i,vErr);
                 }
             }
 
             /**
-             * @brief Set the errors of hout to include correlation between the multiplicaton for any distribution such that hout = hLhs * hRhs. Yes, hLhs and hRhs both should be const but for some reason the method TH1::FindBin is not const...
+             * @brief Set the errors of hout to include full correlation between the multiplicaton for any distribution such that hout = hLhs * hRhs. Yes, hLhs and hRhs both should be const but for some reason the method TH1::FindBin is not const...
              * 
              * @param hout 
              * @param hLhs 
@@ -128,7 +99,7 @@
                     eRhs = hRhs->GetBinError(hRhs->FindBin(hLhs->GetBinCenter(i)));
 
                     // propagation of uncertainty for a function lhs*rhs with inclusion of the correlation between the constituents
-                    vErr = std::sqrt(std::pow(vRhs * eLhs,2) + std::pow(vLhs * eRhs,2) + (2 * Detail::GetPCC(hLhs,hRhs) * vLhs * vRhs * eLhs * eRhs));
+                    vErr = std::sqrt(std::pow(vRhs * eLhs,2) + std::pow(vLhs * eRhs,2) + (2 * vLhs * vRhs * eLhs * eRhs));
                     hout->SetBinError(i,vErr);
                 }
             }
