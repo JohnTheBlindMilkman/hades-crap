@@ -3,9 +3,9 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_all_24_11_20_1.root", TString signName = "hQinvNum_", TString bckgName = "hQinvDen_", int ktMax = 7, int yMax = 4, int psiMax = 8)
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12sim_all_25_07_22.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 10, int yMax = 13, int psiMax = 8)
 {
-    const int maxHistos = ktMax * yMax * psiMax * 2;
+    const int maxHistos = ktMax * yMax * psiMax * 2; // times 2, because we have signal and background histograms
 
     TFile *inpFile = TFile::Open(fileName);
 
@@ -28,8 +28,8 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_
     if (signName.Contains("inv") && bckgName.Contains("inv"))
     {
         std::vector<std::vector<std::vector<TH1D*> > > 
-        hSign(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr))), 
-        hBckg(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr)));
+            hSign(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr))), 
+            hBckg(ktMax,std::vector<std::vector<TH1D*> >(yMax,std::vector<TH1D*>(psiMax,nullptr)));
 
         auto job1 = [&bar]()
         {
@@ -50,12 +50,12 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_
             for (int y = 1; y <= yMax; ++y)
                 for (int psi = 1; psi <= psiMax; ++psi)
                 {
-                    hSign[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%d%d%d",signName.Data(),kt,y,psi));
+                    hSign[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%02d%02d%02d",signName.Data(),kt,y,psi));
                     if (hSign[kt-1][y-1][psi-1] != nullptr)
                         hSign[kt-1][y-1][psi-1]->Sumw2();
                     bar.tick();
 
-                    hBckg[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%d%d%d",bckgName.Data(),kt,y,psi));
+                    hBckg[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%02d%02d%02d",bckgName.Data(),kt,y,psi));
                     if (hBckg[kt-1][y-1][psi-1] != nullptr)
                         hBckg[kt-1][y-1][psi-1]->Sumw2();
                     bar.tick();
@@ -132,6 +132,7 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_
                 {
                     if (hSignPsi[psi-1] == nullptr && hSign[kt-1][y-1][psi-1] != nullptr && hBckgPsi[psi-1] == nullptr && hBckg[kt-1][y-1][psi-1] != nullptr)
                     {
+                        //std::cout << "kT:" << kt << " y:" << y << " psi:" << psi << "\n";
                         hSignPsi[psi-1] = new TH1D(*hSign[kt-1][y-1][psi-1]);
                         hSignPsi[psi-1]->SetName(TString::Format("hQinvSignPsi%d",psi));
                         hBckgPsi[psi-1] = new TH1D(*hBckg[kt-1][y-1][psi-1]);
@@ -139,6 +140,7 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_
                     }
                     else if(hSign[kt-1][y-1][psi-1] != nullptr && hBckg[kt-1][y-1][psi-1] != nullptr)
                     {
+                        //std::cout << "kT:" << kt << " y:" << y << " psi:" << psi << "\n";
                         hSignPsi[psi-1]->Add(hSign[kt-1][y-1][psi-1]);
                         hBckgPsi[psi-1]->Add(hBckg[kt-1][y-1][psi-1]);
                     }
@@ -185,6 +187,7 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12pur_
         {
             if (hSignPsi[psi-1] != nullptr && hBckgPsi[psi-1] != nullptr)
             {
+                //std::cout << "psi:" << psi << " written\n";
                 hSignPsi[psi-1]->Write();
                 hBckgPsi[psi-1]->Write();
             }

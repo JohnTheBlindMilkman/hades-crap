@@ -1,8 +1,9 @@
 #include "Includes.h"
-#include "FemtoMixer/EventCandidate.hxx"
-#include "FemtoMixer/PairCandidate.hxx"
-#include "FemtoMixer/JJFemtoMixer.hxx"
-#include "../HFiredWires/HFiredWires.hxx"
+//#include "FemtoMixer/EventCandidate.hxx"
+//#include "FemtoMixer/PairCandidate.hxx"
+#include "../JJFemtoMixer/JJFemtoMixer.hxx"
+#include "FemtoMixer/PairUtils.hxx"
+#include "FemtoMixer/EventUtils.hxx"
 
 #include <iostream>
 #include <string>
@@ -18,42 +19,17 @@ bool isSim(HParticleCandSim *t) {return true;}
 
 struct HistogramCollection
 {
-	TH1D hQinvSign,hQinvBckg;
-	TH2D hDphiDthetaSign,hDphiDthetaBckg;
-	TH3D hQoslSign,hQoslBckg;
+	TH2D hDPhiDThtaSign,hDPhiDThtaBckg;
 };
 
-std::size_t EventHashing(const Selection::EventCandidate &evt)
+int CalcBinDistance(TH2D *hist, double recoX, double recoY, double kineX, double kineY)
 {
-    return evt.GetCentrality()*1e1 + evt.GetPlate();
-}
+	int binxReco = hist->GetXaxis()->FindBin(recoX);
+	int binyReco = hist->GetYaxis()->FindBin(recoY);
+	int binxKine = hist->GetXaxis()->FindBin(kineX);
+	int binyKine = hist->GetYaxis()->FindBin(kineY);
 
-std::size_t PairHashing(const Selection::PairCandidate &pair)
-{
-	// collection of slices: (array[n],array[n+1]>
-    // make sure this is ordered!
-    constexpr std::array<float,6> ktArr{150,450,750,1050,1350,1650};
-    constexpr std::array<float,4> yArr{0,0.49,0.99,1.49};
-    constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
-
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.GetRapidity()) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.GetPhi()) - EpArr.begin();
-
-	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
-		return 0;
-	else
-    	return ktCut*1e2 + yCut*1e1 + EpCut;
-}
-
-bool PairCut(const Selection::PairCandidate &pair)
-{
-	using Behaviour = Selection::PairCandidate::Behaviour;
-
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
-		pair.GetBothLayers() < 20 ||
-		pair.GetSharedMetaCells() > 0; 
+	return std::abs(binxReco - binxKine) + std::abs(binyReco - binyKine);
 }
 
 int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
@@ -62,10 +38,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	gROOT->SetBatch(kTRUE);
 
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{true};
+	constexpr bool isSimulation{false};
 	constexpr int protonPID{14};
-
-	using HFiredWires = HADES::MDC::HFiredWires;
 
 	//--------------------------------------------------------------------------------
     // Initialization of the global ROOT object and the Hades Loop
@@ -91,10 +65,12 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	}
 	else
 	{
-		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+		//rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen10_16122024.root";
+		//rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/feb24/allParam_feb24_gen0_16042024.root"; // Au+Au 800 MeV
 	}
 	TString paramSource = "root"; // root, ascii, oracle
-	TString paramrelease = "APR12_dst_gen9";  // now, APR12_gen2_dst APR12_gen5_dst
+	TString paramrelease = "APR12_dst_gen10";
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
 	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease);  // now, APR12_gen2_dst
 
@@ -112,7 +88,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		if (isSimulation) // simulation
 		{
 			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen9
+			inputFolder = "/lustre/hades/dstsim/apr12/au1230au/gen10/bmax10/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen10
 		}
 		else // data
 		{
@@ -122,8 +99,9 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			}
 			else
 			{
-				//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
-				inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+				//inputFolder = "/lustre/hades/dst/feb24/gen0c/060/01/root"; // Au+Au 800 MeV
+				//inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+				inputFolder = "/lustre/hades/dst/apr12/gen10/122/root"; // Au+Au 2.4 GeV
 			}
 		}
 	
@@ -139,15 +117,19 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			nFiles++;
 		}
 	}
+
+	loop->readSectorFileList("/lustre/hades/user/sspies/SectorFileLists/Apr12AuAu1230_Gen10_Hadrons.list");
     
     //--------------------------------------------------------------------------------
     // Booking the categories to be read from the DST files.
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit,+HGeantKine";
+	std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit";
 	if (isCustomDst)
 		inputString += ",+HMdcSeg";
+	if (isSimulation)
+		inputString += ",+HGeantKine";
     if (!loop->setInput(inputString.data())) // make sure to use +HMdcSeg if you want the wires
 		exit(1);
 
@@ -166,18 +148,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCandSim*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
-	HGeantKine*       geant_kine;
+    HParticleCand*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
     HCategory* particle_info_cat = (HCategory*) HCategoryManager::getCategory(catParticleEvtInfo);
     HCategory* particle_cand_cat = (HCategory*) HCategoryManager::getCategory(catParticleCand);
 	HCategory* kine_cand_cat = (HCategory*) HCategoryManager::getCategory(catGeantKine);
-	//HCategory *mdc_seg_cat = (HCategory*) gHades->getCurrentEvent()->getCategory(catMdcSeg); // so... this is my stupid fix for now, without it HFiredWires doesn't work
 
-	/* static_assert((isSimulation && !isSim(particle_cand)),"particle candidate must be of type HParticleCandSim");
-	static_assert((!isSimulation && isSim(particle_cand)),"particle candidate must be of type HParticleCand"); */
 	if (isSimulation && !isSim(particle_cand)) // verification if you changed particle_cand class for running simulations
 	{
 		throw std::runtime_error("particle candidate must be of type HParticleCandSim"); // in C++17 this can be evaluated at compile-time, c++14 doesnt support if constexpr (condition)...
@@ -187,7 +165,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		throw std::runtime_error("particle candidate must be of type HParticleCand");
 	}
     
-    if (!particle_cand_cat || !kine_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
+    //if (!particle_cand_cat || !kine_cand_cat) // If the category for the reconstructed tracks does not exist, the macro makes no sense
+	if (!particle_cand_cat)
 		exit(1);
 	
     //================================================================================================================================================================
@@ -197,53 +176,90 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	constexpr float fBeamRapidity = 0.74f; // God I hope this is correct
 	constexpr float fMeVtoGeV = 1.f/1000.f;
 
-	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
-	TH2D *hBetaMomRpc = new TH2D("hBetaMomRpc","#beta vs p of accepted protons (RPC);p #times c [MeV/c];#beta",1250,0,2500,200,0,1.);
-	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",2000,0,2000,121,-1.15,1.25);
+	TH1D *hZVertex = new TH1D("hZVertex","distribution of z component of the vertex",700,-65,5);
+	TH1D *hXVertex = new TH1D("hXVertex","distribution of x component of the vertex",401,-20,20);
+	TH1D *hYVertex = new TH1D("hYVertex","distribution of x component of the vertex",401,-20,20);
+	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",125,0,2500,100,0,1.);
+	TH2D *hBetaMomRpc = new TH2D("hBetaMomRpc","#beta vs p of accepted protons (RPC);p #times c [MeV/c];#beta",125,0,2500,100,0,1.);
+	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",200,0,2000,121,-1.15,1.25);
+	TH2D *hBetaMomTofReco = new TH2D("hBetaMomTofReco","#beta vs p of accepted and well reconstructed protons (ToF);p #times c [MeV/c];#beta",125,0,2500,100,0,1.);
+	TH2D *hBetaMomRpcReco = new TH2D("hBetaMomRpcReco","#beta vs p of accepted and well reconstructed protons (RPC);p #times c [MeV/c];#beta",125,0,2500,100,0,1.);
+	TH2D *hPtRapReco = new TH2D("hPtRapReco","p_{T} vs y_{c.m} of accepted and well reconstructed protons;p_{T} [MeV/c];y_{c.m.}",200,0,2000,121,-1.15,1.25);
 	TH2D *hM2momTof = new TH2D("hM2momTof","m^{2} vs p of accepted protons (ToF);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
 	TH2D *hM2momRpc = new TH2D("hM2momRpc","m^{2} vs p of accepted protons (RPC);m^{2} [GeV^{2}/c^{4}];p [GeV/c]",600,0.4,1.6,1250,0,2.5);
+	TH1D *hMinvTof = new TH1D("hMinvTof","m_{inv} of accepted protons (ToF);m_{inv} [GeV/c^{2}];N",600,0.4,1.6);
+	TH1D *hMinvRpc = new TH1D("hMinvRpc","m_{inv} of accepted protons (RPC);m_{inv} [GeV/c^{2}];N",600,0.4,1.6);
 	TH2D *hSegNcells = new TH2D("hSegNcells","MDC segment vs number of fired cells;seg;cells",24,0.5,24.5,10,-0.5,9.5);
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","Angular distribution of the tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
+	TH2D *hMetaCellsToF = new TH2D("hMetaCellsToF","Hit meta cells of ToF;Sector;Meta Cell",6,-0.5,5.5,64,0,64);
+	TH2D *hMetaCellsRPC = new TH2D("hMetaCellsRPC","Hit meta cells of RPC;Sector;Meta Cell",6,-0.5,5.5,186,64,250);
 
-	TH2D *hMomResolution = new TH2D("hMomResolution","Momentum difference of protons;p_{reco} [MeV/c];p_{kin} - p_{reco}  [MeV/c]",80,0,4000,500,-500, 500);
+	TH2D *hMomResolution = new TH2D("hMomResolution","Momentum difference of protons;p_{reco} [MeV/c];#frac{1}{p_{kin}} - #frac{1}{p_{reco}} [MeV/c]",80,0,4000,500,-0.002, 0.002);
 	TH2D *hPhiResolution = new TH2D("hPhiResolution","#phi angle difference of protons;p_{reco} [MeV/c];#phi_{kin} - #phi_{reco} [deg]",80,0,4000,500,-20, 20);
 	TH2D *hThetaResolution = new TH2D("hThetaResolution","#theta angle difference of protons;p_{reco}  [MeV/c];#theta_{kin} - #theta_{reco} [deg]",80,0,4000,500,-10, 10);
-	
-	TH2D *hQinvSL = new TH2D("hQinvSL","q_{inv} vs Splitting Level for signal of p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
-	TH2D *hQinvSW = new TH2D("hQinvSW","q_{inv} vs Shared Wires for signal of p-p CF;q_{inv} [MeV/c];SW",250,0,3000,24,0,24);
-	TH2D *hQinvBL = new TH2D("hQinvBL","q_{inv} vs Shared layers for signal of p-p CF;q_{inv} [MeV/c];BL",250,0,3000,24,0,24);
-	TH2D *hQinvMWD = new TH2D("hQinvMWD","q_{inv} vs Minimal Wire DIstance for signal of p-p CF;q_{inv} [MeV/c];MWD",250,0,3000,100,0,100);
-	TH2D *hQinvSMC = new TH2D("hQinvSMC","q_{inv} vs Shared Meta Cells for signal of p-p CF;q_{inv} [MeV/c];SMC",250,0,3000,4,0,4);
+	//TH2D *hQinvResolution = new TH2D("hQinvResolution","q_{inv} discrepancy between ideal and recunstructed proton pairs;qinv_{reco};qinv_{kine}",750,0,3000,750,0,3000);
+	TH2D *hQoutResolution = new TH2D("hQoutResolution","q_{out} discrepancy between ideal and recunstructed proton pairs;q_{out}^{reco};q_{out}^{kine}",64,0,500,64,0,500);
+	TH2D *hQsideResolution = new TH2D("hQsideResolution","q_{side} discrepancy between ideal and recunstructed proton pairs;q_{side}^{reco};q_{side}^{kine}",64,0,500,64,0,500);
+	TH2D *hQlongResolution = new TH2D("hQlongResolution","q_{long} discrepancy between ideal and recunstructed proton pairs;q_{long}^{reco};q_{long}^{kine}",64,0,500,64,0,500);
+
+	TH2D *hInnerChi2Phi = new TH2D("hInnerChi2Phi","#chi^{2}_{inner} vs #phi angle difference of accepted protons;#phi_{kine} - #phi_{reco} [deg]; #chi^{2}_{inner}",500,-10, 10,300,0,30);
+	TH2D *hInnerChi2Theta = new TH2D("hInnerChi2Theta","#chi^{2}_{inner} vs #theta angle difference of accepted protons;#theta_{kine} - #theta_{reco} [deg]; #chi^{2}_{inner}",500,-10, 10,300,0,30);
+	TH2D *hOuterChi2Phi = new TH2D("hOuterChi2Phi","#chi^{2}_{outer} vs #phi angle difference of accepted protons;#phi_{kine} - #phi_{reco} [deg]; #chi^{2}_{outer}",500,-10, 10,300,0,30);
+	TH2D *hOuterChi2Theta = new TH2D("hOuterChi2Theta","#chi^{2}_{outer} vs #theta angle difference of accepted protons;#theta_{kine} - #theta_{reco} [deg]; #chi^{2}_{outer}",500,-10, 10,300,0,30);
+	TH2D *hMetaQualityMom = new TH2D("hMetaQualityMom","Q_{META} vs p difference of accepted protons;p_{kine} - p_{reco} [MeV/c];Q_{META}",500,-200,200,500,0,4);
+	TH2D *hChi2Mom = new TH2D("hChi2Mom","#chi^{2}_{RK} vs p difference of accepted protons;p_{kine} - p_{reco} [MeV/c];#chi2^{2}_{RK}",500,-200,200,500,0,1200);
+
+	TH2D *hQinvSLGood = new TH2D("hQinvSLGood","q_{inv} vs Splitting Level for signal of accepted p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQinvSLBad = new TH2D("hQinvSLBad","q_{inv} vs Splitting Level for signal of rejected p-p CF;q_{inv} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQinvSWGood = new TH2D("hQinvSWGood","q_{inv} vs Shared Wires for signal of accepted p-p CF;q_{inv} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQinvSWBad = new TH2D("hQinvSWBad","q_{inv} vs Shared Wires for signal of rejected p-p CF;q_{inv} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQinvBLGood = new TH2D("hQinvBLGood","q_{inv} vs Shared layers for signal of accepted p-p CF;q_{inv} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQinvBLBad = new TH2D("hQinvBLBad","q_{inv} vs Shared layers for signal of rejected p-p CF;q_{inv} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQinvMWDGood = new TH2D("hQinvMWDGood","q_{inv} vs Minimal Wire DIstance for signal of accepted p-p CF;q_{inv} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQinvMWDBad = new TH2D("hQinvMWDBad","q_{inv} vs Minimal Wire DIstance for signal of rejected p-p CF;q_{inv} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQinvSMCGood = new TH2D("hQinvSMCGood","q_{inv} vs Shared Meta Cells for signal of accepted p-p CF;q_{inv} [MeV/c];SMC",250,0,3000,4,0,4);
+	TH2D *hQinvSMCBad = new TH2D("hQinvSMCBad","q_{inv} vs Shared Meta Cells for signal of rejected p-p CF;q_{inv} [MeV/c];SMC",250,0,3000,4,0,4);
+	TH2D *hWiresMultiplicityGood = new TH2D("hWiresMultiplicityGood","Wire multiplicity per event of accepted protons;Sector;Layer",6,0,6,24,0,24);
+	TH2D *hDPhiDThetaSignGood = new TH2D("hDPhiDThetaSignGood","Signal of angular distribution of proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
+	TH2D *hDPhiDThetaBckgGood = new TH2D("hDPhiDThetaBckgGood","Backgound of angular distribution of proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
+	TH2D *hDPhiDThetaSignBad = new TH2D("hDPhiDThetaSignBad","Signal of angular distribution of accepted proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
+	TH2D *hDPhiDThetaBckgBad = new TH2D("hDPhiDThetaBckgBad","Backgound of angular distribution of rejected proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
-	
-	std::vector<TH1D*> ktDist,rapDist;
+
+	std::vector<TH1D*> ktDistGood,rapDistGood,ktDistBad,rapDistBad;
+	std::vector<TH2D*> hKtRapGood, hKtRapBad, hQinvResolution;
 	constexpr std::array<const char *,7> centString{"overflow","0-10 %","10-20 %","20-30 %","30-40 %","40-50 %","50-60 %"};
-	for (const int i : {0,1,2,3,4,5,6})
+	for (const int i : {0,1,2,3,4})
 	{
-		ktDist.push_back(new TH1D(TString::Format("ktDist_cent%d",i),TString::Format("k_{T} distribution for %s centrality",centString.at(i)),1000,0,2000));
-		rapDist.push_back(new TH1D(TString::Format("rapDist_cent%d",i),TString::Format("pair rapidity distribution for %s centrality",centString.at(i)),1000,-2,2));
+		ktDistGood.push_back(new TH1D(TString::Format("ktDist_cent%d_good",i),TString::Format("k_{T} distribution of accepted pairs for %s centrality",centString.at(i)),1000,0,2500));
+		rapDistGood.push_back(new TH1D(TString::Format("rapDist_cent%d_good",i),TString::Format("pair rapidity distribution of accepted pairs for %s centrality",centString.at(i)),1000,-2,2));
+		ktDistBad.push_back(new TH1D(TString::Format("ktDist_cent%d_bad",i),TString::Format("k_{T} distribution of rejected pairs for %s centrality",centString.at(i)),1000,0,2500));
+		rapDistBad.push_back(new TH1D(TString::Format("rapDist_cent%d_bad",i),TString::Format("pair rapidity distribution of rejected pairs for %s centrality",centString.at(i)),1000,-2,2));
+		hKtRapGood.push_back(new TH2D(TString::Format("hKtRapGoodCent%d",i),"k_{T} vs y_{c.m} of accepted proton pairs;k_{T} [MeV/c];y_{c.m.}",2000,0,2500,201,-2,2));
+		hKtRapBad.push_back(new TH2D(TString::Format("hKtRapBadCent%d",i),"k_{T} vs y_{c.m} of rejected proton pairs;k_{T} [MeV/c];y_{c.m.}",2000,0,2500,201,-2,2));
+		hQinvResolution.push_back(new TH2D(TString::Format("hQinvResolutionCent%d",i),"q_{inv} discrepancy between ideal and recunstructed proton pairs;qinv_{reco};qinv_{kine}",750,0,3000,750,0,3000));
 	}
 
 	// create objects for particle selection
-	Selection::EventCandidate fEvent;	
-	Selection::TrackCandidate fTrack;
+	std::shared_ptr<Selection::EventCandidate> fEvent;	
+	std::shared_ptr<Selection::TrackCandidate> fTrack;
 	HParticleWireInfo fWireInfo;
+	HGeantHeader *geantHeader;
 	std::size_t tracks;
+	float betaReco, betaKine, momReco, momKine, rapReco, rapKine, ptReco, ptKine;
+	int binDistance;
 
-	// create object for getting MDC wires
-	//HFiredWires firedWires;
-	//HMdcSeg *innerSeg,*outerSeg;
+	std::map<std::string,std::vector<std::shared_ptr<Selection::PairCandidate> > > fSignMap, fBckgMap;	
 
-	std::map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
-
+	Mixing::PairGrouping{}.MakePairGroupingFunction1D();
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
-	mixer.SetMaxBufferSize(50);
-	mixer.SetEventHashingFunction(EventHashing);
-	mixer.SetPairHashingFunction(PairHashing);
-	mixer.SetPairCuttingFunction(PairCut);
+	mixer.SetMaxBufferSize(0);
+	mixer.SetEventHashingFunction(Mixing::EventGrouping{}.MakeEventGroupingFunction());
+	mixer.SetPairHashingFunction(Mixing::PairGrouping{}.MakePairGroupingFunction1D());
+	mixer.SetPairCuttingFunction(Mixing::PairRejection{}.MakePairRejectionFunction());
 	mixer.PrintSettings();
 
     //--------------------------------------------------------------------------------
@@ -265,6 +281,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     hCounter->GetXaxis()->SetBinLabel(2, "Selected Events");
     hCounter->GetXaxis()->SetBinLabel(3, "All Tracks");
     hCounter->GetXaxis()->SetBinLabel(4, "Selected Tracks");
+	hCounter->GetXaxis()->SetBinLabel(5, "All Pairs");
+	hCounter->GetXaxis()->SetBinLabel(6, "Selected Pairs");
 
 	//--------------------------------------------------------------------------------
 	// wire information w/o HMdcSeg class access
@@ -348,9 +366,20 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     {
 		if (loop->nextEvent(event) <= 0) 
 		{
-			cout << " Last events processed " << endl;
+			std::cout << " Last events processed " << endl;
 			break;
 		}
+
+		// TString tmp; // dummy variable; required by HLoop::isNewFile
+		// if (loop->isNewFile(tmp) && !isSimulation)
+		// {
+		// 	if (!loop->goodSector(0) || !loop->goodSector(1) || !loop->goodSector(3) || !loop->goodSector(4) || !loop->goodSector(5)) // no sector 2 in Au+Au
+		// 	{
+		// 		event += loop->getTree()->GetEntries() - 1;
+		// 		continue;
+		// 	}
+		// }
+
 		hCounter->Fill(cNumAllEvents);
 
 		//--------------------------------------------------------------------------------
@@ -366,29 +395,34 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		particle_info           = HCategoryManager::getObject(particle_info, particle_info_cat, 0);
 		HGeomVector EventVertex  = event_header->getVertexReco().getPos();
 		
-		Float_t vertZ = EventVertex.Z();
-		Float_t vertX = EventVertex.X();
-		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
-		Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
-		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
-		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
+		float EventPlane = -1;
+		float EventPlaneA = -1;
+		float EventPlaneB = -1;
 
-		if (!isSimulation) // EP is reconstructed only for real data
+		if constexpr (isSimulation)
 		{
-			if (EventPlane < 0)
+			geantHeader = loop->getGeantHeader();
+			if (geantHeader == nullptr)
 				continue;
-			if (EventPlaneA < 0 || EventPlaneB < 0)
-				continue;
+			
+			EventPlane = geantHeader->getEventPlane() * TMath::DegToRad();
+			EventPlaneA = EventPlane;
+			EventPlaneB = EventPlane;
 		}
+		else
+		{
+			EventPlane = evtChara.getEventPlane(eEPcorr);
+			EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
+			EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
+		}
+		
+		if (EventPlane < 0)
+			continue;
+		if (EventPlaneA < 0 || EventPlaneB < 0)
+			continue;
 
-		fEvent = Selection::EventCandidate(
-			std::to_string(event_header->getEventRunNumber())+std::to_string(event_header->getEventSeqNumber()),
-			vertX,
-			vertY,
-			vertZ,
-			centClassIndex,
-			EventPlane);
+		fEvent = std::make_shared<Selection::EventCandidate>(event_header,particle_info,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
@@ -396,7 +430,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
         
 		// remove first two to get vortex x,y,z
 		if (   !particle_info->isGoodEvent(Particle::kGoodVertexClust)
-			|| !particle_info->isGoodEvent(Particle::kGoodVertexCand)
+			|| !particle_info->isGoodEvent(Particle::kGoodVertexCand) 
 			|| !particle_info->isGoodEvent(Particle::kGoodSTART)
 			|| !particle_info->isGoodEvent(Particle::kNoPileUpSTART)
 			|| !particle_info->isGoodEvent(Particle::kGoodTRIGGER)
@@ -405,11 +439,18 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			|| !particle_info->isGoodEvent(Particle::kGoodSTARTMETA))
 			continue;
 	
+		if (particle_info->getNStartCluster() >= 5)
+			continue;
+
 		//================================================================================================================================================================
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (!fEvent.SelectEvent({1,2,3,4,5,6})) 
+		hXVertex->Fill(fEvent->GetX());
+		hYVertex->Fill(fEvent->GetY());
+		hZVertex->Fill(fEvent->GetZ());
+
+		if (!fEvent->SelectEvent<HADES::Target::Setup::Apr12>({1,2,3,4},2,2,2))
 			continue;
 		
 		hCounter->Fill(cNumSelectedEvents);
@@ -428,14 +469,9 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		for (Int_t track = 0; track < nTracks; track++) 
 		{
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
-			//innerSeg = HCategoryManager::getObject(innerSeg,mdc_seg_cat,particle_cand->getInnerSegInd());
-			//outerSeg = HCategoryManager::getObject(outerSeg,mdc_seg_cat,particle_cand->getOuterSegInd());
-			//HParticleWireManager &wire_manager = matcher->getWireManager();
-			//wire_manager.setDebug();
-			//wire_manager.setWireRange(0);
-			//wire_manager.getWireInfo(track,fWireInfo,particle_cand);
 			matcher->getWireInfoDirect(particle_cand,fWireInfo);
 
+			// for Feb24 there is no ene loss correction (yet?)
 			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
 			
 			//--------------------------------------------------------------------------------
@@ -449,87 +485,196 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrack = Selection::TrackCandidate(
-				particle_cand,
-				Selection::TrackCandidate::CreateWireArray(fWireInfo),
-				fEvent.GetID(),
-				fEvent.GetReactionPlane(),
-				track,
-				14);
+			if constexpr (isSimulation)
+			{
+				// fTrack = std::make_shared<Selection::TrackCandidate>(
+				// 	particle_cand,
+				// 	static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
+				// 	HADES::MDC::CreateTrackLayers(fWireInfo),
+				// 	fEvent->GetID(),
+				// 	fEvent->GetReactionPlane(),
+				// 	track,
+				// 	protonPID);
+			}
+			else
+			{
+				fTrack = std::make_shared<Selection::TrackCandidate>(
+					particle_cand,
+					HADES::MDC::CreateTrackLayers(fWireInfo),
+					fEvent->GetID(),
+					fEvent->GetReactionPlane(),
+					track,
+					protonPID);
+			}
 			
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
 			
-			if (fTrack.GetSystem() == Selection::Detector::RPC)
+			if (fTrack->GetSystem() == Selection::Detector::RPC)
 			{
-				// fill RPC monitors for all tracks
+				for (const auto &hit : fTrack->GetMetaHits())
+				{
+					hMetaCellsRPC->Fill(fTrack->GetSector(),hit);
+				}
 			}
 			else
 			{
-				// fill ToF monitors for all tracks
+				for (const auto &hit : fTrack->GetMetaHits())
+				{
+					hMetaCellsToF->Fill(fTrack->GetSector(),hit);
+				}
 			}
 
-			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
+			if (!fTrack->SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
-			//hCounter->Fill(cNumSelectedTracks);
-			hPtRap->Fill(fTrack.GetPt(), fTrack.GetRapidity() - fBeamRapidity);
-			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
+			betaReco = fTrack->GetBeta();
+			momReco = fTrack->GetP();
+			rapReco = fTrack->GetRapidity();
+			ptReco = fTrack->GetPt();
+			if (isSimulation)
+			{
+				betaKine = fTrack->GetGeantKine()->GetBeta();
+				momKine = fTrack->GetGeantKine()->GetP();
+				rapKine = fTrack->GetGeantKine()->GetRapidity();
+				ptKine = fTrack->GetGeantKine()->GetPt();
+			
 
+				hPtRap->Fill(ptReco, rapReco - fBeamRapidity);
+				binDistance = CalcBinDistance(hPtRap, ptReco, rapReco - fBeamRapidity, ptKine, rapKine - fBeamRapidity);
+				hPtRapReco->Fill(ptReco, rapReco - fBeamRapidity, 1./(binDistance + 1));
+			}
+			hPhiTheta->Fill(fTrack->GetPhi(),fTrack->GetTheta());
+			hInnerChi2Phi->Fill(fTrack->GetGeantKine()->GetPhi() - fTrack->GetPhi(),fTrack->GetInnerSegChi2());
+			hInnerChi2Theta->Fill(fTrack->GetGeantKine()->GetTheta() - fTrack->GetTheta(),fTrack->GetInnerSegChi2());
+			hOuterChi2Phi->Fill(fTrack->GetGeantKine()->GetPhi() - fTrack->GetPhi(),fTrack->GetOuterSegChi2());
+			hOuterChi2Theta->Fill(fTrack->GetGeantKine()->GetTheta() - fTrack->GetTheta(),fTrack->GetOuterSegChi2());
+			hMetaQualityMom->Fill(momKine - momReco,fTrack->GetMetaMatchQuality());
+			hChi2Mom->Fill(momKine - momReco, fTrack->GetChi2());
 
-			geant_kine = static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1));
-			double kineMom = geant_kine->getTotalMomentum();
-			double kinePhi = geant_kine->getPhiDeg();
-			double kineTheta = geant_kine->getThetaDeg();
-
-			hMomResolution->Fill(fTrack.GetP(),kineMom - fTrack.GetP());
-			hPhiResolution->Fill(fTrack.GetP(),kinePhi - fTrack.GetPhi());
-			hThetaResolution->Fill(fTrack.GetP(),kineTheta - fTrack.GetTheta());
+			if (isSimulation)
+			{
+				hMomResolution->Fill(momReco,1./momKine - 1./momReco);
+				hPhiResolution->Fill(momReco,fTrack->GetGeantKine()->GetPhi() - fTrack->GetPhi());
+				hThetaResolution->Fill(momReco,fTrack->GetGeantKine()->GetTheta() - fTrack->GetTheta());
+			}
 			
 			for (const int &layer : HADES::MDC::WireInfo::allLayerIndexing)
-				hSegNcells->Fill(layer+1,fTrack.GetWires(layer).size());
-
-			fEvent.AddTrack(fTrack);
-
-			if (fTrack.GetSystem() == Selection::Detector::RPC)
 			{
-				hBetaMomRpc->Fill(fTrack.GetP()*fTrack.GetCharge(),fTrack.GetBeta());
-				hM2momRpc->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
+				hSegNcells->Fill(layer + 1,fTrack->GetWires(layer).size());
+				hWiresMultiplicityGood->Fill(fTrack->GetSector(), layer, fTrack->GetWires(layer).size());
+			}
+
+			fEvent->AddTrack(fTrack);
+
+			if (fTrack->GetSystem() == Selection::Detector::RPC)
+			{
+				hBetaMomRpc->Fill(momReco * fTrack->GetCharge(),betaReco);
+				binDistance = CalcBinDistance(hBetaMomRpc,momReco * fTrack->GetCharge(),betaReco,momKine * fTrack->GetCharge(),betaKine);	
+				hBetaMomRpcReco->Fill(momReco * fTrack->GetCharge(), betaReco, 1./(binDistance + 1));
+
+				hM2momRpc->Fill(fTrack->GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack->GetP())*fMeVtoGeV);
+				hMinvRpc->Fill(fTrack->GetM()*fMeVtoGeV);
 			}
 			else
 			{
-				hBetaMomTof->Fill(fTrack.GetP()*fTrack.GetCharge(),fTrack.GetBeta());
-				hM2momTof->Fill(fTrack.GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack.GetP())*fMeVtoGeV);
+				hBetaMomTof->Fill(momReco * fTrack->GetCharge(),betaReco);
+				binDistance = CalcBinDistance(hBetaMomTof,momReco * fTrack->GetCharge(),betaReco,momKine * fTrack->GetCharge(),betaKine);	
+				hBetaMomTofReco->Fill(momReco * fTrack->GetCharge(), betaReco, 1./(binDistance + 1));
+
+				hM2momTof->Fill(fTrack->GetM2()*fMeVtoGeV*fMeVtoGeV,abs(fTrack->GetP())*fMeVtoGeV);
+				hMinvTof->Fill(fTrack->GetM()*fMeVtoGeV);
 			}
 		} // End of track loop
 
-		tracks = fEvent.GetTrackListSize();
+		tracks = fEvent->GetTrackListSize();
 		hCounter->Fill(cNumSelectedTracks,tracks);
 
-		if (tracks > 0)
+		if (tracks > 2)
 		{
-			hCounter->Fill(cNumAllPairs,tracks*(tracks-1)/2); // all combinations w/o repetitions
+			fSignMap = mixer.AddEvent(fEvent,fEvent->GetTrackList());
+			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
-			fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
 			for (const auto &pair : fSignMap)
+			{
 				for (const auto &elem : pair.second)
 				{
-					hQinvSL->Fill(elem.GetQinv(),elem.GetSplittingLevel());
-					hQinvSW->Fill(elem.GetQinv(),elem.GetSharedWires());
-					hQinvBL->Fill(elem.GetQinv(),elem.GetBothLayers());
-					hQinvMWD->Fill(elem.GetQinv(),elem.GetMinWireDistance());
-					hQinvSMC->Fill(elem.GetQinv(),elem.GetSharedMetaCells());
-					ktDist.at(fEvent.GetCentrality())->Fill(elem.GetKt());
-					rapDist.at(fEvent.GetCentrality())->Fill(elem.GetRapidity());
+					hCounter->Fill(cNumAllPairs);
+					if (pair.first != "bad") // if not rejected
+					{
+						if (elem->AreTracksFromTheSameSector()) // those observables only make sense when we are in the same sector
+						{
+							hQinvSLGood->Fill(elem->GetQinv(),elem->GetSplittingLevel());
+							hQinvSWGood->Fill(elem->GetQinv(),elem->GetSharedWires());
+							hQinvBLGood->Fill(elem->GetQinv(),elem->GetBothLayers());
+							if (elem->GetMinWireDistance().has_value) 
+								hQinvMWDGood->Fill(elem->GetQinv(),elem->GetMinWireDistance().value);
+							hQinvSMCGood->Fill(elem->GetQinv(),elem->GetSharedMetaCells());
+						}
 
-					if (pair.first != 0)
-						hCounter->Fill(cNumSelectedPairs);
+						if (isSimulation)
+						{
+							hQinvResolution.at(fEvent->GetCentrality())->Fill(elem->GetQinv(),elem->GetGeantKinePair()->GetQinv());
+							float qOutReco,qOutKine,qSideReco,qSideKine,qLongReco,qLongKine;
+							std::tie(qOutReco,qSideReco,qLongReco) = elem->GetOSL();
+							std::tie(qOutKine,qSideKine,qLongKine) = elem->GetGeantKinePair()->GetOSL();
+							hQoutResolution->Fill(qOutReco,qOutKine);
+							hQsideResolution->Fill(qSideReco,qSideKine);
+							hQlongResolution->Fill(qLongReco,qLongKine);
+						}
+
+						hKtRapGood.at(fEvent->GetCentrality())->Fill(elem->GetKt(),elem->GetRapidity() - fBeamRapidity);
+
+						ktDistGood.at(fEvent->GetCentrality())->Fill(elem->GetKt());
+						rapDistGood.at(fEvent->GetCentrality())->Fill(elem->GetRapidity() - fBeamRapidity);
+						if (pair.first != "0") // if is not overflow in pair kinematics
+						{
+							hDPhiDThetaSignGood->Fill(elem->GetDPhi(),elem->GetDTheta());
+							hCounter->Fill(cNumSelectedPairs);
+						}
+					}
+					else // if rejected
+					{
+						if (elem->AreTracksFromTheSameSector())
+						{
+							hQinvSLBad->Fill(elem->GetQinv(),elem->GetSplittingLevel());
+							hQinvSWBad->Fill(elem->GetQinv(),elem->GetSharedWires());
+							hQinvBLBad->Fill(elem->GetQinv(),elem->GetBothLayers());
+							if (elem->GetMinWireDistance().has_value) 
+								hQinvMWDBad->Fill(elem->GetQinv(),elem->GetMinWireDistance().value);
+							hQinvSMCBad->Fill(elem->GetQinv(),elem->GetSharedMetaCells());
+						}
+
+						hKtRapBad.at(fEvent->GetCentrality())->Fill(elem->GetKt(),elem->GetRapidity() - fBeamRapidity);
+						
+						ktDistBad.at(fEvent->GetCentrality())->Fill(elem->GetKt());
+						rapDistBad.at(fEvent->GetCentrality())->Fill(elem->GetRapidity() - fBeamRapidity);	
+						hDPhiDThetaSignBad->Fill(elem->GetDPhi(),elem->GetDTheta());
+					}
 				}
+			}
+			
+			for (const auto &backgroundEntry : fBckgMap)
+			{
+				for (const auto &entry : backgroundEntry.second)
+				{
+					if (backgroundEntry.first != "bad" && backgroundEntry.first != "0")
+					{
+						hDPhiDThetaBckgGood->Fill(entry->GetDPhi(),entry->GetDTheta());
+					}
+					else
+					{
+						hDPhiDThetaBckgBad->Fill(entry->GetDPhi(),entry->GetDTheta());
+					}
+				}
+			}
 		}
-
-	} // End of event loop
 	
+	} // End of event loop
+	 
+	hWiresMultiplicityGood->Scale(1./nEvents);
+
 	// printing some info about the RAM I'm using to know how much memory each job should be given
 	static ProcInfo_t info;
 	constexpr float toGB = 1.f/1024.f/1024.f;
@@ -543,7 +688,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     sorter.finalize();
     timer.Stop();
-    cout << "Finished DST processing" << endl;
+    std::cout << "Finished DST processing" << endl;
 
     //--------------------------------------------------------------------------------
     // Creating output file and storing results there
@@ -557,28 +702,65 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     // Remember to write your results to the output file here
     //================================================================================================================================================================
 
+	hXVertex->Write();
+	hYVertex->Write();
+	hZVertex->Write();
+
 	hPtRap->Write();
 	hBetaMomRpc->Write();
 	hBetaMomTof->Write();
+	hPtRapReco->Write();
+	hBetaMomRpcReco->Write();
+	hBetaMomTofReco->Write();
 	hM2momRpc->Write();
 	hM2momTof->Write();
+	hMinvTof->Write();
+	hMinvRpc->Write();
 	hSegNcells->Write();
 	hPhiTheta->Write();
+	hMetaCellsToF->Write();
+	hMetaCellsRPC->Write();
 
 	hMomResolution->Write();
 	hPhiResolution->Write();
 	hThetaResolution->Write();
+	//hQinvResolution->Write();
+	hQoutResolution->Write();
+	hQsideResolution->Write();
+	hQlongResolution->Write();
 
-	hQinvSL->Write();
-	hQinvSW->Write();
-	hQinvBL->Write();
-	hQinvMWD->Write();
-	hQinvSMC->Write();
+	hInnerChi2Phi->Write();
+	hInnerChi2Theta->Write();
+	hOuterChi2Phi->Write();
+	hOuterChi2Theta->Write();
+	hMetaQualityMom->Write();
+	hChi2Mom->Write();
 
-	for (const int i : {0,1,2,3,4,5,6})
+	hQinvSLGood->Write();
+	hQinvSWGood->Write();
+	hQinvBLGood->Write();
+	hQinvMWDGood->Write();
+	hQinvSMCGood->Write();
+	hQinvSLBad->Write();
+	hQinvSWBad->Write();
+	hQinvBLBad->Write();
+	hQinvMWDBad->Write();
+	hQinvSMCBad->Write();
+	hWiresMultiplicityGood->Write();
+	hDPhiDThetaSignGood->Write();
+	hDPhiDThetaBckgGood->Write();
+	hDPhiDThetaSignBad->Write();
+	hDPhiDThetaBckgBad->Write();
+
+	for (const int i : {0,1,2,3,4})
 	{
-		ktDist.at(i)->Write();
-		rapDist.at(i)->Write();
+		hKtRapGood.at(i)->Write();
+		hKtRapBad.at(i)->Write();
+		ktDistGood.at(i)->Write();
+		rapDistGood.at(i)->Write();
+		ktDistBad.at(i)->Write();
+		rapDistBad.at(i)->Write();
+		hQinvResolution.at(i)->Write();
 	}
 
     //--------------------------------------------------------------------------------
@@ -587,7 +769,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     out->Save();
     out->Close();
 
-    cout << "####################################################" << endl;
+    std::cout << "####################################################" << endl;
 	gROOT->SetBatch(kFALSE);
 	return 0;
 	}

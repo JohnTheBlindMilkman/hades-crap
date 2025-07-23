@@ -8,14 +8,12 @@
 
 void fitMomentumResolution()
 {
-    const TString fileName = "../slurmOutput/apr12momres_all_24_10_08.root";
+    const TString fileName = "../slurmOutput/apr12sim_all_25_07_03_1.root";
     const TString outputFile = "../output/momentum_resolution.root";
     const TString inpMomHist = "hMomResolution";
     const TString inpPhiHist = "hPhiResolution";
     const TString inpThetaHist = "hThetaResolution";
     constexpr int entriesCutoff{10000};
-    constexpr bool fitSlices{true};
-    constexpr bool fitGaussianParams{true};
 
     TFile *inpFile = TFile::Open(fileName);
 
@@ -23,7 +21,7 @@ void fitMomentumResolution()
     TH2D *hPhiHist = inpFile->Get<TH2D>(inpPhiHist);
     TH2D *hThetaHist = inpFile->Get<TH2D>(inpThetaHist);
 
-    TF1 *fGauss = new TF1("fGauss","gaus",hMomHist->GetYaxis()->GetXmin(),hMomHist->GetYaxis()->GetXmax());
+    TF1 *fGauss = new TF1("fGauss","gaus",-5,5);
 
     // I will now assume that all three histograms have the same X axis range and binning!
     // why? because I'm lazy
@@ -31,12 +29,12 @@ void fitMomentumResolution()
     const int nBins = hMomHist->GetNbinsX();
     std::vector<float> momMuCollection, momSigmaCollection, momMuErrCollection, momSigmaErrCollection,
     phiMuCollection, phiSigmaCollection, phiMuErrCollection, phiSigmaErrCollection,
-    thetaMuCollection, thetaSigmaCollection, thetaMuErrCollection, thetaSigmaErrCollection, 
-    pRecoArr;
+    thetaMuCollection, thetaSigmaCollection, thetaMuErrCollection, thetaSigmaErrCollection, pRecoArr;
+    std::vector<TH1D*> momSlice, phiSlice, thetaSlice;
     
     for (int bin = 1; bin <= nBins; ++bin)
     {
-        TH1D *hProjMom = hMomHist->ProjectionY("MomProjY",bin,bin);
+        TH1D *hProjMom = hMomHist->ProjectionY(TString::Format("MomProjY_%d",bin),bin,bin);
         if (hProjMom->GetEntries() > entriesCutoff)
         {
             pRecoArr.push_back(hMomHist->GetXaxis()->GetBinCenter(bin));
@@ -45,9 +43,10 @@ void fitMomentumResolution()
             momMuErrCollection.push_back(fGauss->GetParError(1));
             momSigmaCollection.push_back(fGauss->GetParameter(2));
             momSigmaErrCollection.push_back(fGauss->GetParError(2));
+            momSlice.push_back(hProjMom);
         }
 
-        TH1D *hProjPhi = hPhiHist->ProjectionY("PhiProjY",bin,bin);
+        TH1D *hProjPhi = hPhiHist->ProjectionY(TString::Format("PhiProjY_%d",bin),bin,bin);
         if (hProjPhi->GetEntries() > entriesCutoff)
         {
             hProjPhi->Fit(fGauss);
@@ -55,9 +54,10 @@ void fitMomentumResolution()
             phiMuErrCollection.push_back(fGauss->GetParError(1));
             phiSigmaCollection.push_back(fGauss->GetParameter(2));
             phiSigmaErrCollection.push_back(fGauss->GetParError(2));
+            phiSlice.push_back(hProjPhi);
         }
 
-        TH1D *hProjTheta = hThetaHist->ProjectionY("ThetaProjY",bin,bin);
+        TH1D *hProjTheta = hThetaHist->ProjectionY(TString::Format("ThetaProjY_%d",bin),bin,bin);
         if (hProjTheta->GetEntries() > entriesCutoff)
         {
             hProjTheta->Fit(fGauss);
@@ -65,6 +65,7 @@ void fitMomentumResolution()
             thetaMuErrCollection.push_back(fGauss->GetParError(1));
             thetaSigmaCollection.push_back(fGauss->GetParameter(2));
             thetaSigmaErrCollection.push_back(fGauss->GetParError(2));
+            thetaSlice.push_back(hProjTheta);
         }
     }
 
@@ -114,4 +115,8 @@ void fitMomentumResolution()
     fPhiSigFit->Write();
     fThetaMuFit->Write();
     fThetaSigFit->Write();
+
+    for (const auto &hist : momSlice) hist->Write();
+    for (const auto &hist : phiSlice) hist->Write();
+    for (const auto &hist : thetaSlice) hist->Write();
 }

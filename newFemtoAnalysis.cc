@@ -1,9 +1,7 @@
 #include "Includes.h"
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
-#include "FemtoMixer/JJFemtoMixer.hxx"
-#include "FemtoMixer/TrackSmearer.hxx"
-#include "../HFiredWires/HFiredWires.hxx"
+#include "../JJFemtoMixer/JJFemtoMixer.hxx"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -23,47 +21,58 @@ struct HistogramCollection
 	TH3D hQoslSign,hQoslBckg;
 };
 
-std::size_t EventHashing(const Selection::EventCandidate &evt)
+std::string EventHashing(const std::shared_ptr<Selection::EventCandidate> &evt)
 {
-    return evt.GetCentrality()*1e2 + evt.GetPlate();
+	// return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetCentrality()),2) + 
+	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
+
+	return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
+		//JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
+		JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
 }
 
-std::size_t PairHashing(const Selection::PairCandidate &pair)
+std::string PairHashing(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	// collection of slices: (array[n],array[n+1]>
     // make sure this is ordered!
-    constexpr std::array<float,8> ktArr{200,400,600,800,1000,1200,1400,1600}; // {200,400,600,800,1000,1200,1400,1600} ? (7 bins)
-    constexpr std::array<float,5> yArr{0.16,0.39,0.62,0.86,1.09}; // {0.16,0.39,0.62,0.86,1.09} ? (4 bins)
+    constexpr std::array<float,11> ktArr{0,200,400,600,800,1000,1200,1400,1600,1800,2000};
+    constexpr std::array<float,14> yArr{0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99,1.09,1.19,1.29,1.39};
     constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair.GetKt()) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair.GetRapidity()) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair.GetPhi()) - EpArr.begin();
+    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair->GetKt()) - ktArr.begin();
+    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair->GetRapidity()) - yArr.begin();
+    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair->GetPhi()) - EpArr.begin();
 
 	// reject if value is below first slice or above the last
 	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
-		return 0;
+		return "0";
 	else
-    	return ktCut*1e2 + yCut*1e1 + EpCut;
+    	return JJUtils::to_fixed_size_string((ktCut),2) + JJUtils::to_fixed_size_string(yCut,2) + JJUtils::to_fixed_size_string(EpCut,2);
 }
 
-bool PairRejection(const Selection::PairCandidate &pair)
+bool PairRejection(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	// previous 17/24 is now 0.7
-	return pair.RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
-		pair.GetBothLayers() < 20 ||
-		pair.GetSharedMetaCells() > 0; 
+	if (pair->AreTracksFromTheSameSector())
+	{
+		return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.5,3) ||
+			pair->GetBothLayers() < 20 ||
+			pair->GetSharedMetaCells() > 0;
+	}
+	else
+	{
+		return false;
+	}
 }
 
-int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)	//for simulation set approx 100 files and output name testOutFileSim.root
+int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{false}; // for now this could be easly just const
+	constexpr bool isSimulation{true}; // for now this could be easly just const
 	constexpr int protonPID{14};
 
 	//--------------------------------------------------------------------------------
@@ -90,10 +99,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	}
 	else
 	{
-		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root";
+		//rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen9_27092017.root"; //gen9
+		rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/apr12/allParam_APR12_gen10_16122024.root"; //gen10
+		//rootParFile = "/cvmfs/hadessoft.gsi.de/param/real/feb24/allParam_feb24_gen0_16042024.root"; // Au+Au 800 MeV
 	}
 	TString paramSource      = "root"; // root, ascii, oracle
-	TString paramrelease     = "APR12_dst_gen9"; 
+	TString paramrelease     = "APR12_dst_gen10"; 
 	HDst::setupSpectrometer(beamtime,mdcMods,"rich,mdc,tof,rpc,shower,wall,start,tbox");
 	HDst::setupParameterSources(paramSource,asciiParFile,rootParFile,paramrelease); 
 
@@ -110,7 +121,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		if (isSimulation) // simulation
 		{
 			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-			inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+			//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen9
+			inputFolder = "/lustre/hades/dstsim/apr12/au1230au/gen10/bmax10/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen10
 		}
 		else // data
 		{
@@ -120,8 +132,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			}
 			else
 			{
-				//inputFolder = "/lustre/hades/dst/feb24/gen0c/039/01/root"; // Au+Au 800 MeV
-				inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV
+				//inputFolder = "/lustre/hades/dst/feb24/gen0c/060/01/root"; // Au+Au 800 MeV
+				//inputFolder = "/lustre/hades/dst/apr12/gen9/122/root"; // Au+Au 2.4 GeV gen9
+				inputFolder = "/lustre/hades/dst/apr12/gen10/122/root"; // Au+Au 2.4 GeV gen10
 			}
 		}
 	
@@ -137,13 +150,20 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			nFiles++;
 		}
 	}
+
+	loop->readSectorFileList("/lustre/hades/user/sspies/SectorFileLists/Apr12AuAu1230_Gen10_Hadrons.list");
     
     //--------------------------------------------------------------------------------
     // Booking the categories to be read from the DST files.
     // By default all categories are booked therefore -* (Unbook all) first and book the ones needed
     // All required categories have to be booked except the global Event Header which is always booked
     //--------------------------------------------------------------------------------
-    if (!loop->setInput("-*,+HGeantKine,+HParticleCand,+HParticleEvtInfo,+HWallHit"))
+    std::string inputString = "-*,+HParticleCand,+HParticleEvtInfo,+HWallHit";
+	if (isCustomDst)
+		inputString += ",+HMdcSeg";
+	if (isSimulation)
+		inputString += ",+HGeantKine";
+    if (!loop->setInput(inputString.data()))
 		exit(1);
 
 	gHades->setBeamTimeID(HADES::kApr12); // this is needed when using the ParticleEvtChara
@@ -161,7 +181,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -186,33 +206,24 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 	TH2D *hPhiTheta = new TH2D("hPhiTheta","#phi vs #theta distribution of tracks;#phi [deg];#theta [deg]",360,0,360,90,0,90);
 
-	std::map<std::size_t, HistogramCollection> fMapFoHistograms;
+	std::map<std::string, HistogramCollection> fMapFoHistograms;
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
-
-	/* TFile *momentumSmearingFile = TFile::Open("/lustre/hades/user/kjedrzej/apr12/Corrections/momentum_resolution.root");
-	Correction::TrackSmearer fSmearer(
-		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fMomMuFit")),
-		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fMomSigFit")),
-		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fPhiMuFit")),
-		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fPhiSigFit")),
-		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fThetaMuFit")),
-		std::unique_ptr<TF1>(momentumSmearingFile->Get<TF1>("fThetaSigFit"))
-	); */
 	
 	// create objects for particle selection and mixing
-	Selection::EventCandidate fEvent;	
-	Selection::TrackCandidate fTrack;
+	std::shared_ptr<Selection::EventCandidate> fEvent;	
+	std::shared_ptr<Selection::TrackCandidate> fTrack;
 
 	// create object for getting MDC wires
 	HParticleWireInfo fWireInfo;
+	HGeantHeader *geantHeader;
 
-	std::map<std::size_t,std::vector<Selection::PairCandidate> > fSignMap, fBckgMap;
+	std::map<std::string,std::vector<std::shared_ptr<Selection::PairCandidate> > > fSignMap, fBckgMap;
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
-	mixer.SetMaxBufferSize(50); // ana=50, sim=200
+	mixer.SetMaxBufferSize(200); // ana=50, sim=200
 	mixer.SetEventHashingFunction(EventHashing);
 	mixer.SetPairHashingFunction(PairHashing);
 	mixer.SetPairCuttingFunction(PairRejection);
@@ -325,6 +336,16 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			break;
 		}
 
+		// TString tmp; // dummy variable; required by HLoop::isNewFile
+		// if (loop->isNewFile(tmp) && !isSimulation)
+		// {
+		// 	if (!loop->goodSector(0) || !loop->goodSector(1) || !loop->goodSector(3) || !loop->goodSector(4) || !loop->goodSector(5)) // no sector 2 in Au+Au
+		// 	{
+		// 		event += loop->getTree()->GetEntries() - 1;
+		// 		continue;
+		// 	}
+		// }
+
 		hCounter->Fill(cNumAllEvents);
 
 		//--------------------------------------------------------------------------------
@@ -344,31 +365,38 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		Float_t vertX = EventVertex.X();
 		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
-		Float_t EventPlane = evtChara.getEventPlane(eEPcorr);
-		Float_t EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
-		Float_t EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
+		Float_t EventPlane = -1;
+		Float_t EventPlaneA = -1;
+		Float_t EventPlaneB = -1;
 
-		if constexpr (!isSimulation)
+		if constexpr (isSimulation)
 		{
-			if (EventPlane < 0)
+			geantHeader = loop->getGeantHeader();
+			if (geantHeader == nullptr)
 				continue;
-			if (EventPlaneA < 0 || EventPlaneB < 0)
-				continue;
+			
+			EventPlane = geantHeader->getEventPlane() * TMath::DegToRad();
+			EventPlaneA = EventPlane;
+			EventPlaneB = EventPlane;
+		}
+		else
+		{
+			EventPlane = evtChara.getEventPlane(eEPcorr);
+			EventPlaneA = evtChara.getEventPlane(eEPcorr,1);
+			EventPlaneB = evtChara.getEventPlane(eEPcorr,2);
 		}
 		
-		fEvent = Selection::EventCandidate(
-			std::to_string(event_header->getEventRunNumber()) + std::to_string(event_header->getEventSeqNumber()),
-			vertX,
-			vertY,
-			vertZ,
-			centClassIndex,
-			EventPlane);
+		if (EventPlane < 0)
+			continue;
+		if (EventPlaneA < 0 || EventPlaneB < 0)
+			continue;
+		
+		fEvent = std::make_shared<Selection::EventCandidate>(event_header,particle_info,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
 		//--------------------------------------------------------------------------------
         
-		// remove first two to get vortex x,y,z
 		if (   !particle_info->isGoodEvent(Particle::kGoodVertexClust)
 			|| !particle_info->isGoodEvent(Particle::kGoodVertexCand)
 			|| !particle_info->isGoodEvent(Particle::kGoodSTART)
@@ -378,12 +406,15 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			|| !particle_info->isGoodEvent(Particle::kGoodSTARTVETO)
 			|| !particle_info->isGoodEvent(Particle::kGoodSTARTMETA))
 			continue;
+
+		if (particle_info->getNStartCluster() >= 5)
+			continue;
 	
 		//================================================================================================================================================================
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEvent.SelectEvent({6},2,2,2))
+		if (! fEvent->SelectEvent<HADES::Target::Setup::Apr12>({1},2,2,2))
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);
@@ -404,10 +435,9 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
 			//fWireManager = matcher->getWireManager();
 			matcher->getWireInfoDirect(particle_cand,fWireInfo);
-			//fWireManager.setWireRange(0);
-			//fWireManager.getWireInfo(track,fWireInfo,particle_cand);
 			
 			// I have no freakin idea if this is how it should be done
+			// for Feb24 there is no ene loss correction (yet?)
 			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
 
 			//--------------------------------------------------------------------------------
@@ -421,18 +451,32 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
-			fTrack = Selection::TrackCandidate(
-				particle_cand,
-				Selection::TrackCandidate::CreateWireArray(fWireInfo),
-				fEvent.GetID(),
-				fEvent.GetReactionPlane(),
-				track,
-				protonPID);
+			if constexpr (isSimulation)
+			{
+				fTrack = std::make_shared<Selection::TrackCandidate>(
+					particle_cand,
+					nullptr,
+					HADES::MDC::CreateTrackLayers(fWireInfo),
+					fEvent->GetID(),
+					fEvent->GetReactionPlane(),
+					track,
+					protonPID);
+			}
+			else
+			{
+				fTrack = std::make_shared<Selection::TrackCandidate>(
+					particle_cand,
+					HADES::MDC::CreateTrackLayers(fWireInfo),
+					fEvent->GetID(),
+					fEvent->GetReactionPlane(),
+					track,
+					protonPID);
+			}
 			//================================================================================================================================================================
 			// Put your analyses on track level here
 			//================================================================================================================================================================
 			
-			if (fTrack.GetSystem() == Selection::Detector::RPC)
+			if (fTrack->GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for all tracks
 			}
@@ -441,16 +485,16 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				// fill ToF monitors for all tracks
 			}
 
-			if (!fTrack.SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
+			if (!fTrack->SelectTrack(betamom_2sig_p_rpc_pionCmom,betamom_2sig_p_tof_pionCmom))
 				continue;
 
 			//fSmearer.SmearMomenta(fTrack); // this will smear your momenta
 
-			fEvent.AddTrack(fTrack);
-			hPhiTheta->Fill(fTrack.GetPhi(),fTrack.GetTheta());
+			fEvent->AddTrack(fTrack);
+			hPhiTheta->Fill(fTrack->GetPhi(),fTrack->GetTheta());
 			hCounter->Fill(cNumSelectedTracks);
 
-			if (fTrack.GetSystem() == Selection::Detector::RPC)
+			if (fTrack->GetSystem() == Selection::Detector::RPC)
 			{
 				// fill RPC monitors for accepted tracks
 			}
@@ -461,33 +505,32 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		} // End of track loop
 
-		if (fEvent.GetTrackListSize()) // if track vector has entries
+		if (fEvent->GetTrackListSize() > 2) // if track vector has entries
 		{
-			hCounter->Fill(cNumAllPairs,fEvent.GetTrackListSize()*(fEvent.GetTrackListSize()-1)/2); // all combinations w/o repetitions
-
-            fSignMap = mixer.AddEvent(fEvent,fEvent.GetTrackList());
+            fSignMap = mixer.AddEvent(fEvent,fEvent->GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
 			for (const auto &signalEntry : fSignMap)
 			{
 				for (const auto &entry : signalEntry.second)
 				{
+					hCounter->Fill(cNumAllPairs);
 					if (fMapFoHistograms.find(signalEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
-						TH1D(TString::Format("hQinvSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH1D(TString::Format("hQinvBckg_%lu",signalEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH1D(TString::Format("hQinvSign_%s",signalEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH1D(TString::Format("hQinvBckg_%s",signalEntry.first.data()),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
 						TH3D(/* TString::Format("hQoslSign_%lu",signalEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
 						TH3D(/* TString::Format("hQoslBckg_%lu",signalEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
 						};
 						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
-					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry.GetQinv());
+					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry->GetQinv());
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong); */
 
-					if (signalEntry.first != 0)
+					if (signalEntry.first != "bad" && signalEntry.first != "0")
 						hCounter->Fill(cNumSelectedPairs);
 				}
 			}
@@ -499,14 +542,14 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					if (fMapFoHistograms.find(backgroundEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
-						TH1D(TString::Format("hQinvSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
-						TH1D(TString::Format("hQinvBckg_%lu",backgroundEntry.first),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH1D(TString::Format("hQinvSign_%s",backgroundEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+						TH1D(TString::Format("hQinvBckg_%s",backgroundEntry.first.data()),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
 						TH3D(/* TString::Format("hQoslSign_%lu",backgroundEntry.first),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */),
 						TH3D(/* TString::Format("hQoslBckg_%lu",backgroundEntry.first),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",64,0,500,64,0,500,64,0,500 */)
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
-					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry.GetQinv());
+					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry->GetQinv());
 					/* float qout,qside,qlong;
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(qout,qside,qlong); */

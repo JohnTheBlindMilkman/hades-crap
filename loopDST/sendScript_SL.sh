@@ -39,20 +39,20 @@ submissiondir=${submissionbase}/loopDST
     outputdir=/lustre/hades/user/${user}/apr12/ # outputdir for files AND logFiles
 pathoutputlog=${outputdir}/newOut                  # protocol from batch farm for each file
      filename=apr12ana_${day}                   # filename of log file if nFilesPerJob > 1 (partnumber will be appended)
-par1=/lustre/hades/user/hadesdst/svn/debian10/6.24.02/hydra2trunk/defall.sh  # optional par1 : environment script
+par1=/cvmfs/hadessoft.gsi.de/install/debian10/6.24.02/hydra2-7.0/defall.sh  # optional par1 : environment script
 par2=${submissiondir}/analysis                                 # optional par2 : executable
 par3=""                                                        # optional par3 : input file list
 par4=${outputdir}                                              # optional par4 : outputfile (part number will be appended (_num.root))
 par5=-1                                                        # optional par5 : number of events
 par6="no"                                                      # optional par6
 par7="no"                                                      # optional par7   "single" to run comma separated list as single files in jobscript
-partition="long"                                               # partition: main: max 8h, grid: max 3d, long: max 7d 
-resources="--mem=2000 --time=0-12:00:00"                        # runtime < 10h, mem < 2GB
+partition="main"                                               # partition: main: max 8h, grid: max 3d, long and high_mem: max 7d 
+resources="--mem=2G --time=0-4:00:00"                          # main and long: max 4GB per cpu, high_mem: max 6GB per cpu
 email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs have finished
 
 jobarrayFile="loop_sim_${day}_jobarray.dat"
 
-filelist=${currentDir}/listsApr12/sim_${day}.list  # file list in local dir! not in submissiondir!!!
+filelist=${currentDir}/listsApr12Gen10/sim_${day}.list  # file list in local dir! not in submissiondir!!!
 ######################################################################
 
 nFiles=$( cat $filelist | wc -l)

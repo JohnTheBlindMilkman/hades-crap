@@ -1,0 +1,3 @@
+[submodule "submodules/KDTree"]
+	path = submodules/KDTree
+	url = git@github.com:JohnTheBlindMilkman/KDTree.git

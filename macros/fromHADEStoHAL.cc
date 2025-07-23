@@ -7,13 +7,17 @@
 
 TH1D* ConvertXaxisUnits(TH1D *hInp)
 {
-    const double MeVtoGeV = 1./1000.;
+    if (hInp == nullptr)
+        return nullptr;
+
+    constexpr double GeVtoMeV = 1000.;
+    constexpr double MeVtoGeV = 1. / GeVtoMeV;
     const int nBins = hInp->GetNbinsX();
     const double newMin = hInp->GetXaxis()->GetXmin() /* * MeVtoGeV */;
     const double newMax = hInp->GetXaxis()->GetXmax() / 2. /* * MeVtoGeV */; // /2 to convert from qinv to k*
 
     TH1D *hOtp = new TH1D(hInp->GetName(),hInp->GetTitle(),nBins,newMin,newMax);
-    //hOtp->GetXaxis()->SetTitle("k* [MeV/c]");
+    hOtp->GetXaxis()->SetTitle("k* [MeV/c]");
 
     for (int i = 1; i <= nBins; ++i)
     {
@@ -53,14 +57,14 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_40_50_cent.root";
-    const TString inpFilePathInteg = "../output/1Dcorr_40_50_cent_Integ.root";
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent_Purity.root";
+    const TString inpFilePathInteg = "../output/1Dcorr_0_10_cent_Purity.root";
     const TString inpHistBaseKt = "hQinvRatKt";
     const TString inpHistBaseRap = "hQinvRatY";
     const TString inpHistBasePsi = "hQinvRatPsi";
     const TString inpHitsInteg = "hQinvRatInteg";
-    const std::vector<int> ktBins = {1,2,3,4,5,6,7};
-    const std::vector<int> rapBins = {1,2,3,4};
+    const std::vector<int> ktBins = {1,2,3,4,5,6,7,8,9,10};
+    const std::vector<int> rapBins = {1,2,3,4,5,6,7,8,9,10,11,12,13};
     const std::vector<int> psiBins = {1,2,3,4,5,6,7,8};
     const std::vector<TString> sProjName{"out","side","long"};
 
@@ -112,7 +116,8 @@ void fromHADEStoHAL()
     otpFile = TFile::Open(otpFilePath,"RECREATE");
 
     for (const auto elem : histArray)
-        elem->Write();
+        if (elem != nullptr)
+            elem->Write();
 
     /* for (const auto elem : histProjArray)
         elem->Write(); */
