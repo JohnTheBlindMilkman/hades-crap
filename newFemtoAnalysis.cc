@@ -2,8 +2,6 @@
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
 #include "../JJFemtoMixer/JJFemtoMixer.hxx"
-#include "FemtoMixer/TrackSmearer.hxx"
-#include "../HFiredWires/HFiredWires.hxx"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -25,19 +23,12 @@ struct HistogramCollection
 
 std::string EventHashing(const std::shared_ptr<Selection::EventCandidate> &evt)
 {
-	//return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetCentrality())) + JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()));
+	// return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetCentrality()),2) + 
+	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
 
 	return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
-		JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
+		//JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
 		JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
-}
-
-std::string TrackHashing(const std::shared_ptr<Selection::TrackCandidate> &trck)
-{
-	//return std::to_string(trck->GetPt()/1000) + std::to_string(trck->GetRapidity());
-	return std::to_string(static_cast<std::size_t>(std::abs(trck->GetPx()/100))) + 
-		std::to_string(static_cast<std::size_t>(std::abs(trck->GetPy()/100))) + 
-		std::to_string(static_cast<std::size_t>(std::abs(trck->GetPz()/100)));
 }
 
 std::string PairHashing(const std::shared_ptr<Selection::PairCandidate> &pair)
@@ -56,16 +47,23 @@ std::string PairHashing(const std::shared_ptr<Selection::PairCandidate> &pair)
 	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
 		return "0";
 	else
-    	return std::to_string((ktCut)) + std::to_string(yCut) + std::to_string(EpCut);
+    	return JJUtils::to_fixed_size_string((ktCut),2) + JJUtils::to_fixed_size_string(yCut,2) + JJUtils::to_fixed_size_string(EpCut,2);
 }
 
 bool PairRejection(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return (pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) && pair->AreTracksFromTheSameSector()) ||
-		pair->GetBothLayers() < 20 ||
-		pair->GetSharedMetaCells() > 0;
+	if (pair->AreTracksFromTheSameSector())
+	{
+		return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.5,3) ||
+			pair->GetBothLayers() < 20 ||
+			pair->GetSharedMetaCells() > 0;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
@@ -74,7 +72,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	gROOT->SetBatch(kTRUE);
 	
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{false}; // for now this could be easly just const
+	constexpr bool isSimulation{true}; // for now this could be easly just const
 	constexpr int protonPID{14};
 
 	//--------------------------------------------------------------------------------
@@ -183,7 +181,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -225,7 +223,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	std::map<std::string,std::vector<std::shared_ptr<Selection::PairCandidate> > > fSignMap, fBckgMap;
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
-	mixer.SetMaxBufferSize(50); // ana=50, sim=200
+	mixer.SetMaxBufferSize(200); // ana=50, sim=200
 	mixer.SetEventHashingFunction(EventHashing);
 	mixer.SetPairHashingFunction(PairHashing);
 	mixer.SetPairCuttingFunction(PairRejection);
@@ -338,15 +336,15 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			break;
 		}
 
-		TString tmp; // dummy variable; required by HLoop::isNewFile
-		if (loop->isNewFile(tmp))
-		{
-			if (!loop->goodSector(0) || !loop->goodSector(1) || !loop->goodSector(3) || !loop->goodSector(4) || !loop->goodSector(5)) // no sector 2 in Au+Au
-			{
-				event += loop->getTree()->GetEntries() - 1;
-				continue;
-			}
-		}
+		// TString tmp; // dummy variable; required by HLoop::isNewFile
+		// if (loop->isNewFile(tmp) && !isSimulation)
+		// {
+		// 	if (!loop->goodSector(0) || !loop->goodSector(1) || !loop->goodSector(3) || !loop->goodSector(4) || !loop->goodSector(5)) // no sector 2 in Au+Au
+		// 	{
+		// 		event += loop->getTree()->GetEntries() - 1;
+		// 		continue;
+		// 	}
+		// }
 
 		hCounter->Fill(cNumAllEvents);
 
@@ -437,8 +435,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
 			//fWireManager = matcher->getWireManager();
 			matcher->getWireInfoDirect(particle_cand,fWireInfo);
-			//fWireManager.setWireRange(0);
-			//fWireManager.getWireInfo(track,fWireInfo,particle_cand);
 			
 			// I have no freakin idea if this is how it should be done
 			// for Feb24 there is no ene loss correction (yet?)
@@ -460,7 +456,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 				fTrack = std::make_shared<Selection::TrackCandidate>(
 					particle_cand,
 					nullptr,
-					Selection::TrackCandidate::CreateWireArray(fWireInfo),
+					HADES::MDC::CreateTrackLayers(fWireInfo),
 					fEvent->GetID(),
 					fEvent->GetReactionPlane(),
 					track,
@@ -470,7 +466,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			{
 				fTrack = std::make_shared<Selection::TrackCandidate>(
 					particle_cand,
-					Selection::TrackCandidate::CreateWireArray(fWireInfo),
+					HADES::MDC::CreateTrackLayers(fWireInfo),
 					fEvent->GetID(),
 					fEvent->GetReactionPlane(),
 					track,
@@ -511,8 +507,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 		if (fEvent->GetTrackListSize() > 2) // if track vector has entries
 		{
-			hCounter->Fill(cNumAllPairs,fEvent->GetTrackListSize()*(fEvent->GetTrackListSize()-1)/2); // all combinations w/o repetitions
-
             fSignMap = mixer.AddEvent(fEvent,fEvent->GetTrackList());
 			fBckgMap = mixer.GetSimilarPairs(fEvent);
 
@@ -520,6 +514,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			{
 				for (const auto &entry : signalEntry.second)
 				{
+					hCounter->Fill(cNumAllPairs);
 					if (fMapFoHistograms.find(signalEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
@@ -535,7 +530,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					std::tie(qout,qside,qlong) = entry.GetOSL();
 					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong); */
 
-					if (signalEntry.first != "bad" || signalEntry.first != "0")
+					if (signalEntry.first != "bad" && signalEntry.first != "0")
 						hCounter->Fill(cNumSelectedPairs);
 				}
 			}

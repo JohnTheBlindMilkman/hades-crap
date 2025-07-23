@@ -51,10 +51,11 @@ void makeMomResCorrection1D()
     const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"},{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"}};
     const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
     const int rebin = 1;
+    constexpr int minX = 0, maxX = 300;
 
     bool isFirst = true;
 
-    TLine *line = new TLine(0,1,500,1);
+    TLine *line = new TLine(minX,1,maxX,1);
     line->SetLineStyle(kDashed);
     line->SetLineColor(kGray);
 
@@ -69,7 +70,7 @@ void makeMomResCorrection1D()
     JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
-    canvKt->SetMargin(0.2,0.02,0.15,0.02);
+    canvKt->SetMargin(0.15,0.05,0.15,0.05);
     isFirst = true;
     for (const auto &kt : ktArr)
     {
@@ -98,7 +99,7 @@ void makeMomResCorrection1D()
     JJColor::CreatePrimaryWutGradient();
 
     TCanvas *canvY = new TCanvas("canvY","",1600,900);
-    canvY->SetMargin(0.2,0.02,0.15,0.02);
+    canvY->SetMargin(0.15,0.05,0.15,0.05);
     isFirst = true;
     for (const auto &y : yArr)
     {
@@ -127,7 +128,7 @@ void makeMomResCorrection1D()
     JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
-    canvPsi->SetMargin(0.2,0.02,0.15,0.02);
+    canvPsi->SetMargin(0.15,0.05,0.15,0.05);
     for (const auto &psi : psiArr)
     {
         TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatPsi%d",psi.first));

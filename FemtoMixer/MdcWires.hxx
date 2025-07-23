@@ -7,8 +7,6 @@
 
     #include "hparticlemetamatcher.h"
 
-    #include "JJUtils.hxx"
-
     namespace HADES
     {
         namespace MDC
@@ -25,227 +23,215 @@
                 constexpr std::array<short unsigned,numberOfInnerLayers> halfLayerIndexing{0,1,2,3,4,5,6,7,8,9,10,11};
                 constexpr std::array<short unsigned,numberOfAllLayers> allLayerIndexing{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23};
                 constexpr std::array<std::array<short unsigned,numberOfLayersInPlane>,numberOfPlanes> allLayerPerPlaneIndexing
-                    {
-                        std::array<short unsigned,numberOfLayersInPlane>{0,1,2,3,4,5},
-                        std::array<short unsigned,numberOfLayersInPlane>{6,7,8,9,10,11},
-                        std::array<short unsigned,numberOfLayersInPlane>{12,13,14,15,16,17},
-                        std::array<short unsigned,numberOfLayersInPlane>{18,19,20,21,22,23}
-                    };
+                {
+                    std::array<short unsigned,numberOfLayersInPlane>{0,1,2,3,4,5},
+                    std::array<short unsigned,numberOfLayersInPlane>{6,7,8,9,10,11},
+                    std::array<short unsigned,numberOfLayersInPlane>{12,13,14,15,16,17},
+                    std::array<short unsigned,numberOfLayersInPlane>{18,19,20,21,22,23}
+                };
             }
 
             /**
-             * @brief Struct representing an MDC Wire. Either stores a value (if the main constructor is used) or doesn't (if is default-constructed).  Behaves similarly as an std::optional<T>.
+             * @brief Class representing all MDC layers. Holds an array of objects T for each MDC layer.
              * 
-             * @tparam T stored type
+             * @tparam T object held at each layer
              */
             template <typename T>
-            struct Wire
-            {
-                T id;
-                bool was_fired;
-                Wire() : id(T()), was_fired(false) {}
-                explicit Wire (T val) : id(val), was_fired(true) {}
-                bool operator==(const Wire &other) const noexcept {return (id == other.id && was_fired && other.was_fired);}
-            };
-
-            /**
-             * @brief Struct representing a pair of MDC Wires.
-             * 
-             * @tparam T stored type
-             */
-            template <typename T>
-            struct WirePair
-            {
-                std::pair<Wire<T>, Wire<T> > pair;
-                WirePair(Wire<T> &&wire1, Wire<T> &&wire2) : pair(std::make_pair(std::forward<Wire<T>>(wire1), std::forward<Wire<T>>(wire2))) {}
-                T Distance(const WirePair<T> &other) const noexcept
-                {
-                    T dist1 = std::min(std::abs(pair.first.id - other.pair.first.id),std::abs(pair.second.id - other.pair.second.id));
-                    T dist2 = std::min(std::abs(pair.first.id - other.pair.second.id),std::abs(pair.second.id - other.pair.first.id));
-                }
-                bool operator==(const WirePair &other) const noexcept
-                {
-                    if ((pair.first == other.pair.first && pair.second == other.pair.second) || 
-                        (pair.first == other.pair.second && pair.second == other.pair.first));
-                }
-            };
-
-            /**
-             * @brief Struct representing an MDC layer. It either holds a value (if the main constructor is used) or is empty (if default constructor is used). Behaves similarly as std::optional<T>
-             * 
-             * @tparam T stored type
-             */
-            template <typename T>
-            struct Layer
-            {
-                T value;
-                bool is_empty;
-                Layer() : value(T()), is_empty(true) {}
-                explicit Layer(T val) : value(val), is_empty(false) {}
-                bool operator==(const Layer &other) const noexcept {return (value == other.value && (!is_empty) && (!other.is_empty));}
-            };
-
-            /**
-             * @brief Class representing all MDC layers. Holds an array of type Layer<T>.
-             * 
-             * @tparam T stored type
-             */
-            template <typename T>
-            class Layers
+            class MDCLayers
             {
                 private:
-                    std::array<Layer<T>,WireInfo::numberOfAllLayers> m_layers;
+                    std::array<T,WireInfo::numberOfAllLayers> m_layers;
 
                 public:
-                    Layer<T>& operator[](std::size_t index)
-                    {
-                        return m_layers[index];
-                    }
-                    const Layer<T>& operator[](std::size_t index) const
-                    {
-                        return m_layers[index];
-                    }
-                    Layer<T>& at(std::size_t index)
-                    {
-                        return m_layers.at(index);
-                    }
-                    const Layer<T>& at(std::size_t index) const
-                    {
-                        return m_layers.at(index);
-                    }
-                    auto begin()
-                    {
-                        return m_layers.begin();
-                    }
-                    const auto begin() const
-                    {
-                        return m_layers.begin();
-                    }
-                    auto end()
-                    {
-                        return m_layers.end();
-                    }
-                    const auto end() const
-                    {
-                        return m_layers.end();
-                    }
+                    using value_type = T;
+
+                    constexpr auto begin() {return m_layers.begin();}
+                    constexpr auto end() {return m_layers.end();}
+                    constexpr const auto begin() const {return m_layers.begin();}
+                    constexpr const auto end() const {return m_layers.end();}
+                    [[nodiscard]] constexpr T& at(std::size_t index) {return m_layers.at(index);}
+                    [[nodiscard]] constexpr const T& at(std::size_t index) const {return m_layers.at(index);}
+                    [[nodiscard]] constexpr T& operator[](std::size_t index) noexcept {return m_layers[index];}
+                    [[nodiscard]] constexpr const T& operator[](std::size_t index) const noexcept {return m_layers[index];}
             };
-
-            // using TrackLayers = Layers<std::vector<unsigned> >;
-            // using PairLayers = Layers<std::vector<std::pair<unsigned, unsigned> > >;
-            // using PairDistances = Layers<unsigned>;
-
-            class FiredWiresOps
+            /**
+             * @brief Simple struct mimicing the behaviour of std::optional. If the default constructor is invoked, the struct is "empty", but if the main constructor is used it has some value.
+             * 
+             * @tparam T underlying object
+             */
+            template <typename T>
+            struct OptionalDistance
             {
-                /**
-                 * @brief Create a modernised wire collection object
-                 * 
-                 * @param wi HParticleWireInfo object, obtained from HParticleMetaMatcher
-                 * @return Collection of MDC layers
-                 */
-                [[nodiscard]] static Layers<WirePair<unsigned> > CreateWireArray(const HParticleWireInfo &wi)
+                T value;
+                bool has_value;
+                OptionalDistance() : value(T()), has_value(false) {}
+                OptionalDistance(T val) : value(val), has_value(true) {}
+                bool operator<(const OptionalDistance<T> &other) const noexcept 
                 {
-                    Layers<WirePair<unsigned> > array;
+                    return (has_value && other.has_value) ? value < other.value : false;
+                }
+            };
+            
+            using LayersTrack = MDCLayers<std::vector<unsigned> >;
+            using LayersPair = MDCLayers<std::pair<std::vector<unsigned>, std::vector<unsigned> > >;
+            using WireDistances = MDCLayers<OptionalDistance<unsigned> >;
 
-                    for (std::size_t mod = 0; mod < HADES::MDC::WireInfo::numberOfPlanes; ++mod)
-                        for (std::size_t lay = 0; lay < HADES::MDC::WireInfo::numberOfLayersInPlane; ++lay)
+            /**
+             * @brief Create a Track Layers object
+             * 
+             * @param wi HParticleWireInfo object, obtained from HParticleMetaMatcher
+             * @return collection of wires fired by the track
+             */
+            [[nodiscard]] LayersTrack CreateTrackLayers(const HParticleWireInfo &wi)
+            {
+                LayersTrack array;
+
+                for (std::size_t mod = 0; mod < HADES::MDC::WireInfo::numberOfPlanes; ++mod)
+                    for (std::size_t lay = 0; lay < HADES::MDC::WireInfo::numberOfLayersInPlane; ++lay)
+                    {
+                        std::vector<unsigned> tmpVec;
+
+                        if (wi.ar[mod][lay][0] > -1)
+                            tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][0]));
+                        if (wi.ar[mod][lay][1] > -1)
+                            tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][1]));
+
+                        array[mod * HADES::MDC::WireInfo::numberOfLayersInPlane + lay] = tmpVec;
+                    }
+
+                return array;
+            }
+            /**
+             * @brief Create a Pair Layers object
+             * 
+             * @param track1 collection of fired wires of the first track
+             * @param track2 collection of fired wires of the second track
+             * @return collection of pairs of fired wires
+             */
+            [[nodiscard]] LayersPair CreatePairLayers(const LayersTrack &track1, const LayersTrack &track2)
+            {
+                LayersPair pairLayers;
+                std::transform(track1.begin(), track1.end(), track2.begin(), pairLayers.begin(),
+                    [](const auto &layer1,const auto &layer2){return std::make_pair(layer1,layer2);});
+
+                return pairLayers;
+            }
+            /**
+             * @brief Calculate the number of MDC layers where both tracks had fired at least one wire
+             * 
+             * @param pairLayers collection of pairs of fired wires
+             * @return  number of layers where both traks had fired a wire 
+             */
+            [[nodiscard]] unsigned CalculateBothLayers(const LayersPair &pairLayers)
+            {
+                MDCLayers<bool> bothLayers;
+                std::transform(pairLayers.begin(), pairLayers.end(), bothLayers.begin(),
+                    [](const auto &layer){return static_cast<bool>(layer.first.size() > 0 && layer.second.size() > 0);});
+
+                return std::count_if(bothLayers.begin(),bothLayers.end(),[](bool areBoth){return areBoth;});
+            }
+            /**
+             * @brief Calculate smallest distance between all the wires for each MDC layer
+             * 
+             * @param pairLayers collection of pairs of fired wires
+             * @return collection of smallest distances 
+             */
+            [[nodiscard]] WireDistances CalculateWireDistances(const LayersPair &pairLayers)
+            {
+                WireDistances wireDistsances;
+
+                auto uniaryOp = [](const std::pair<std::vector<unsigned>, std::vector<unsigned> > &layer)
+                {
+                    if (layer.first.size() > 0 && layer.second.size() > 0)
+                    {
+                        long minDist = std::numeric_limits<unsigned>::max();
+
+                        for(const auto &wire1 : layer.first)
+                            for (const auto &wire2 : layer.second)
+                            {
+                                minDist = std::min(minDist, std::abs(static_cast<long>(wire1) - static_cast<long>(wire2)));
+                            }
+
+                        return OptionalDistance<unsigned>(minDist);
+                    }
+                    else
+                    {
+                        return OptionalDistance<unsigned>();
+                    }
+                };
+
+                std::transform(pairLayers.begin(),pairLayers.end(),wireDistsances.begin(),uniaryOp);
+
+                return wireDistsances;
+            }
+            /**
+             * @brief Calculate number of shared wires within the pair of tracks
+             * 
+             * @param pairLayers collection of pairs of fired wires
+             * @return number of shared wires
+             */
+            [[nodiscard]] unsigned CalculateSharedWires(const LayersPair &pairLayers)
+            {
+                MDCLayers<unsigned> sharedWires;
+                auto uniaryOp = [](const std::pair<std::vector<unsigned>, std::vector<unsigned> > &layer)
+                {
+                    unsigned sw = 0;
+                    for(const auto &wire1 : layer.first)
+                        for (const auto &wire2 : layer.second)
                         {
-                            int valWire1 = wi.ar[mod][lay][0];
-                            int valWire2 = wi.ar[mod][lay][1];
-
-                            array[mod * HADES::MDC::WireInfo::numberOfLayersInPlane + lay] = 
-                                Layer<WirePair<unsigned> >(
-                                    WirePair<unsigned>(
-                                        ((valWire1 > -1) ? Wire<unsigned>(static_cast<unsigned>(valWire1)) : Wire<unsigned>()),
-                                        ((valWire2 > -1) ? Wire<unsigned>(static_cast<unsigned>(valWire2)) : Wire<unsigned>())
-                                    )
-                                );
+                            if (wire1 == wire2)
+                            {
+                                ++sw;
+                            }
                         }
 
-                    return array;
-                }
-                // [[nodiscard]] static PairLayers CreatePairLayers(const TrackLayers &layersTrack1, const TrackLayers &layersTrack2)
-                // {
-                //     PairLayers array;
-                //     auto lambda = [](const Layer<std::vector<unsigned> > &layer1, const Layer<std::vector<unsigned> > &layer2)
-                //     {
-                //         if (layer1.has_value && layer2.has_value)
-                //         {
-                            
+                    return sw;
+                };
 
-                //             return Layer<std::vector<std::pair<unsigned, unsigned> > >();
-                //         }
-                //         else
-                //         {
-                //             return Layer<std::vector<std::pair<unsigned, unsigned> > >();
-                //         }
-                //     };
-                    
-                // }
-                /**
-                 * @brief 
-                 * 
-                 * @param layersTrack1 
-                 * @param layersTrack2 
-                 * @return Layers<unsigned> 
-                 */
-                [[nodiscard]] static Layers<unsigned> CalculateWireDistances(const Layers<WirePair<unsigned> > &layersTrack1, const Layers<WirePair<unsigned> > &layersTrack2)
+                std::transform(pairLayers.begin(), pairLayers.end(), sharedWires.begin(), uniaryOp);
+
+                return std::accumulate(sharedWires.begin(),sharedWires.end(),0);
+            }
+            /**
+             * @brief Calculate pair splitting level according to Adams J., et al., Phys. Rev. C 71.4 (2005): 044906
+             * 
+             * @param pairLayers collection of pairs of fired wires
+             * @return splitting level (e.g. SL = -0.5 no splitting, SL = 1 possible split tracks)
+             */
+            [[nodiscard]] double CalcluateSplittingLevel(const LayersPair &pairLayers)
+            {
+                unsigned nHits1 = 0, nHits2 = 0;
+                MDCLayers<int> splittingLevels;
+                auto uniaryOp = [&nHits1,&nHits2](const std::pair<std::vector<unsigned>, std::vector<unsigned> > &layer)
                 {
-                    Layers<unsigned> wireDistances;
+                    int splittingLvl = 0;
+                    auto hits1 = layer.first.size();
+                    auto hits2 = layer.second.size();
 
-                    std::transform(layersTrack1.begin(),layersTrack1.end(),layersTrack2.begin(),
-                                    std::back_inserter(wireDistances),
-                                    [](const auto &layer1, const auto &layer2)
-                                    {
-                                        if (layer1.has_value && layer2.has_value)
-                                        {
-                                            unsigned minDist = std::numeric_limits<unsigned>::max();
+                    if (hits1 > 0 && hits2 > 0)
+                    {
+                        --splittingLvl;
+                        ++nHits1;
+                        ++nHits2;
+                    }
+                    else if (hits1 > 0)
+                    {
+                        ++splittingLvl;
+                        ++nHits1;
+                    }
+                    else if (hits2 > 0)
+                    {
+                        ++splittingLvl;
+                        ++nHits2;
+                    }
 
-                                            for (const auto &bothWires : JJUtils::zip_to_bigger(layer1.value,layer2.value))
-                                            {
-                                                minDist = std::min(minDist,std::abs(bothWires.first - bothWires.second));
-                                            }
+                    return splittingLvl;
+                };
 
-                                            return Layer<unsgined>(minDist);
-                                        }
-                                        else
-                                        {
-                                            return Layer<unsigned>();
-                                        }
-                                    });
+                std::transform(pairLayers.begin(), pairLayers.end(), splittingLevels.begin(), uniaryOp);
 
-                    return wireDistances;
-                }
-                // [[nodiscard]] static double CalculateSplittingLevel(const Layers<std::vector<unsigned> > &layersTrack1, const Layers<std::vector<unsigned> > &layersTrack2)
-                // {
-                //     std::array<double,WireInfo::numberOfAllLayers> splittingVals;
-
-                //     std::transform(layersTrack1.begin(),layersTrack1.end(),layersTrack2.begin(),
-                //                     std::back_inserter(splittingVals),
-                //                     [](const auto &layer1, const auto &layer2)
-                //                     {
-                //                         if (layer1.has_value && layer2.has_value)
-                //                         {
-                //                             double SL = 0;
-                                            
-                //                             // revisit the STAR paper
-
-                //                             return SL;
-                //                         }
-                //                         else
-                //                         {
-                //                             return -1;
-                //                         }
-                //                     });
-
-                //     //return std::accumulate(splittingVals.begin(),splittingVals.end(),0.) / ;
-                // }
-                // [[nodiscard]] static unsigned CalculateMinWireDistance()
-                // {
-
-                // }
-            };
-
+                return (nHits1 > 0 || nHits2 > 0) ? std::accumulate(splittingLevels.begin(),splittingLevels.end(),0.) / (nHits1 + nHits2) : 0;
+            }
         } // namespace MDC
         
     } // namespace HADES

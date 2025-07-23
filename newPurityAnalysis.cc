@@ -1,8 +1,7 @@
 #include "Includes.h"
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
-#include "FemtoMixer/JJFemtoMixer.hxx"
-#include "../HFiredWires/HFiredWires.hxx"
+#include "../JJFemtoMixer/JJFemtoMixer.hxx"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -24,10 +23,10 @@ struct HistogramCollection
 
 std::string EventHashing(const std::shared_ptr<Selection::EventCandidate> &evt)
 {
-    //return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetCentrality())) + JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()));
-	return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
-	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
-	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
+    return std::to_string(static_cast<std::size_t>(evt->GetCentrality())) + JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
+	// return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
+	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
+	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
 }
 
 std::string TrackHashing(const std::shared_ptr<Selection::TrackCandidate> &trck)
@@ -61,9 +60,16 @@ bool PairCut(const std::shared_ptr<Selection::PairCandidate> &pair)
 {
 	using Behaviour = Selection::PairCandidate::Behaviour;
 
-	return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
-		pair->GetBothLayers() < 20 ||
-		pair->GetSharedMetaCells() > 0; 
+	if (pair->AreTracksFromTheSameSector())
+	{
+		return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
+			pair->GetBothLayers() < 20 ||
+			pair->GetSharedMetaCells() > 0;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
@@ -72,7 +78,7 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 	gROOT->SetBatch(kTRUE);
 	
 	constexpr int protonPID{14};
-	constexpr std::size_t mixerBuffer{200};
+	constexpr std::size_t mixerBuffer{0};
 
 	//--------------------------------------------------------------------------------
     // Initialization of the global ROOT object and the Hades Loop
@@ -107,8 +113,9 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
     {
 		Int_t nFiles = 0;
 
-		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-		TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV
+		//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
+		//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen9
+		inputFolder = "/lustre/hades/dstsim/apr12/au1230au/gen10/bmax10/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen10
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -395,7 +402,7 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 			fTrackNum = std::make_shared<Selection::TrackCandidate>(
 					particle_cand,
 					static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
-					Selection::TrackCandidate::CreateWireArray(fWireInfo),
+					HADES::MDC::CreateTrackLayers(fWireInfo),
 					fEventNum->GetID(),
 					fEventNum->GetReactionPlane(),
 					track,
@@ -404,7 +411,7 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 			fTrackDen = std::make_shared<Selection::TrackCandidate>(
 					particle_cand,
 					static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
-					Selection::TrackCandidate::CreateWireArray(fWireInfo),
+					HADES::MDC::CreateTrackLayers(fWireInfo),
 					fEventDen->GetID(),
 					fEventDen->GetReactionPlane(),
 					track,
@@ -448,7 +455,7 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 			}
 		}
 
-		if (fEventDen->GetTrackListSize()) // if track vector has entries
+		if (fEventDen->GetTrackListSize() > 2) // if track vector has entries
 		{
             fSignMapDen = mixerDen.AddEvent(fEventDen,fEventDen->GetTrackList());
 

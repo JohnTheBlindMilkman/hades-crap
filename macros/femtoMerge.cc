@@ -3,7 +3,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 
-void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_25_05_27.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 10, int yMax = 13, int psiMax = 8)
+void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12sim_all_25_07_22.root", TString signName = "hQinvSign_", TString bckgName = "hQinvBckg_", int ktMax = 10, int yMax = 13, int psiMax = 8)
 {
     const int maxHistos = ktMax * yMax * psiMax * 2; // times 2, because we have signal and background histograms
 
@@ -50,12 +50,12 @@ void femtoMerge(TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_
             for (int y = 1; y <= yMax; ++y)
                 for (int psi = 1; psi <= psiMax; ++psi)
                 {
-                    hSign[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%d%d%d",signName.Data(),kt,y,psi));
+                    hSign[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%02d%02d%02d",signName.Data(),kt,y,psi));
                     if (hSign[kt-1][y-1][psi-1] != nullptr)
                         hSign[kt-1][y-1][psi-1]->Sumw2();
                     bar.tick();
 
-                    hBckg[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%d%d%d",bckgName.Data(),kt,y,psi));
+                    hBckg[kt-1][y-1][psi-1] = inpFile->Get<TH1D>(TString::Format("%s%02d%02d%02d",bckgName.Data(),kt,y,psi));
                     if (hBckg[kt-1][y-1][psi-1] != nullptr)
                         hBckg[kt-1][y-1][psi-1]->Sumw2();
                     bar.tick();

@@ -63,50 +63,6 @@
             oss << val;
             return oss.str();
         }
-        
-        /**
-         * @brief Create new container of size std::min(size_of_container1,size_of_container2) which holds items from both containers at each index
-         * 
-         * @tparam T type of the containers
-         * @param cont1 first container
-         * @param cont2 second container
-         * @return std::vector<std::pair<T,T> > output container
-         */
-        template <template<class> typename Container, typename T>
-        Container<std::pair<T,T> > zip_to_smaller(const Container<T> &cont1, const Container<T> &cont2)
-        {
-            std::size_t maxIter = std::min(cont1.size(),cont2.size());
-            Container<std::pair<T,T> > contOut(std::pair<T,T>(),maxIter);
-
-            for (std::size_t i = 0; i < maxIter; ++i)
-            {
-                contOut[i] = std::make_pair(cont1[i],cont2[i]);
-            }
-
-            return contOut;
-        }  
-        
-        /**
-         * @brief Create new container of size std::max(size_of_container1,size_of_container2) which holds items from both containers at each index
-         * 
-         * @tparam T type of the containers
-         * @param cont1 first container
-         * @param cont2 second container
-         * @return std::vector<std::pair<T,T> > output container
-         */
-        template <template<class> typename Container, typename T>
-        Container<std::pair<T,T> > zip_to_bigger(const Container<T> &cont1, const Container<T> &cont2)
-        {
-            std::size_t maxIter = std::max(cont1.size(),cont2.size());
-            Container<std::pair<T,T> > contOut(std::pair<T,T>(),maxIter);
-
-            for (std::size_t i = 0; i < maxIter; ++i)
-            {
-                contOut[i] = std::make_pair(cont1[i],cont2[i]); // this is UB if maxIter > cont1.size() or cont2.size()!
-            }
-
-            return contOut;
-        }  
     }
 
 #endif

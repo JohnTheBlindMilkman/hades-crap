@@ -4,9 +4,9 @@
 
 void makeMomResSigma()
 {
-    const TString fileName = "../slurmOutput/apr12sim_all_25_05_16.root";
-    const TString inpHistName = "hQinvResolution";
-    const TString outputFile = "../output/1DMomResSigma_0_40_cent.root";
+    const TString fileName = "../slurmOutput/apr12sim_all_25_07_22.root";
+    const TString inpHistName = "hQinvResolutionCent4";
+    const TString outputFile = "../output/1DMomResSigma_30_40_cent.root";
 
     TFile *inpFile = TFile::Open(fileName);
     TH2D *hQinvResolution = inpFile->Get<TH2D>(inpHistName);

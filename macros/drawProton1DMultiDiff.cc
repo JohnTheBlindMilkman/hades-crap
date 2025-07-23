@@ -52,15 +52,15 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_25_05_27_processed.root";
+    const TString fileName = "../slurmOutput/apr12sim_all_25_07_22_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent.root";
-    const std::vector<std::pair<int,TString> > ktArr{{1,"(0,200)"},{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
-    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"},{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"}};
-    const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
+    const std::vector<std::pair<int,TString> > ktArr{/* {1,"(0,200)"}, */{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
+    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"}/* ,{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"} */};
     const int rebin = 1;
+    constexpr int minX = 0, maxX = 300;
 
     float norm;    
-    TLine *line = new TLine(0,1,3000,1);
+    TLine *line = new TLine(minX,1,maxX,1);
     line->SetLineStyle(kDashed);
     line->SetLineColor(kGray);
 
@@ -70,7 +70,7 @@ void drawProton1DMultiDiff()
     JJColor::CreateSecondaryWutGradient();
 
     TCanvas *canvKt = new TCanvas("canvKt","",1600,900);
-    canvKt->SetMargin(0.2,0.02,0.15,0.02);
+    canvKt->SetMargin(0.15,0.05,0.15,0.05);
     for (const auto &kt : ktArr)
     {
         TH1D *hSign = inpFile->Get<TH1D>(TString::Format("hQinvSignKt%d",kt.first));
@@ -80,17 +80,15 @@ void drawProton1DMultiDiff()
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
             hRat->Sumw2();
-            norm = JJUtils::CF::GetNormByRange(hRat,300,500);
+            norm = JJUtils::CF::GetNormByRange(hRat,200,300);
             hRat->Rebin(rebin);
             norm *= rebin;
             hRat->Scale(1./norm);
             hRat->SetName(TString::Format("hQinvRatKt%d",kt.first));
             hRat->SetTitle(TString::Format("k_{T} #in %s;q_{inv} [MeV/c];CF(q_{inv})",kt.second.Data()));
-            //hRat->SetMarkerStyle(20);
-            //hRat->SetMarkerColor(JJColor::fWutAllColors[kt.first-1]);
             prepareGraph(hRat,JJColor::fWutSecondaryColors11[kt.first-1]);
 
-            hRat->GetXaxis()->SetRangeUser(0,490);
+            hRat->GetXaxis()->SetRangeUser(minX,maxX);
             hRat->GetYaxis()->SetRangeUser(0,1.9);
 
             hRat->Write();
@@ -111,7 +109,7 @@ void drawProton1DMultiDiff()
     JJColor::CreatePrimaryWutGradient();
 
     TCanvas *canvY = new TCanvas("canvY","",1600,900);
-    canvY->SetMargin(0.2,0.02,0.15,0.02);
+    canvY->SetMargin(0.15,0.05,0.15,0.05);
     for (const auto &y : yArr)
     {
         TH1D *hSign = inpFile->Get<TH1D>(TString::Format("hQinvSignY%d",y.first));
@@ -121,17 +119,15 @@ void drawProton1DMultiDiff()
             TH1D *hRat = new TH1D(*hSign);
             hRat->Divide(hBckg);
             hRat->Sumw2();
-            norm = JJUtils::CF::GetNormByRange(hRat,300,900);
+            norm = JJUtils::CF::GetNormByRange(hRat,200,300);
             hRat->Rebin(rebin);
             norm *= rebin;
             hRat->Scale(1./norm);
             hRat->SetName(TString::Format("hQinvRatY%d",y.first));
             hRat->SetTitle(TString::Format("y #in %s",y.second.Data()));
-            //hRat->SetMarkerStyle(20);
-            //hRat->SetMarkerColor(JJColor::fWutAllColors[y.first-1]);
             prepareGraph(hRat,JJColor::fWutSecondaryColors11[y.first]);
 
-            hRat->GetXaxis()->SetRangeUser(0,490);
+            hRat->GetXaxis()->SetRangeUser(minX,maxX);
             hRat->GetYaxis()->SetRangeUser(0,1.9);
 
             hRat->Write();
@@ -149,44 +145,30 @@ void drawProton1DMultiDiff()
     line->Draw("same");
     canvY->Write();
 
-    JJColor::CreateSecondaryWutGradient();
-
-    TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
-    canvPsi->SetMargin(0.2,0.02,0.15,0.02);
-    for (const auto &psi : psiArr)
-    {
-        TH1D *hSign = inpFile->Get<TH1D>(TString::Format("hQinvSignPsi%d",psi.first));
-        TH1D  *hBckg = inpFile->Get<TH1D>(TString::Format("hQinvBckgPsi%d",psi.first));
-        if (hSign != nullptr && hBckg != nullptr)
+    for (const auto &kt : ktArr)
+        for (const auto &y : yArr)
         {
-            TH1D *hRat = new TH1D(*hSign);
-            hRat->Divide(hBckg);
-            hRat->Sumw2();
-            norm = JJUtils::CF::GetNormByRange(hRat,300,900);
-            hRat->Rebin(rebin);
-            norm *= rebin;
-            hRat->Scale(1./norm);
-            hRat->SetName(TString::Format("hQinvRatPsi%d",psi.first));
-            hRat->SetTitle(TString::Format("#phi - #Psi_{E.P.} #in %s",psi.second.Data()));
-            //hRat->SetMarkerStyle(20);
-            //hRat->SetMarkerColor(JJColor::fWutAllColors[psi.first-1]);
-            prepareGraph(hRat,JJColor::fWutSecondaryColors11[psi.first-1]);
+            TH1D *hSign = inpFile->Get<TH1D>(TString::Format("hQinvSignKt%dY%d",kt.first,y.first));
+            TH1D *hBckg = inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%dY%d",kt.first,y.first));
+            if (hSign != nullptr && hBckg != nullptr)
+            {
+                TH1D *hRat = new TH1D(*hSign);
+                hRat->Divide(hBckg);
+                hRat->Sumw2();
+                norm = JJUtils::CF::GetNormByRange(hRat,200,300);
+                hRat->Rebin(rebin);
+                norm *= rebin;
+                hRat->Scale(1./norm);
+                hRat->SetName(TString::Format("hQinvRatKt%dY%d",kt.first,y.first));
+                hRat->SetTitle(TString::Format("k_{T} #in %s and y #in %s;q_{inv} [MeV/c];CF(q_{inv})",kt.second.Data(),y.second.Data()));
+                prepareGraph(hRat,JJColor::fWutSecondaryColors11[kt.first-1]);
 
-            hRat->GetXaxis()->SetRangeUser(0,490);
-            hRat->GetYaxis()->SetRangeUser(0,1.9);
+                hRat->GetXaxis()->SetRangeUser(minX,maxX);
+                hRat->GetYaxis()->SetRangeUser(0,1.9);
 
-            hRat->Write();
-            if (psi.first -1 == 0)
-                hRat->Draw("hist pe");
-            else
-                hRat->Draw("same hist pe");
-
-            hSign->Write();
-            hBckg->Write();
+                hRat->Write();
+                hSign->Write();
+                hBckg->Write();
+            }
         }
-    }
-    
-    canvPsi->BuildLegend(0.2,0.2,0.5,0.5,"","p");
-    line->Draw("same");
-    canvPsi->Write();
 }

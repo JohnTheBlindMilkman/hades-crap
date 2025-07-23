@@ -48,7 +48,7 @@ namespace Selection
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
             EventCandidate(const std::string &evtId, float vertx, float verty, float vertz, int cent, float EP)
-            : EventId(evtId),Centrality(cent),ChargedTracks(0),ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),X(vertx),Y(verty),Z(vertz) {}
+            : EventId(evtId),Centrality(cent),TargetPlate(-1),ChargedTracks(0),ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),X(vertx),Y(verty),Z(vertz) {}
             /**
              * @brief Construct a new Event Candidate object
              * 
@@ -59,17 +59,12 @@ namespace Selection
              */
             EventCandidate(HEventHeader* evtHeader, const HParticleEvtInfo* evtInfo,  int cent, float EP)
                 : EventId(std::to_string(evtHeader->getEventRunNumber()) + std::to_string(evtHeader->getEventSeqNumber())),
-                Centrality(cent),
+                Centrality(cent), TargetPlate(-1),
                 ChargedTracks(evtInfo->getSumRpcMultHitCut() + evtInfo->getSumTofMultCut()),
                 ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),
                 X(evtHeader->getVertexReco().getPos().X()),
                 Y(evtHeader->getVertexReco().getPos().Y()),
                 Z(evtHeader->getVertexReco().getPos().Z()) {}
-            /**
-             * @brief Destroy the Event Candidate object
-             * 
-             */
-            ~EventCandidate(){}
             /**
              * @brief Select event for given centrality and vertex position
              * 
@@ -116,7 +111,7 @@ namespace Selection
              * 
              * @return std::string 
              */
-            std::string GetID() const
+            [[nodiscard]] std::string GetID() const noexcept
             {
                 return EventId;
             }
@@ -127,7 +122,7 @@ namespace Selection
              * @return true 
              * @return false 
              */
-            bool operator!=(const EventCandidate &other) const
+            [[nodiscard]] bool operator!=(const EventCandidate &other) const noexcept
             {
                 return (EventId != other.EventId);
             }
@@ -136,7 +131,7 @@ namespace Selection
              * 
              * @return short int 
              */
-            short int GetCentrality() const
+            [[nodiscard]] short int GetCentrality() const noexcept
             {
                 return Centrality;
             }
@@ -145,7 +140,7 @@ namespace Selection
              * 
              * @return short int 
              */
-            short int GetPlate() const
+            [[nodiscard]] short int GetPlate() const noexcept
             {
                 return TargetPlate;
             }
@@ -154,7 +149,7 @@ namespace Selection
              * 
              * @return int 
              */
-            int GetNCharged() const
+            [[nodiscard]] int GetNCharged() const noexcept
             {
                 return ChargedTracks;
             }
@@ -163,7 +158,7 @@ namespace Selection
              * 
              * @return std::vector<TrackCandidate> 
              */
-            std::vector<std::shared_ptr<TrackCandidate> > GetTrackList() const
+            [[nodiscard]] std::vector<std::shared_ptr<TrackCandidate> > GetTrackList() const noexcept
             {
                 return trackList;
             }
@@ -172,7 +167,7 @@ namespace Selection
              * 
              * @return std::size_t 
              */
-            std::size_t GetTrackListSize() const
+            [[nodiscard]] std::size_t GetTrackListSize() const noexcept
             {
                 return trackList.size();
             }
@@ -181,7 +176,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetReactionPlane() const
+            [[nodiscard]] float GetReactionPlane() const noexcept
             {
                 return ReactionPlaneAngle;
             }
@@ -190,7 +185,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetX() const
+            [[nodiscard]] float GetX() const noexcept
             {
                 return X;
             }
@@ -199,7 +194,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetY() const
+            [[nodiscard]] float GetY() const noexcept
             {
                 return Y;
             }
@@ -208,7 +203,7 @@ namespace Selection
              * 
              * @return float 
              */
-            float GetZ() const
+            [[nodiscard]] float GetZ() const noexcept
             {
                 return Z;
             }
@@ -217,7 +212,7 @@ namespace Selection
              * 
              * @return average pT or 0 if event is empty
              */
-            double GetAveragePt() const
+            [[nodiscard]] double GetAveragePt() const
             {
                 if (trackList.empty())
                     return 0.;

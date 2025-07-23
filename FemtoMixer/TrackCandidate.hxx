@@ -1,13 +1,14 @@
 #ifndef TrackCandidate_hxx
     #define TrackCandidate_hxx
 
-#include "../../HFiredWires/HFiredWires.hxx"
+#include "MdcWires.hxx"
 
 #include "TLorentzVector.h"
 #include "TCutG.h"
 #include "hparticlecand.h"
 #include "hparticlecandsim.h"
 #include "hparticlemetamatcher.h"
+#include "hgeantkine.h"
 
 namespace Selection
 {
@@ -15,43 +16,57 @@ namespace Selection
 
     class TrackCandidate
     {
-        friend class PairCandidate; // this is here because I have a badly structured code
+        friend class PairCandidate; // this is here because I have a poorly structured code
 
         private:
             std::shared_ptr<TrackCandidate> GeantKineTrack;
             std::string TrackId;
             Detector System;
-            bool IsAtMdcEdge;
+            bool isAtMdcEdge, isGoodMetaCell;
             short int PID, Charge, Sector;
             unsigned NBadLayers;
-            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass, Mass2, Beta, PolarAngle, AzimuthalAngle, AzimuthalAngleWrtEP, ReactionPlaneAngle;
-            std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> firedWiresCollection;
+            float Rapidity, TotalMomentum, TransverseMomentum, Px, Py, Pz, Energy, Mass, Mass2, Beta, 
+                PolarAngle, AzimuthalAngle, AzimuthalAngleWrtEP, ReactionPlaneAngle, innerSegChi2, outerSegChi2, metaMatchQuality, chi2;
+            HADES::MDC::LayersTrack firedWiresCollection;
             std::array<short unsigned,HADES::MDC::WireInfo::numberOfPlanes> goodLayers;
             std::vector<unsigned> metaHits;
+
+            static constexpr short badIndex = -1; // if there is no module or cell, the value is set to -1
+            static constexpr short maxTofIndex = 64; // highest index of unique ToF cells
+            static constexpr short maxRpcIndex = 250; // highest index of unique RPC cells
+            static constexpr short tofCells = 8; // number of cells in each ToF module
+            static constexpr short rpcCells = 31; // number of cells in each RPC collumn
 
             /**
              * @brief Remove and mark MDC layers which are considered "bad", i.e. the track has fired too many wires in it
              * 
              * @param list collection of wires
-             * @param cutoff lower bound of acceptable number of fired wires in each MDC layer 
+             * @param cutoff maximal acceptable number of fired wires in each MDC layer 
+             * @return number of bad layers
              */
-            void RemoveBadLayers(std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &list, std::size_t cutoff)
+            unsigned RemoveAndCountBadLayers(HADES::MDC::LayersTrack &list, std::size_t cutoff)
             {
-                for (auto &layer : firedWiresCollection)
+                unsigned badLayers = 0;
+                for (auto &layer : list)
                     if (layer.size() > cutoff)
                     {
-                        ++NBadLayers;
+                        ++badLayers;
                         layer.clear();
                         layer.resize(0);
                     }
+
+                return badLayers;
             }
             /**
-             * @brief calculate in how many layers a hit has been registered for each plane
+             * @brief calculate how many layers have been hit in each plane
              * 
-             * @param list 
+             * @param list collection of wires
+             * @return number of fired layers in each plane
              */
-            void CalculateLayersPerPlane(const std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &list)
+            [[nodiscard]] std::array<unsigned short,HADES::MDC::WireInfo::numberOfPlanes> CalculateLayersPerPlane(const HADES::MDC::LayersTrack &list) const
             {
+                std::array<unsigned short,HADES::MDC::WireInfo::numberOfPlanes> tmpArray;
+
                 for (const auto &plane : HADES::MDC::WireInfo::planeIndexing)
                 {
                     short unsigned counter = 0;
@@ -60,48 +75,43 @@ namespace Selection
                         if (list[layer].size() > 0)
                             ++counter;
                     }
-                    goodLayers.at(plane) = counter;
+                    tmpArray.at(plane) = counter;
                 }
+
+                return tmpArray;
             }
             /**
              * @brief Get the Meta Hits information for this track
              * 
-             * @param part 
-             * @return std::vector<unsigned> 
+             * @param part HParticleCand pointer
+             * @return vector of registered hits (each stored value represents a unique META cell; the vector::size() defines the number of hits for this track)
              */
             [[nodiscard]] std::vector<unsigned> CalcMetaHits(HParticleCand* part) const
             {
                 std::vector<unsigned> output;
-                int mod,cell;
+                int mod,cell,uniqueCell;
 
-                switch (System)
+                if (System == Detector::RPC)
                 {
-                    case Detector::RPC:
-                        //mod = part->getMetaModule(0);
-                        cell = part->getMetaCell(0);
-                        if (cell > -1)
-                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
-
-                        //mod = part->getMetaModule(1);
-                        cell = part->getMetaCell(1);
-                        if (cell > -1)
-                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
-                        break;
-
-                    case Detector::ToF:
-                        mod = part->getMetaModule(0);
-                        cell = part->getMetaCell(0);
-                        if (mod > -1 && cell > -1)
-                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
-
-                        mod = part->getMetaModule(1);
-                        cell = part->getMetaCell(1);
-                        if (mod > -1 && cell > -1)
-                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
-                        break;
-                    
-                    default:
-                        break;
+                    for (const auto& hit : {0,1})
+                    {
+                        mod = part->getMetaModule(hit);
+                        cell = part->getMetaCell(hit);
+                        uniqueCell = maxTofIndex + mod * rpcCells + cell;
+                        if (mod > badIndex && cell > badIndex && uniqueCell < maxRpcIndex)
+                            output.push_back(static_cast<unsigned>(uniqueCell)); 
+                    }
+                }
+                else if (System == Detector::ToF)
+                {
+                    for (const auto& hit : {0,1})
+                    {
+                        mod = part->getMetaModule(hit);
+                        cell = part->getMetaCell(hit);
+                        uniqueCell = mod * tofCells + cell;
+                        if (mod > badIndex && cell > badIndex && uniqueCell < maxTofIndex)
+                            output.push_back(static_cast<unsigned>(uniqueCell));
+                    }
                 }
 
                 return output;
@@ -109,80 +119,79 @@ namespace Selection
             /**
              * @brief Get the Meta Hits information for this track
              * 
-             * @param part 
-             * @return std::vector<unsigned> 
+             * @param part HParticleCandSim pointer
+             * @return vector of registered hits (each stored value represents a unique META cell; the vector::size() defines the number of hits for this track)
              */
             [[nodiscard]] std::vector<unsigned> CalcMetaHits(HParticleCandSim* part) const
             {
                 std::vector<unsigned> output;
-                int mod,cell;
+                int mod,cell,uniqueCell;
 
-                switch (System)
+                if (System == Detector::RPC)
                 {
-                    case Detector::RPC:
-                        //mod = part->getMetaModule(0);
-                        cell = part->getMetaCell(0);
-                        if (cell > -1)
-                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
-
-                        //mod = part->getMetaModule(1);
-                        cell = part->getMetaCell(1);
-                        if (cell > -1)
-                            output.push_back(static_cast<unsigned>(64 + (31 - cell)));
-                        break;
-
-                    case Detector::ToF:
-                        mod = part->getMetaModule(0);
-                        cell = part->getMetaCell(0);
-                        if (mod > -1 && cell > -1)
-                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
-
-                        mod = part->getMetaModule(1);
-                        cell = part->getMetaCell(1);
-                        if (mod > -1 && cell > -1)
-                            output.push_back(static_cast<unsigned>(mod * 8 + cell));
-                        break;
-                    
-                    default:
-                        break;
+                    for (const auto& hit : {0,1})
+                    {
+                        mod = part->getMetaModule(hit);
+                        cell = part->getMetaCell(hit);
+                        uniqueCell = maxTofIndex + mod * rpcCells + cell;
+                        if (mod > badIndex && cell > badIndex && uniqueCell < maxRpcIndex)
+                            output.push_back(static_cast<unsigned>(uniqueCell)); 
+                    }
                 }
+                else if (System == Detector::ToF)
+                {
+                    for (const auto& hit : {0,1})
+                    {
+                        mod = part->getMetaModule(hit);
+                        cell = part->getMetaCell(hit);
+                        uniqueCell = mod * tofCells + cell;
+                        if (mod > badIndex && cell > badIndex && uniqueCell < maxTofIndex)
+                            output.push_back(static_cast<unsigned>(uniqueCell));
+                    }
+                }
+
+                return output;
             }
+            /**
+             * @brief Get the Meta Hits information for this track
+             * 
+             * @param part HGeantKine pointer
+             * @return vector of registered hits (each stored value represents a unique META cell; the vector::size() defines the number of hits for this track)
+             */
             [[nodiscard]] std::vector<unsigned> CalcMetaHits(HGeantKine* part) const
             {
                 std::vector<unsigned> output;
-                std::vector<HGeantRpc*> rpcCells;
-                std::vector<HGeantTof*> tofCells;
-                int mod,cell;
+                int mod,cell,uniqueCell;
 
-                switch (System)
+                if (System == Detector::RPC)
                 {
-                    case Detector::RPC:
-                        if (part->getRpcHits(rpcCells))
+                    std::vector<HGeantRpc*> rpcCellList;
+                    if (part->getRpcHits(rpcCellList))
+                    {
+                        for (const auto elem : rpcCellList)
                         {
-                            for (const auto elem : rpcCells)
-                            {
-                                cell = elem->getCell();
-                                if (cell > -1)
-                                    output.push_back(static_cast<unsigned>(64 + (31 - cell)));
-                            }
+                            mod = elem->getColumn();
+                            cell = elem->getCell();
+                            uniqueCell = maxTofIndex + mod * rpcCells + cell;
+                            if (mod > badIndex && cell > badIndex && uniqueCell < maxRpcIndex)
+                                output.push_back(static_cast<unsigned>(uniqueCell));
                         }
-                        break;
-
-                    case Detector::ToF:
-                        if (part->getTofHits(tofCells))
+                    }
+                }
+                else if (System == Detector::ToF)
+                {
+                    std::vector<HGeantTof*> tofCellList;
+                    if (part->getTofHits(tofCellList))
+                    {
+                        for (const auto elem : tofCellList)
                         {
-                            for (const auto elem : tofCells)
-                            {
-                                mod = elem->getModule();
-                                cell = elem->getCell();
-                                if (mod > -1 && cell > -1)
-                                    output.push_back(static_cast<unsigned>(mod * 8 + cell));
-                            }
+                            mod = elem->getModule();
+                            cell = elem->getCell();
+                            uniqueCell = mod * tofCells + cell;
+                            if (mod > badIndex && cell > badIndex && uniqueCell < maxTofIndex)
+                                output.push_back(static_cast<unsigned>(uniqueCell));
                         }
-                        break;
-                    
-                    default:
-                        break;
+                    }
                 }
 
                 return output;
@@ -193,7 +202,7 @@ namespace Selection
              * @param angle 
              * @return float 
              */
-            [[nodiscard]] float ConstrainAngle(const float &angle)
+            [[nodiscard]] float ConstrainAngle(float angle) const noexcept
             {
                 if (angle > 157.5)
                     return angle -360.;
@@ -209,28 +218,29 @@ namespace Selection
              * @brief Construct a new Track Candidate object
              * 
              * @param particleCand HParticleCand object pointer
-             * @param wires array of the fired wires, obtained from HFiredWires class
+             * @param wires array of the fired wires
              * @param evtId unique ID of the underlying event
              * @param EP event plane angle of the underlying event
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (when using DSTs put here whatever, just make sure the same PID is in the TrackCandidate::SelectTrack method)
              */
-            TrackCandidate(HParticleCand* particleCand, const std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid)
-            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaHits({})
+            TrackCandidate(HParticleCand* particleCand, const HADES::MDC::LayersTrack &wires, const std::string &evtId, float EP, std::size_t trackId, short pid) : 
+                GeantKineTrack(nullptr), ReactionPlaneAngle(EP),NBadLayers(0),firedWiresCollection(wires),
+                goodLayers(CalculateLayersPerPlane(firedWiresCollection)),metaHits(CalcMetaHits(particleCand))
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(14));
                 TLorentzVector vecTmp = *particleCand;
-                CalculateLayersPerPlane(firedWiresCollection);
-                RemoveBadLayers(firedWiresCollection,2);
+                NBadLayers = RemoveAndCountBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
                 AzimuthalAngle = particleCand->getPhi();
                 AzimuthalAngleWrtEP = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
-                Beta = particleCand->getBeta();
+                Beta = particleCand->getBeta(); // or should I use this one Beta = 1 - (1/(1+(TotalMomentum*TotalMomentum/Mass2))); ?
                 Charge = particleCand->getCharge();
                 Sector = particleCand->getSector();
                 Energy = vecTmp.E();
-                IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                isAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                isGoodMetaCell = HParticleTool::isGoodMetaCell(particleCand,4,kTRUE);
                 Mass = particleCand->getMass();
                 Mass2 = particleCand->getMass2();
                 PID = pid;
@@ -245,7 +255,11 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
-                metaHits = CalcMetaHits(particleCand);
+
+                innerSegChi2 = particleCand->getInnerSegmentChi2();
+                outerSegChi2 = particleCand->getOuterSegmentChi2();
+                metaMatchQuality = particleCand->getMetaMatchQuality();
+                chi2 = particleCand->getChi2();
             }
             /**
              * @brief Construct a new Track Candidate object
@@ -257,23 +271,24 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> &wires, const std::string &evtId, float EP, std::size_t trackId, short pid) 
-            : GeantKineTrack((geantKine == nullptr) ? nullptr : new TrackCandidate(geantKine,evtId,EP,trackId,pid)), 
-            ReactionPlaneAngle(EP),firedWiresCollection(wires),NBadLayers(0),goodLayers({}),metaHits({})
+            TrackCandidate(HParticleCandSim* particleCand,HGeantKine* geantKine, const HADES::MDC::LayersTrack &wires, const std::string &evtId, float EP, std::size_t trackId, short pid) : 
+                GeantKineTrack((geantKine == nullptr) ? nullptr : new TrackCandidate(geantKine,evtId,EP,trackId,pid)), 
+                ReactionPlaneAngle(EP),NBadLayers(0),firedWiresCollection(wires),goodLayers(CalculateLayersPerPlane(firedWiresCollection)),
+                metaHits(CalcMetaHits(particleCand))
             {
                 particleCand->calc4vectorProperties(HPhysicsConstants::mass(particleCand->getGeantPID()));
                 TLorentzVector vecTmp = *particleCand;
-                CalculateLayersPerPlane(firedWiresCollection);
-                RemoveBadLayers(firedWiresCollection,2);
+                NBadLayers = RemoveAndCountBadLayers(firedWiresCollection,2);
 
                 TrackId = evtId + std::to_string(trackId);
                 AzimuthalAngle = particleCand->getPhi();
                 AzimuthalAngleWrtEP = ConstrainAngle(particleCand->getPhi() - ReactionPlaneAngle);
-                Beta = particleCand->getBeta();
+                Beta = particleCand->getBeta(); // or should I use this one Beta = 1 - (1/(1+(TotalMomentum*TotalMomentum/Mass2))); ?
                 Charge = particleCand->getCharge();
                 Sector = particleCand->getSector();
                 Energy = vecTmp.E();
-                IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                isAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                isGoodMetaCell = HParticleTool::isGoodMetaCell(particleCand,4,kTRUE);
                 Mass = particleCand->getMass();
                 Mass2 = particleCand->getMass2();
                 PID = particleCand->getGeantPID(); // only for simulations
@@ -288,7 +303,11 @@ namespace Selection
                     System = Detector::ToF;
                 TotalMomentum = vecTmp.P();
                 TransverseMomentum = vecTmp.Pt();
-                metaHits = CalcMetaHits(particleCand);
+                
+                innerSegChi2 = particleCand->getInnerSegmentChi2();
+                outerSegChi2 = particleCand->getOuterSegmentChi2();
+                metaMatchQuality = particleCand->getMetaMatchQuality();
+                chi2 = particleCand->getChi2();
             }
             /**
              * @brief Construct a new Track Candidate object
@@ -300,14 +319,17 @@ namespace Selection
              * @param trackId unique ID of this track within the event (e.g. index of the track in the loop)
              * @param pid PID of the particle we want (put here whatever, we use HParticleCandSim for PID later)
              */
-            TrackCandidate(HGeantKine* particleCand, const std::string &evtId, float EP, std::size_t trackId, short pid) 
-            : GeantKineTrack(nullptr), ReactionPlaneAngle(EP),firedWiresCollection({}),NBadLayers(0),goodLayers({}),metaHits({})
+            TrackCandidate(HGeantKine* particleCand, const std::string &evtId, float EP, std::size_t trackId, short pid) :
+                GeantKineTrack(nullptr), ReactionPlaneAngle(EP),innerSegChi2(std::numeric_limits<float>::max()), 
+                outerSegChi2(std::numeric_limits<float>::max()), metaMatchQuality(std::numeric_limits<float>::max()), 
+                chi2(std::numeric_limits<float>::max()),NBadLayers(0),firedWiresCollection({}),goodLayers({}),
+                metaHits(CalcMetaHits(particleCand))
             {
                 TrackId = evtId + std::to_string(trackId);
                 AzimuthalAngle = particleCand->getPhiDeg();
                 AzimuthalAngleWrtEP = ConstrainAngle(particleCand->getPhiDeg() - ReactionPlaneAngle);
                 Energy = particleCand->getE();
-                IsAtMdcEdge =particleCand->isAtAnyMdcEdge();
+                isAtMdcEdge =particleCand->isAtAnyMdcEdge();
                 Mass = particleCand->getM();
                 Mass2 = Mass * Mass;
                 PID = particleCand->getID(); // only for simulations
@@ -323,13 +345,7 @@ namespace Selection
                 TotalMomentum = particleCand->getTotalMomentum();
                 TransverseMomentum = particleCand->getTransverseMomentum();
                 Beta = 1 - (1/(1+(TotalMomentum*TotalMomentum/Mass2))); // beta = 1 - 1/(1+p^2/m_0^2) if my calculations are correct
-                metaHits = CalcMetaHits(particleCand);
             }
-            /**
-             * @brief Destroy the Track Candidate object
-             * 
-             */
-            ~TrackCandidate(){}
             /**
              * @brief Track selection method
              * 
@@ -339,20 +355,20 @@ namespace Selection
              * @return true if track is selected
              * @return false otherwise
              */
-            bool SelectTrack(const TCutG *rpcCut, const TCutG *tofCut, bool checkPID = true)
+            bool SelectTrack(const TCutG *rpcCut, const TCutG *tofCut, bool checkPID = true) const
             {
                 if (PID != 14 && checkPID)
                     return false;
-                if (IsAtMdcEdge)
+                if (isAtMdcEdge)
                     return false;
-                /* if (TotalMomentum < 500. || TotalMomentum > 1500.)
-                    return false; */
-                /*if (TransverseMomentum < 300. || TransverseMomentum > 1000.)
-                    return false;
-                if (Rapidity < 0.14 || Rapidity > 1.34) // (-0.6,0.6) in c.m.
-                    return false;*/
-                /* if (Beta < 0.2)
-                    return false; */
+                // if (!isGoodMetaCell)
+                //     return false;
+                // if (innerSegChi2 <= 0 || outerSegChi2 <= 0)
+                //     return false;
+                // if (metaMatchQuality >= 4)
+                //     return false;
+                // if (chi2 >= 400)
+                //     return false;
                 if (NBadLayers > 1)
                     return false;
                 if (std::count_if(goodLayers.begin(),goodLayers.end(),[](unsigned i){return (i > 3);}) != 4)
@@ -374,31 +390,6 @@ namespace Selection
                 return false;
             }
             /**
-             * @brief Create a modernised wire collection object
-             * 
-             * @param wi HParticleWireInfo object, obtained from HParticleMetaMatcher
-             * @return std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> 
-             */
-            [[nodiscard]] static std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> CreateWireArray(const HParticleWireInfo &wi)
-            {
-                std::array<std::vector<unsigned>,HADES::MDC::WireInfo::numberOfAllLayers> array;
-
-                for (std::size_t mod = 0; mod < HADES::MDC::WireInfo::numberOfPlanes; ++mod)
-                    for (std::size_t lay = 0; lay < HADES::MDC::WireInfo::numberOfLayersInPlane; ++lay)
-                    {
-                        std::vector<unsigned> tmpVec;
-
-                        if (wi.ar[mod][lay][0] > -1)
-                            tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][0]));
-                        if (wi.ar[mod][lay][1] > -1)
-                            tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][1]));
-
-                        array[mod * HADES::MDC::WireInfo::numberOfLayersInPlane + lay] = tmpVec;
-                    }
-
-                return array;
-            }
-            /**
              * @brief Get the indexes of wires at given layer
              * 
              * @param layer 
@@ -409,6 +400,20 @@ namespace Selection
             {
                 return firedWiresCollection.at(layer);
             }
+            /**
+             * @brief Get the All Wires object
+             * 
+             * @return HADES::MDC::LayersTrack 
+             */
+            [[nodiscard]] HADES::MDC::LayersTrack GetAllWires() const noexcept
+            {
+                return firedWiresCollection;
+            }
+            /**
+             * @brief Get the unique ID of this track
+             * 
+             * @return std::string 
+             */
             [[nodiscard]] std::string GetID() const noexcept
             {
                 return TrackId;
@@ -531,21 +536,6 @@ namespace Selection
                 return Pz;
             }
             /**
-             * @brief Set the 4-momentum
-             * 
-             * @param px x component
-             * @param py y component
-             * @param pz z component
-             * @param ene energy
-             */
-            void SetMomentum(float px, float py, float pz, float ene) noexcept
-            {
-                Px = px;
-                Py = py;
-                Pz = pz;
-                Energy = ene;
-            }
-            /**
              * @brief Get the Beta of the track
              * 
              * @return float 
@@ -589,6 +579,69 @@ namespace Selection
             [[nodiscard]] std::vector<unsigned> GetMetaHits() const noexcept
             {
                 return metaHits;
+            }
+            /**
+             * @brief Get the stored HGeantKine TrackCandidate
+             * 
+             * @return std::shared_ptr<TrackCandidate> 
+             */
+            [[nodiscard]] const std::shared_ptr<TrackCandidate>& GetGeantKine() const noexcept
+            {
+                return GeantKineTrack;
+            }
+            /**
+             * @brief Get the Inner Seg Chi 2 object
+             * 
+             * @return float 
+             */
+            [[nodiscard]] float GetInnerSegChi2() const noexcept
+            {
+                return innerSegChi2;
+            }
+            /**
+             * @brief Get the Outer Seg Chi 2 object
+             * 
+             * @return float 
+             */
+            [[nodiscard]] float GetOuterSegChi2() const noexcept
+            {
+                return outerSegChi2;
+            }
+            /**
+             * @brief Get the Chi 2 object
+             * 
+             * @return float 
+             */
+            [[nodiscard]] float GetChi2() const noexcept
+            {
+                return chi2;
+            }
+            /**
+             * @brief Get the Meta Match Quality object
+             * 
+             * @return float 
+             */
+            [[nodiscard]] float GetMetaMatchQuality() const noexcept
+            {
+                return metaMatchQuality;
+            }
+            /**
+             * @brief Check if the track is at the edge of MDC
+             * 
+             * @return true if it is and false otherwise
+             */
+            [[nodiscard]] bool IsAtMdcEdge() const noexcept
+            {
+                return isAtMdcEdge;
+            }
+            /**
+             * @brief Check if the track has a valid META cell
+             * 
+             * @return true if it has and false otherwise
+             */
+            [[nodiscard]] bool IsGoodMetaCell() const noexcept
+            {
+                return isGoodMetaCell;
             }
     };
 } // namespace Selection
