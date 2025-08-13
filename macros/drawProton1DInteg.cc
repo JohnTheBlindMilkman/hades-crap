@@ -13,7 +13,7 @@ void drawProton1DInteg()
 {
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12sim_all_25_07_22_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_25_08_11_processed.root";
     const TString outputFile = "../output/1Dcorr_0_10_cent_Integ.root";
     const int rebin = 1;
     constexpr int minX = 0, maxX = 300;

@@ -11,17 +11,19 @@
 double GetBinCenterByConent(const TH1D *hist, double content)
 {
     const int xBins = hist->GetNbinsX();
-    int bin = 0;
+    std::pair<int,double> bin{0,0.};
 
     // we assume we are working with CDFs -> bin content is not decreasing with each bin
     for (int i = 1; i <= xBins; ++i)
     {
-        double binCont = hist->GetBinContent(i);
-        bin = i;
-        if (binCont > content) break;
+        std::pair<int,double> binNew{i,hist->GetBinContent(i)};
+        
+        if (std::abs(bin.second - content) < std::abs(binNew.second - content)) 
+            break;
+        bin = binNew;
     }
 
-    return hist->GetBinCenter(bin);
+    return hist->GetBinCenter(bin.first);
 }
 
 TH2D* CalcCDF(const TH2D *hist)
@@ -43,14 +45,12 @@ TH2D* CalcCDF(const TH2D *hist)
     {
         for (int yBin = 1; yBin <= yBins; ++yBin)
         {
-            double binConent = 0;
-            for (int i = 1; i <= xBin; ++i)
-            {
-                for (int j = 1; j <= yBin; ++j)
-                {
-                    binConent += hist->GetBinContent(i,j);
-                }
-            }
+            // F - CDF, f - PDF
+            // F(i,j) = F(i,j-1) + F(i-1,j) - F(i-1,j-1) + f(i,j)
+            double binConent = hCumulative->GetBinContent(xBin,yBin - 1) + 
+                hCumulative->GetBinContent(xBin - 1, yBin) - 
+                hCumulative->GetBinContent(xBin - 1, yBin - 1) + 
+                hist->GetBinContent(xBin,yBin);
             hCumulative->SetBinContent(xBin,yBin,binConent);
             bar.tick();
         }
@@ -64,7 +64,7 @@ TH2D* CalcCDF(const TH2D *hist)
 
 void generateCdfs()
 {
-    const TString filePath = "../slurmOutput/apr12sim_all_25_07_22.root";
+    const TString filePath = "../slurmOutput/apr12ana_all_25_07_25.root";
     const TString ktRapName = "hKtRapGoodCent";
     const TString ktCentNameBase = "ktDist_cent";
     const TString rapCentNameBase = "rapDist_cent";

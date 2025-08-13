@@ -4,6 +4,7 @@
 #include "TH1D.h"
 #include "TH3D.h"
 #include "TString.h"
+#include "../FemtoMixer/PairUtils.hxx"
 
 TH1D* ConvertXaxisUnits(TH1D *hInp)
 {
@@ -57,54 +58,48 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_0_10_cent_Purity.root";
-    const TString inpFilePathInteg = "../output/1Dcorr_0_10_cent_Purity.root";
-    const TString inpHistBaseKt = "hQinvRatKt";
-    const TString inpHistBaseRap = "hQinvRatY";
-    const TString inpHistBasePsi = "hQinvRatPsi";
-    const TString inpHitsInteg = "hQinvRatInteg";
-    const std::vector<int> ktBins = {1,2,3,4,5,6,7,8,9,10};
-    const std::vector<int> rapBins = {1,2,3,4,5,6,7,8,9,10,11,12,13};
-    const std::vector<int> psiBins = {1,2,3,4,5,6,7,8};
-    const std::vector<TString> sProjName{"out","side","long"};
+    const TString inpFilePath = "../output/1Dcorr_0_10_cent_Purity_MomRes.root";
+    const auto ktArr = Mixing::PairGrouping{}.GetKtIndexSequence();
+    const auto yArr = Mixing::PairGrouping{}.GetRapIndexSequence();
+    //const std::vector<TString> sProjName{"out","side","long"};
 
     std::vector<TH1D*> histArray;
     std::vector<TH1D*> histProjArray;
     TFile *inpFile,*otpFile;
 
     inpFile = TFile::Open(inpFilePath);
-    for (const int &ktval : ktBins)
+    for (const auto &ktval : ktArr)
     {
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseKt.Data(),ktval))));
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%d",ktval))));
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%d",ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvRatKt%ld",ktval))));
+        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%ld",ktval))));
+        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%ld",ktval))));
     }
-    for (const int &rapval : rapBins)
+    for (const auto &rapval : yArr)
     {
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBaseRap.Data(),rapval))));
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignY%d",rapval))));
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgY%d",rapval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvRatY%ld",rapval))));
+        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignY%ld",rapval))));
+        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgY%ld",rapval))));
     }
-    for (const int &psival : psiBins)
-    {
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("%s%d",inpHistBasePsi.Data(),psival))));
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignPsi%d",psival))));
-        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgPsi%d",psival))));
-    }
+    for (const auto &ktval : ktArr)
+        for (const auto &rapval : yArr)
+        {
+            histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvRatKt%ldY%ld",ktval,rapval))));
+            // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%ldY%ld",ktval,rapval))));
+            // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%ldY%ld",ktval,rapval))));
+        }
     /* for (const auto &proj : sProjName)
     {
-        for (const int &ktval : ktBins)
+        for (const int &ktval : ktArr)
             histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQ%sRatKt%d",proj.Data(),ktval))));
-        for (const int &rapval : rapBins)
+        for (const int &rapval : yArr)
             histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQ%sRatY%d",proj.Data(),rapval))));
         for (const int &psival : psiBins)
             histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQ%sRatPsi%d",proj.Data(),psival))));
     } */
 
-    inpFile = TFile::Open(inpFilePathInteg);
-    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(inpHitsInteg)));
-    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvSignInteg")));
-    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvBckgInteg")));
+    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvRatInteg")));
+    // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvSignInteg")));
+    // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvBckgInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQoutRatInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQsideRatInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQlongRatInteg")));

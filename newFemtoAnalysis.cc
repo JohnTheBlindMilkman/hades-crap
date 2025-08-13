@@ -1,7 +1,7 @@
 #include "Includes.h"
-#include "FemtoMixer/EventCandidate.hxx"
-#include "FemtoMixer/PairCandidate.hxx"
 #include "../JJFemtoMixer/JJFemtoMixer.hxx"
+#include "FemtoMixer/PairUtils.hxx"
+#include "FemtoMixer/EventUtils.hxx"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -21,58 +21,13 @@ struct HistogramCollection
 	TH3D hQoslSign,hQoslBckg;
 };
 
-std::string EventHashing(const std::shared_ptr<Selection::EventCandidate> &evt)
-{
-	// return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetCentrality()),2) + 
-	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
-
-	return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
-		//JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
-		JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
-}
-
-std::string PairHashing(const std::shared_ptr<Selection::PairCandidate> &pair)
-{
-	// collection of slices: (array[n],array[n+1]>
-    // make sure this is ordered!
-    constexpr std::array<float,11> ktArr{0,200,400,600,800,1000,1200,1400,1600,1800,2000};
-    constexpr std::array<float,14> yArr{0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99,1.09,1.19,1.29,1.39};
-    constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
-
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair->GetKt()) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair->GetRapidity()) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair->GetPhi()) - EpArr.begin();
-
-	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
-		return "0";
-	else
-    	return JJUtils::to_fixed_size_string((ktCut),2) + JJUtils::to_fixed_size_string(yCut,2) + JJUtils::to_fixed_size_string(EpCut,2);
-}
-
-bool PairRejection(const std::shared_ptr<Selection::PairCandidate> &pair)
-{
-	using Behaviour = Selection::PairCandidate::Behaviour;
-
-	if (pair->AreTracksFromTheSameSector())
-	{
-		return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.5,3) ||
-			pair->GetBothLayers() < 20 ||
-			pair->GetSharedMetaCells() > 0;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 	
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{true}; // for now this could be easly just const
+	constexpr bool isSimulation{false}; // for now this could be easly just const
 	constexpr int protonPID{14};
 
 	//--------------------------------------------------------------------------------
@@ -181,7 +136,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCandSim*    particle_cand;	//dla symulacji jest HParticleCandSim*, bo inny obiekt (posiada inne informacje); dla danych jest HParticleCand*
+    HParticleCand*    particle_cand;	
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -223,10 +178,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	std::map<std::string,std::vector<std::shared_ptr<Selection::PairCandidate> > > fSignMap, fBckgMap;
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
-	mixer.SetMaxBufferSize(200); // ana=50, sim=200
-	mixer.SetEventHashingFunction(EventHashing);
-	mixer.SetPairHashingFunction(PairHashing);
-	mixer.SetPairCuttingFunction(PairRejection);
+	mixer.SetMaxBufferSize((isSimulation) ? 200 : 50); // ana=50, sim=200
+	mixer.SetEventHashingFunction(Mixing::EventGrouping{}.MakeEventGroupingFunction());
+	mixer.SetPairHashingFunction(Mixing::PairGrouping{}.MakePairGroupingFunction1D());
+	mixer.SetPairCuttingFunction(Mixing::PairRejection{}.MakePairRejectionFunction());
 	
     //--------------------------------------------------------------------------------
     // The following counter histogram is used to gather some basic information on the analysis
@@ -447,10 +402,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 	
 			if (!particle_cand->isFlagBit(Particle::kIsUsed))
 				continue;
-	
 			//--------------------------------------------------------------------------------
 			// Getting information on the current track (Not all of them necessary for all analyses)
 			//--------------------------------------------------------------------------------
+
 			if constexpr (isSimulation)
 			{
 				fTrack = std::make_shared<Selection::TrackCandidate>(

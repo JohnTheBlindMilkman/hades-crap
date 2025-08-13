@@ -51,7 +51,7 @@
                 {
                     if (fraction < 0. || fraction > 1.)
                     {
-                        std::cerr << "error<PairCandidate::RejectPairByCloseHits>: provided fraction is outside the bounds (0,1)" << std::endl;
+                        std::cerr << "error<PairCandidate::RejectPairByCloseHits>: provided fraction is outside the bounds [0,1]" << std::endl;
                         std::exit(1);
                     }
 
@@ -313,7 +313,14 @@
 
                     return SMC;
                 }
-                bool Reject(type<Behaviour::Uniform>,const float &fraction, const unsigned &cutoff) const noexcept
+                /**
+                 * @brief Reject pair if the fraction of distances between fired wires is grater than the set limit
+                 * 
+                 * @param fractionLimit in what fraction of the all hits the merging can occur
+                 * @param cutoff how close the wires are allowed to be
+                 * @return true if the calculated fraction exceeds the limit
+                 */
+                bool Reject(type<Behaviour::Uniform>,const float &fractionLimit, const unsigned &cutoff) const noexcept
                 {
                     float closeLayers = 0;
                     float totalLayers = 0;
@@ -330,11 +337,18 @@
                     }
                     
                     if (totalLayers > 0)
-                        return ( (closeLayers/totalLayers) > fraction) ? true : false;
+                        return ( (closeLayers/totalLayers) > fractionLimit) ? true : false;
                     else
                         return true;
                 }
-                bool Reject(type<Behaviour::OneUnder>,const float &fraction, const unsigned &cutoff) const noexcept
+                /**
+                 * @brief Reject pair if the fraction of distances between fired wires is grater than the set limit or if at any layer the distance beteen the fired wires is smaller than cutoff - 1
+                 * 
+                 * @param fractionLimit in what fraction of the all hits the merging can occur
+                 * @param cutoff how close the wires are allowed to be
+                 * @return true if the calculated fraction exceeds the limit
+                 */
+                bool Reject(type<Behaviour::OneUnder>,const float &fractionLimit, const unsigned &cutoff) const noexcept
                 {
                     float closeLayers = 0;
                     float totalLayers = 0;
@@ -358,11 +372,18 @@
                     }
 
                     if (totalLayers > 0)
-                        return ( (closeLayers/totalLayers) > fraction) ? true : false;
+                        return ( (closeLayers/totalLayers) > fractionLimit) ? true : false;
                     else
                         return true;
                 }
-                bool Reject(type<Behaviour::Weighted>,const float &fraction, const unsigned &cutoff) const noexcept
+                /**
+                 * @brief Reject pair if the fraction of distances between fired wires is grater than the set limit. The calculated fraction is weighted based on how much closer the fired wires are. Currently this fraction can be > 1, IDK what to do about it, but I don't use it so...
+                 * 
+                 * @param fractionLimit in what fraction of the all hits the merging can occur
+                 * @param cutoff how close the wires are allowed to be
+                 * @return true if the calculated fraction exceeds the limit
+                 */
+                bool Reject(type<Behaviour::Weighted>,const float &fractionLimit, const unsigned &cutoff) const noexcept
                 {
                     float closeLayers = 0.;
                     float totalLayers = 0.;
@@ -379,7 +400,7 @@
                     }
 
                     if (totalLayers > 0)
-                        return ( (closeLayers/totalLayers) > fraction) ? true : false; // this fraction could be above 1, not sure how to interpret this
+                        return ( (closeLayers/totalLayers) > fractionLimit) ? true : false; // this fraction could be above 1, not sure how to interpret this
                     else
                         return true;
                 }

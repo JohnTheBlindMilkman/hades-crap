@@ -2,6 +2,8 @@
 #include "FemtoMixer/EventCandidate.hxx"
 #include "FemtoMixer/PairCandidate.hxx"
 #include "../JJFemtoMixer/JJFemtoMixer.hxx"
+#include "FemtoMixer/EventUtils.hxx"
+#include "FemtoMixer/PairUtils.hxx"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -20,57 +22,6 @@ struct HistogramCollection
 	TH1D hQinvSign;
 	TH3D hQoslSign;
 };
-
-std::string EventHashing(const std::shared_ptr<Selection::EventCandidate> &evt)
-{
-    return std::to_string(static_cast<std::size_t>(evt->GetCentrality())) + JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
-	// return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
-	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetReactionPlane()/10),2) + 
-	// 	JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
-}
-
-std::string TrackHashing(const std::shared_ptr<Selection::TrackCandidate> &trck)
-{
-	//return std::to_string(trck->GetPt()/1000) + std::to_string(trck->GetRapidity());
-	return std::to_string(static_cast<std::size_t>(std::abs(trck->GetPx()/100))) + 
-		std::to_string(static_cast<std::size_t>(std::abs(trck->GetPy()/100))) + 
-		std::to_string(static_cast<std::size_t>(std::abs(trck->GetPz()/100)));
-}
-
-std::string PairHashing(const std::shared_ptr<Selection::PairCandidate> &pair)
-{
-	// collection of slices: (array[n],array[n+1]>
-    // make sure this is ordered!
-    constexpr std::array<float,11> ktArr{0,200,400,600,800,1000,1200,1400,1600,1800,2000};
-    constexpr std::array<float,14> yArr{0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99,1.09,1.19,1.29,1.39};
-    constexpr std::array<float,9> EpArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
-
-    std::size_t ktCut = std::lower_bound(ktArr.begin(),ktArr.end(),pair->GetKt()) - ktArr.begin();
-    std::size_t yCut = std::lower_bound(yArr.begin(),yArr.end(),pair->GetRapidity()) - yArr.begin();
-    std::size_t EpCut = std::lower_bound(EpArr.begin(),EpArr.end(),pair->GetPhi()) - EpArr.begin();
-
-	// reject if value is below first slice or above the last
-	if (ktCut == 0 || ktCut > ktArr.size()-1 || yCut == 0 || yCut > yArr.size()-1 || EpCut == 0 || EpCut > EpArr.size()-1)
-		return "0";
-	else
-    	return std::to_string((ktCut)) + std::to_string(yCut) + std::to_string(EpCut);
-}
-
-bool PairCut(const std::shared_ptr<Selection::PairCandidate> &pair)
-{
-	using Behaviour = Selection::PairCandidate::Behaviour;
-
-	if (pair->AreTracksFromTheSameSector())
-	{
-		return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.7,2) ||
-			pair->GetBothLayers() < 20 ||
-			pair->GetSharedMetaCells() > 0;
-	}
-	else
-	{
-		return false;
-	}
-}
 
 int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)	//for simulation set approx 100 files and output name testOutFileSim.root
 {
@@ -113,9 +64,9 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
     {
 		Int_t nFiles = 0;
 
-		//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
-		//inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen9
-		inputFolder = "/lustre/hades/dstsim/apr12/au1230au/gen10/bmax10/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen10
+		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 800 MeV
+		//TString inputFolder = "/lustre/hades/dstsim/apr12/gen9vertex/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen9
+		TString inputFolder = "/lustre/hades/dstsim/apr12/au1230au/gen10/bmax10/no_enhancement_gcalor/root"; // Au+Au 2.4 GeV gen10
 	
 		TSystemDirectory* inputDir = new TSystemDirectory("inputDir", inputFolder);
 		TList* files = inputDir->GetListOfFiles();
@@ -186,15 +137,15 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixerNum,mixerDen;
 	mixerNum.SetMaxBufferSize(mixerBuffer);
-	mixerNum.SetEventHashingFunction(EventHashing);
-	mixerNum.SetPairHashingFunction(PairHashing);
-	mixerNum.SetPairCuttingFunction(PairCut);
+	mixerNum.SetEventHashingFunction(Mixing::EventGrouping{}.MakeEventGroupingFunction());
+	mixerNum.SetPairHashingFunction(Mixing::PairGrouping{}.MakePairGroupingFunction1D());
+	mixerNum.SetPairCuttingFunction(Mixing::PairRejection{}.MakePairRejectionFunction());
 	mixerNum.PrintSettings();
 
 	mixerDen.SetMaxBufferSize(mixerBuffer);
-	mixerDen.SetEventHashingFunction(EventHashing);
-	mixerDen.SetPairHashingFunction(PairHashing);
-	mixerDen.SetPairCuttingFunction(PairCut);
+	mixerDen.SetEventHashingFunction(Mixing::EventGrouping{}.MakeEventGroupingFunction());
+	mixerDen.SetPairHashingFunction(Mixing::PairGrouping{}.MakePairGroupingFunction1D());
+	mixerDen.SetPairCuttingFunction(Mixing::PairRejection{}.MakePairRejectionFunction());
 	mixerDen.PrintSettings();
 	
     //--------------------------------------------------------------------------------
@@ -294,15 +245,15 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 			break;
 		}
 
-		TString tmp; // dummy variable; required by HLoop::isNewFile
-		if (loop->isNewFile(tmp))
-		{
-			if (!loop->goodSector(0) || !loop->goodSector(1) || !loop->goodSector(3) || !loop->goodSector(4) || !loop->goodSector(5)) // no sector 2 in Au+Au
-			{
-				event += loop->getTree()->GetEntries() - 1;
-				continue;
-			}
-		}
+		// TString tmp; // dummy variable; required by HLoop::isNewFile
+		// if (loop->isNewFile(tmp))
+		// {
+		// 	if (!loop->goodSector(0) || !loop->goodSector(1) || !loop->goodSector(3) || !loop->goodSector(4) || !loop->goodSector(5)) // no sector 2 in Au+Au
+		// 	{
+		// 		event += loop->getTree()->GetEntries() - 1;
+		// 		continue;
+		// 	}
+		// }
 
 		hCounter->Fill(cNumAllEvents);
 
@@ -318,10 +269,6 @@ int newPurityAnalysis(TString inputlist = "", TString outfile = "purityOutFile.r
 		event_header            = gHades->getCurrentEvent()->getHeader();
 		particle_info           = HCategoryManager::getObject(particle_info, particle_info_cat, 0);
 		HGeomVector EventVertex  = event_header->getVertexReco().getPos();
-		
-		Float_t vertZ = EventVertex.Z();
-		Float_t vertX = EventVertex.X();
-		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
 
 		geantHeader = loop->getGeantHeader();

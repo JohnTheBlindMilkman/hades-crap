@@ -38,6 +38,28 @@ namespace Selection
             static constexpr short rpcCells = 31; // number of cells in each RPC collumn
 
             /**
+             * @brief Create a new index for a given RPC hit, based on the module and cell numbers (values from maxTofIndex to maxRpcIndex - 1)
+             * 
+             * @param module ID of the module which was hit
+             * @param cell ID of the cell which was hit
+             * @return new index of the hit
+             */
+            [[nodiscard]] constexpr int MakeUniqueRpcIndex(int module, int cell) const noexcept
+            {
+                return maxTofIndex + module * rpcCells + cell;
+            }
+            /**
+             * @brief Create a new index for a given ToF hit, based on the module and cell numbers (values from 0 to maxTofIndex - 1)
+             * 
+             * @param module ID of the module which was hit
+             * @param cell ID of the cell which was hit
+             * @return new index of the hit
+             */
+            [[nodiscard]] constexpr int MakeUniqueTofIndex(int module, int cell) const noexcept
+            {
+                return module * tofCells + cell;
+            }
+            /**
              * @brief Remove and mark MDC layers which are considered "bad", i.e. the track has fired too many wires in it
              * 
              * @param list collection of wires
@@ -97,7 +119,7 @@ namespace Selection
                     {
                         mod = part->getMetaModule(hit);
                         cell = part->getMetaCell(hit);
-                        uniqueCell = maxTofIndex + mod * rpcCells + cell;
+                        uniqueCell = MakeUniqueRpcIndex(mod,cell);
                         if (mod > badIndex && cell > badIndex && uniqueCell < maxRpcIndex)
                             output.push_back(static_cast<unsigned>(uniqueCell)); 
                     }
@@ -108,7 +130,7 @@ namespace Selection
                     {
                         mod = part->getMetaModule(hit);
                         cell = part->getMetaCell(hit);
-                        uniqueCell = mod * tofCells + cell;
+                        uniqueCell = MakeUniqueTofIndex(mod,cell);
                         if (mod > badIndex && cell > badIndex && uniqueCell < maxTofIndex)
                             output.push_back(static_cast<unsigned>(uniqueCell));
                     }
@@ -133,7 +155,7 @@ namespace Selection
                     {
                         mod = part->getMetaModule(hit);
                         cell = part->getMetaCell(hit);
-                        uniqueCell = maxTofIndex + mod * rpcCells + cell;
+                        uniqueCell = MakeUniqueRpcIndex(mod,cell);
                         if (mod > badIndex && cell > badIndex && uniqueCell < maxRpcIndex)
                             output.push_back(static_cast<unsigned>(uniqueCell)); 
                     }
@@ -144,7 +166,7 @@ namespace Selection
                     {
                         mod = part->getMetaModule(hit);
                         cell = part->getMetaCell(hit);
-                        uniqueCell = mod * tofCells + cell;
+                        uniqueCell = MakeUniqueTofIndex(mod,cell);
                         if (mod > badIndex && cell > badIndex && uniqueCell < maxTofIndex)
                             output.push_back(static_cast<unsigned>(uniqueCell));
                     }
@@ -172,7 +194,7 @@ namespace Selection
                         {
                             mod = elem->getColumn();
                             cell = elem->getCell();
-                            uniqueCell = maxTofIndex + mod * rpcCells + cell;
+                            uniqueCell = MakeUniqueRpcIndex(mod,cell);
                             if (mod > badIndex && cell > badIndex && uniqueCell < maxRpcIndex)
                                 output.push_back(static_cast<unsigned>(uniqueCell));
                         }
@@ -187,7 +209,7 @@ namespace Selection
                         {
                             mod = elem->getModule();
                             cell = elem->getCell();
-                            uniqueCell = mod * tofCells + cell;
+                            uniqueCell = MakeUniqueTofIndex(mod,cell);
                             if (mod > badIndex && cell > badIndex && uniqueCell < maxTofIndex)
                                 output.push_back(static_cast<unsigned>(uniqueCell));
                         }

@@ -17,9 +17,25 @@
                     return std::array<std::size_t,sizeof...(Is)>{(Is + 1)...};
                 }
 
-                static constexpr std::size_t m_ktIntervals = 10, m_rapIntervals = 13, m_psiIntervals = 8;
-                static constexpr std::array<float, m_ktIntervals + 1> m_ktArr = {0,200,400,600,800,1000,1200,1400,1600,1800,2000};
-                static constexpr std::array<float, m_rapIntervals + 1> m_rapArr = {0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99,1.09,1.19,1.29,1.39};
+                TString RemoveTrailingZeros(TString val) const noexcept
+                {
+                    if (val.Contains('.'))
+                    {
+                        val.Remove(TString::EStripType::kTrailing,'0');
+                        if (val.EndsWith("."))
+                        {
+                            val.Resize(val.Length() - 1);
+                        }
+                    }
+                    
+                    return val;
+                }
+
+                static constexpr std::size_t m_ktIntervals = 14, m_rapIntervals = 7, m_psiIntervals = 8;
+                // static constexpr std::array<float, m_ktIntervals + 1> m_ktArr = {0,200,400,600,800,1000,1200,1400,1600,1800,2000};
+                // static constexpr std::array<float, m_rapIntervals + 1> m_rapArr = {0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99,1.09,1.19,1.29,1.39};
+                static constexpr std::array<float, m_ktIntervals + 1> m_ktArr = {0,255,382.5,482.5,575,657.5,737.5,815,895,980,1070,1172.5,1300,1490,std::numeric_limits<float>::max()};
+                static constexpr std::array<float, m_rapIntervals + 1> m_rapArr = {0.,0.372,0.48,0.568,0.656,0.748,0.868,std::numeric_limits<float>::max()};
                 static constexpr std::array<float,m_psiIntervals + 1> m_epArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
             public:
@@ -48,7 +64,7 @@
                 }
                 [[nodiscard]] std::function<std::string (const std::shared_ptr<Selection::PairCandidate> &)> MakePairGroupingFunction1D() const noexcept
                 {
-                    std::array<float, m_ktIntervals + 1> newKtArr = m_ktArr;
+                    std::array<float, m_ktIntervals + 1> newKtArr = m_ktArr; // this is a workaround, because I have the arrays marked as static and the std::function (i think) tries to move them (which is a big no-no according to the compiler)
                     std::array<float, m_rapIntervals + 1> newRapArr = m_rapArr;
                     return [this,newKtArr,newRapArr](const std::shared_ptr<Selection::PairCandidate> &pair) -> std::string {return this->GetPairIndex1D(pair,newKtArr,newRapArr);};
                 }
@@ -63,6 +79,46 @@
                 [[nodiscard]] constexpr auto GetPsiIndexSequence() const noexcept 
                 {
                     return MakeIndexSequence(std::make_index_sequence<m_psiIntervals>{});
+                }
+                [[nodiscard]] std::array<std::pair<std::size_t,TString>,m_ktIntervals> GetKtIndexIntervalPairs() const noexcept 
+                {
+                    std::array<float, m_ktIntervals + 1> newKtArr = m_ktArr;
+                    auto ktIndices = GetKtIndexSequence();
+                    std::array<std::pair<std::size_t,TString>,m_ktIntervals> ktIndecesAndIntervals;
+                    std::transform(ktIndices.begin(),ktIndices.end(),ktIndecesAndIntervals.begin(),
+                        [this,newKtArr](std::size_t i)
+                        {
+                            TString lowEdge = RemoveTrailingZeros(TString(std::to_string(newKtArr.at(i - 1))));
+                            TString highEdge = RemoveTrailingZeros(TString(std::to_string(newKtArr.at(i))));
+                            if (highEdge == RemoveTrailingZeros(TString(std::to_string(std::numeric_limits<float>::max()))))
+                                highEdge = "#infty";
+                            return std::make_pair(i,TString::Format("(%s,%s)", lowEdge.Data(), highEdge.Data()));
+                        }
+                    );
+
+                    return ktIndecesAndIntervals;
+                }
+                [[nodiscard]] std::array<std::pair<std::size_t,TString>,m_rapIntervals> GetRapIndexIntervalPairs() const noexcept 
+                {
+                    std::array<float, m_rapIntervals + 1> newRapArr = m_rapArr;
+                    auto rapIndices = GetRapIndexSequence();
+                    std::array<std::pair<std::size_t,TString>,m_rapIntervals> rapIndecesAndIntervals;
+                    std::transform(rapIndices.begin(),rapIndices.end(),rapIndecesAndIntervals.begin(),
+                        [newRapArr](std::size_t i){return std::make_pair(i,TString::Format("(%f,%f)",newRapArr.at(i - 1), newRapArr.at(i)));}
+                    );
+
+                    return rapIndecesAndIntervals;
+                }
+                [[nodiscard]] std::array<std::pair<std::size_t,TString>,m_psiIntervals> GetPsiIndexIntervalPairs() const noexcept 
+                {
+                    std::array<float, m_psiIntervals + 1> newPsiArr = m_epArr;
+                    auto psiIndices = GetPsiIndexSequence();
+                    std::array<std::pair<std::size_t,TString>,m_psiIntervals> psiIndecesAndIntervals;
+                    std::transform(psiIndices.begin(),psiIndices.end(),psiIndecesAndIntervals.begin(),
+                        [newPsiArr](std::size_t i){return std::make_pair(i,TString::Format("(%f,%f)",newPsiArr.at(i - 1), newPsiArr.at(i)));}
+                    );
+
+                    return psiIndecesAndIntervals;
                 }
         };
 
@@ -86,7 +142,7 @@
                         return false;
                     }
                 }
-                [[nodiscard]] std::function<bool (const std::shared_ptr<Selection::PairCandidate> &)> MakePairRejectionFunction() noexcept
+                [[nodiscard]] std::function<bool (const std::shared_ptr<Selection::PairCandidate> &)> MakePairRejectionFunction() const noexcept
                 {
                     return [this](const std::shared_ptr<Selection::PairCandidate> &pair){return this->Reject(pair);};
                 }

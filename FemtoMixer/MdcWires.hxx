@@ -19,6 +19,7 @@
                 constexpr short unsigned numberOfLayersInPlane = 6;
                 constexpr short unsigned numberOfPlanes = 4;
                 constexpr short unsigned numberOfAllLayers = numberOfInnerLayers + numberOfOuterLayers;
+                constexpr short noWire = -1;
                 constexpr std::array<short unsigned,numberOfPlanes> planeIndexing{0,1,2,3};
                 constexpr std::array<short unsigned,numberOfInnerLayers> halfLayerIndexing{0,1,2,3,4,5,6,7,8,9,10,11};
                 constexpr std::array<short unsigned,numberOfAllLayers> allLayerIndexing{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23};
@@ -32,9 +33,9 @@
             }
 
             /**
-             * @brief Class representing all MDC layers. Holds an array of objects T for each MDC layer.
+             * @brief Class representing all MDC layers. Holds an array of objects of type T for each MDC layer.
              * 
-             * @tparam T object held at each layer
+             * @tparam T object type which held at each layer
              */
             template <typename T>
             class MDCLayers
@@ -91,9 +92,9 @@
                     {
                         std::vector<unsigned> tmpVec;
 
-                        if (wi.ar[mod][lay][0] > -1)
+                        if (wi.ar[mod][lay][0] > WireInfo::noWire) // safer than !=, because IDK if it won't be e.g. -2, -3, etc.
                             tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][0]));
-                        if (wi.ar[mod][lay][1] > -1)
+                        if (wi.ar[mod][lay][1] > WireInfo::noWire)
                             tmpVec.push_back(static_cast<unsigned>(wi.ar[mod][lay][1]));
 
                         array[mod * HADES::MDC::WireInfo::numberOfLayersInPlane + lay] = tmpVec;
@@ -149,6 +150,7 @@
                         for(const auto &wire1 : layer.first)
                             for (const auto &wire2 : layer.second)
                             {
+                                // I cast to long instead of int to avoid narrowing conversion warning, even though I know it won't narrow it down
                                 minDist = std::min(minDist, std::abs(static_cast<long>(wire1) - static_cast<long>(wire2)));
                             }
 
@@ -230,7 +232,7 @@
 
                 std::transform(pairLayers.begin(), pairLayers.end(), splittingLevels.begin(), uniaryOp);
 
-                return (nHits1 > 0 || nHits2 > 0) ? std::accumulate(splittingLevels.begin(),splittingLevels.end(),0.) / (nHits1 + nHits2) : 0;
+                return (nHits1 > 0 || nHits2 > 0) ? std::accumulate(splittingLevels.begin(),splittingLevels.end(),0.) / (nHits1 + nHits2) : 0.;
             }
         } // namespace MDC
         

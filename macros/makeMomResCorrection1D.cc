@@ -6,6 +6,7 @@
 #include "TLine.h"
 #include "../Externals/Palettes.hxx"
 #include "MacroUtils.hxx"
+#include "../FemtoMixer/PairUtils.hxx"
 
 /* void SetErrors(TH1D *hout, const TH1D *hNum, TH1D *hDen)
 {
@@ -34,7 +35,6 @@ TH1D* CorrectForMomRes(const TH1D *data, TH1D *momRes)
     for (int i = 1; i <= nbins; ++i)
     {
         hCorrected->SetBinContent(i,data->GetBinContent(i) * momRes->GetBinContent(i));
-        //std::cout << "PCC: " << JJUtils::Generic::Detail::GetPCC(data,momRes) << "\n";
     }
 
     JJUtils::Generic::SetErrorsMultiply(hCorrected,data,momRes);
@@ -47,10 +47,11 @@ void makeMomResCorrection1D()
     const TString fileNameExp = "../output/1Dcorr_0_10_cent_Purity.root";
     const TString fileNameMomRes = "../output/1Dmomres_0_10_cent_SMASH.root";
 
-    const std::vector<std::pair<int,TString> > ktArr{{1,"(0,200)"},{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
-    const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"},{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"}};
-    const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
-    const int rebin = 1;
+    // const std::vector<std::pair<int,TString> > ktArr{{1,"(0,200)"},{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
+    // const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"},{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"}};
+    // const std::vector<std::pair<int,TString> > psiArr{{1,"(-202.5,-157.5)"},{2,"(-157.5,-112.5)"},{3,"(-112.5,-67.5)"},{4,"(-67.5,-22.5)"},{5,"(-22.5,22.5)"},{6,"(22.5,67.5)"},{7,"(67.5,112.5)"},{8,"(112.5,157.5)"}};
+    const auto ktArr = Mixing::PairGrouping{}.GetKtIndexIntervalPairs();
+    const auto yArr = Mixing::PairGrouping{}.GetRapIndexIntervalPairs();
     constexpr int minX = 0, maxX = 300;
 
     bool isFirst = true;
@@ -74,7 +75,7 @@ void makeMomResCorrection1D()
     isFirst = true;
     for (const auto &kt : ktArr)
     {
-        TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatKt%d",kt.first));
+        TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatKt%ld",kt.first));
 
         if (hData != nullptr)
         {
@@ -103,7 +104,7 @@ void makeMomResCorrection1D()
     isFirst = true;
     for (const auto &y : yArr)
     {
-        TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatY%d",y.first));
+        TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatY%ld",y.first));
 
         if (hData != nullptr)
         {
@@ -125,33 +126,17 @@ void makeMomResCorrection1D()
     line->Draw("same");
     canvY->Write();
 
-    JJColor::CreateSecondaryWutGradient();
-
-    TCanvas *canvPsi = new TCanvas("canvPsi","",1600,900);
-    canvPsi->SetMargin(0.15,0.05,0.15,0.05);
-    for (const auto &psi : psiArr)
-    {
-        TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatPsi%d",psi.first));
-
-        if (hData != nullptr)
+    for (const auto &kt : ktArr)
+        for (const auto &y : yArr)
         {
-            TH1D *hCorrect = CorrectForMomRes(hData,hMomResFactor);
-            if (isFirst)
-            {
-                hCorrect->Draw("hist pe");
-                isFirst = false;
-            }
-            else
-            {
-                hCorrect->Draw("same hist pe");
-            }
+            TH1D *hData = inpFileData->Get<TH1D>(TString::Format("hQinvRatKt%ldY%ld",kt.first,y.first));
 
-            hCorrect->Write();
+            if (hData != nullptr)
+            {
+                TH1D *hCorrect = CorrectForMomRes(hData,hMomResFactor);
+                hCorrect->Write();
+            }
         }
-    }
-    canvPsi->BuildLegend(0.2,0.2,0.5,0.5,"","p");
-    line->Draw("same");
-    canvPsi->Write();
 
     TH1D *hData = inpFileData->Get<TH1D>("hQinvRatInteg");
     TH1D *hCorrect = CorrectForMomRes(hData,hMomResFactor);
