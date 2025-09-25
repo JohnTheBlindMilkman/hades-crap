@@ -6,6 +6,7 @@
     #include "TCanvas.h"
     #include "TString.h"
     #include "TPavesText.h"
+    #include "TMath.h"
 
     namespace JJUtils
     {
@@ -95,9 +96,9 @@
                     eDen = hDen->GetBinError(hDen->FindBin(hNum->GetBinCenter(i)));
 
                     // propagation of uncertainty for a function num/den with inclusion of the correlation between the constituents
-                    if (fabs(vDen) > 0.)
-                        vErr = std::sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - (2*vNum*eNum*eDen)/(vDen*vDen*vDen));
-                    hout->SetBinError(i,vErr);
+                    vErr = std::sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - (2*vNum*eNum*eDen)/(vDen*vDen*vDen));
+                    
+                    (TMath::IsNaN(vErr)) ? hout->SetBinError(i,0) : hout->SetBinError(i,vErr);
                 }
             }
 
