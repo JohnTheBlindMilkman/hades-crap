@@ -127,7 +127,7 @@
             {
                 MDCLayers<bool> bothLayers;
                 std::transform(pairLayers.begin(), pairLayers.end(), bothLayers.begin(),
-                    [](const auto &layer){return static_cast<bool>(layer.first.size() > 0 && layer.second.size() > 0);});
+                    [](const auto &layer){return static_cast<bool>(!layer.first.empty() && !layer.second.empty());});
 
                 return std::count_if(bothLayers.begin(),bothLayers.end(),[](bool areBoth){return areBoth;});
             }
@@ -143,7 +143,7 @@
 
                 auto uniaryOp = [](const std::pair<std::vector<unsigned>, std::vector<unsigned> > &layer)
                 {
-                    if (layer.first.size() > 0 && layer.second.size() > 0)
+                    if (!layer.first.empty() && !layer.second.empty())
                     {
                         long minDist = std::numeric_limits<unsigned>::max();
 
@@ -207,21 +207,19 @@
                 auto uniaryOp = [&nHits1,&nHits2](const std::pair<std::vector<unsigned>, std::vector<unsigned> > &layer)
                 {
                     int splittingLvl = 0;
-                    auto hits1 = layer.first.size();
-                    auto hits2 = layer.second.size();
 
-                    if (hits1 > 0 && hits2 > 0)
+                    if (!layer.first.empty() && !layer.second.empty())
                     {
                         --splittingLvl;
                         ++nHits1;
                         ++nHits2;
                     }
-                    else if (hits1 > 0)
+                    else if (!layer.first.empty())
                     {
                         ++splittingLvl;
                         ++nHits1;
                     }
-                    else if (hits2 > 0)
+                    else if (!layer.second.empty())
                     {
                         ++splittingLvl;
                         ++nHits2;

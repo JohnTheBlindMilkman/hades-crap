@@ -212,6 +212,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
     HParticleMetaMatcher* matcher = new HParticleMetaMatcher();
     matcher->setDebug();
 	matcher->setUseEMC(kFALSE);
+	matcher->setRunWireManager(false);
 	if (isCustomDst)
 		matcher->setUseSeg(kTRUE);
     masterTaskSet->add(matcher);
@@ -316,9 +317,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		particle_info           = HCategoryManager::getObject(particle_info, particle_info_cat, 0);
 		HGeomVector EventVertex  = event_header->getVertexReco().getPos();
 		
-		Float_t vertZ = EventVertex.Z();
-		Float_t vertX = EventVertex.X();
-		Float_t vertY = EventVertex.Y();
 		Int_t centClassIndex    = evtChara.getCentralityClass(eCentEst, eCentClass1); // 0 is overflow, 1 is 0-10, etc.
 		Float_t EventPlane = -1;
 		Float_t EventPlaneA = -1;
@@ -369,7 +367,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
-		if (! fEvent->SelectEvent<HADES::Target::Setup::Apr12>({1},2,2,2))
+		if (! fEvent->SelectEvent<HADES::Target::Setup::Apr12>({4},2,2,2))
 			continue;
 
 		hCounter->Fill(cNumSelectedEvents);
@@ -388,12 +386,12 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		for (Int_t track = 0; track < nTracks; track++) 
 		{
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
+
+			// I have a vague idea about how it should be done: set momentum and then call calc4vectorproperties before using
+			particle_cand->setMomentum(particle_cand->getCorrectedMomentumPID(protonPID));
+			
 			//fWireManager = matcher->getWireManager();
 			matcher->getWireInfoDirect(particle_cand,fWireInfo);
-			
-			// I have no freakin idea if this is how it should be done
-			// for Feb24 there is no ene loss correction (yet?)
-			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
 
 			//--------------------------------------------------------------------------------
 			// Discarding all tracks that have been discarded by the track sorter and counting all / good tracks

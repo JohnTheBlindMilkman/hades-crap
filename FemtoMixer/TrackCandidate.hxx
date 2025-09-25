@@ -558,6 +558,15 @@ namespace Selection
                 return Pz;
             }
             /**
+             * @brief Get energy of the track
+             * 
+             * @return float 
+             */
+            [[nodiscard]] float GetEnergy() const noexcept
+            {
+                return Energy;
+            }
+            /**
              * @brief Get the Beta of the track
              * 
              * @return float 

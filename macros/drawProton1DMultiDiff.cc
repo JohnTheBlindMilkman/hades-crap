@@ -53,10 +53,8 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_25_08_11_processed.root";
-    const TString outputFile = "../output/1Dcorr_0_10_cent.root";
-    // const std::vector<std::pair<int,TString> > ktArr{/* {1,"(0,200)"}, */{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
-    // const std::vector<std::pair<int,TString> > yArr{{1,"(-0.65,-0.55)"},{2,"(-0.55,-0.45)"},{3,"(-0.45,-0.35)"},{4,"(-0.35,-0.25)"},{5,"(-0.25,-0.15)"},{6,"(-0.15,-0.05)"},{7,"(-0.05,0.05)"},{8,"(0.05,0.15)"},{9,"(0.15,0.25)"}/* ,{10,"(0.25,0.35)"},{11,"(0.35,0.45)"},{12,"(0.45,0.55)"},{13,"(0.55,0.65)"} */};
+    const TString fileName = "../slurmOutput/apr12ana_all_25_09_24_processed.root";
+    const TString outputFile = "../output/1Dcorr_30_40_cent.root";
     const auto ktArr = Mixing::PairGrouping{}.GetKtIndexIntervalPairs();
     const auto yArr = Mixing::PairGrouping{}.GetRapIndexIntervalPairs();
     const int rebin = 1;
@@ -127,7 +125,7 @@ void drawProton1DMultiDiff()
             norm *= rebin;
             hRat->Scale(1./norm);
             hRat->SetName(TString::Format("hQinvRatY%ld",y.first));
-            hRat->SetTitle(TString::Format("y #in %s",y.second.Data()));
+            hRat->SetTitle(TString::Format("y_{lab}^{1,2} #in %s",y.second.Data()));
             prepareGraph(hRat,JJColor::fWutSecondaryColors11[y.first]);
 
             hRat->GetXaxis()->SetRangeUser(minX,maxX);
@@ -163,7 +161,7 @@ void drawProton1DMultiDiff()
                 norm *= rebin;
                 hRat->Scale(1./norm);
                 hRat->SetName(TString::Format("hQinvRatKt%ldY%ld",kt.first,y.first));
-                hRat->SetTitle(TString::Format("k_{T} #in %s and y #in %s;q_{inv} [MeV/c];CF(q_{inv})",kt.second.Data(),y.second.Data()));
+                hRat->SetTitle(TString::Format("k_{T} #in %s and y_{lab}^{1,2} #in %s;q_{inv} [MeV/c];CF(q_{inv})",kt.second.Data(),y.second.Data()));
                 prepareGraph(hRat,JJColor::fWutSecondaryColors11[kt.first-1]);
 
                 hRat->GetXaxis()->SetRangeUser(minX,maxX);

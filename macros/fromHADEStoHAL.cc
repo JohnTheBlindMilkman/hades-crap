@@ -58,7 +58,7 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 
 void fromHADEStoHAL()
 {
-    const TString inpFilePath = "../output/1Dcorr_0_10_cent_Purity_MomRes.root";
+    const TString inpFilePath = "../output/1Dcorr_30_40_cent_Purity_MomRes.root";
     const auto ktArr = Mixing::PairGrouping{}.GetKtIndexSequence();
     const auto yArr = Mixing::PairGrouping{}.GetRapIndexSequence();
     //const std::vector<TString> sProjName{"out","side","long"};
@@ -71,21 +71,21 @@ void fromHADEStoHAL()
     for (const auto &ktval : ktArr)
     {
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvRatKt%ld",ktval))));
-        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%ld",ktval))));
-        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%ld",ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%ld",ktval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%ld",ktval))));
     }
     for (const auto &rapval : yArr)
     {
         histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvRatY%ld",rapval))));
-        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignY%ld",rapval))));
-        // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgY%ld",rapval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignY%ld",rapval))));
+        histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgY%ld",rapval))));
     }
     for (const auto &ktval : ktArr)
         for (const auto &rapval : yArr)
         {
             histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvRatKt%ldY%ld",ktval,rapval))));
-            // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%ldY%ld",ktval,rapval))));
-            // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%ldY%ld",ktval,rapval))));
+            histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvSignKt%ldY%ld",ktval,rapval))));
+            histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>(TString::Format("hQinvBckgKt%ldY%ld",ktval,rapval))));
         }
     /* for (const auto &proj : sProjName)
     {
@@ -98,8 +98,8 @@ void fromHADEStoHAL()
     } */
 
     histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvRatInteg")));
-    // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvSignInteg")));
-    // histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvBckgInteg")));
+    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvSignInteg")));
+    histArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQinvBckgInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQoutRatInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQsideRatInteg")));
     //histProjArray.push_back(ConvertXaxisUnits(inpFile->Get<TH1D>("hQlongRatInteg")));

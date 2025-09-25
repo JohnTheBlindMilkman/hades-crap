@@ -44,7 +44,7 @@ TH1D* CorrectForMomRes(const TH1D *data, TH1D *momRes)
 
 void makeMomResCorrection1D()
 {
-    const TString fileNameExp = "../output/1Dcorr_0_10_cent_Purity.root";
+    const TString fileNameExp = "../output/1Dcorr_30_40_cent_Purity.root";
     const TString fileNameMomRes = "../output/1Dmomres_0_10_cent_SMASH.root";
 
     // const std::vector<std::pair<int,TString> > ktArr{{1,"(0,200)"},{2,"(200,400)"},{3,"(400,600)"},{4,"(600,800)"},{5,"(800,1000)"},{6,"(1000,1200)"},{7,"(1200,1400)"},{8,"(1400,1600)"},{9,"(1600,1800)"},{10,"(1800,2000)"}};
@@ -82,12 +82,12 @@ void makeMomResCorrection1D()
             TH1D *hCorrect = CorrectForMomRes(hData,hMomResFactor);
             if (isFirst)
             {
-                hCorrect->Draw("hist pe");
+                hCorrect->Draw("hist pe pmc plc");
                 isFirst = false;
             }
             else
             {
-                hCorrect->Draw("same hist pe");
+                hCorrect->Draw("same hist pe pmc plc");
             }
 
             hCorrect->Write();

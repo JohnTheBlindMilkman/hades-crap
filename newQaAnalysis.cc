@@ -179,6 +179,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH1D *hZVertex = new TH1D("hZVertex","distribution of z component of the vertex",700,-65,5);
 	TH1D *hXVertex = new TH1D("hXVertex","distribution of x component of the vertex",401,-20,20);
 	TH1D *hYVertex = new TH1D("hYVertex","distribution of x component of the vertex",401,-20,20);
+	TH1D *hXMom = new TH1D("hXMom","p_{x} distribution of accepted protons",3000,-1500,1500);
+	TH1D *hYMom = new TH1D("hYMom","p_{y} distribution of accepted protons",3000,-1500,1500);
+	TH1D *hZMom = new TH1D("hZMom","p_{z} distribution of accepted protons",3000,0,3000);
+	TH1D *hEne = new TH1D("hEne","Energy distribution of accepted protons",2500,900,3400);
 	TH2D *hBetaMomTof = new TH2D("hBetaMomTof","#beta vs p of accepted protons (ToF);p #times c [MeV/c];#beta",125,0,2500,100,0,1.);
 	TH2D *hBetaMomRpc = new TH2D("hBetaMomRpc","#beta vs p of accepted protons (RPC);p #times c [MeV/c];#beta",125,0,2500,100,0,1.);
 	TH2D *hPtRap = new TH2D("hPtRap","p_{T} vs y_{c.m} of accepted protons;p_{T} [MeV/c];y_{c.m.}",200,0,2000,121,-1.15,1.25);
@@ -194,10 +198,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hMetaCellsToF = new TH2D("hMetaCellsToF","Hit meta cells of ToF;Sector;Meta Cell",6,-0.5,5.5,64,0,64);
 	TH2D *hMetaCellsRPC = new TH2D("hMetaCellsRPC","Hit meta cells of RPC;Sector;Meta Cell",6,-0.5,5.5,186,64,250);
 
-	TH2D *hMomResolution = new TH2D("hMomResolution","Momentum difference of protons;p_{reco} [MeV/c];#frac{1}{p_{kin}} - #frac{1}{p_{reco}} [MeV/c]",80,0,4000,500,-0.002, 0.002);
+	TH2D *hMomResolution = new TH2D("hMomResolution","Momentum difference of protons;p_{reco} [MeV/c];#frac{1}{p_{kin}} - #frac{1}{p_{reco}} [MeV/c]",80,0,4000,1000,-0.001, 0.001);
 	TH2D *hPhiResolution = new TH2D("hPhiResolution","#phi angle difference of protons;p_{reco} [MeV/c];#phi_{kin} - #phi_{reco} [deg]",80,0,4000,500,-20, 20);
 	TH2D *hThetaResolution = new TH2D("hThetaResolution","#theta angle difference of protons;p_{reco}  [MeV/c];#theta_{kin} - #theta_{reco} [deg]",80,0,4000,500,-10, 10);
-	//TH2D *hQinvResolution = new TH2D("hQinvResolution","q_{inv} discrepancy between ideal and recunstructed proton pairs;qinv_{reco};qinv_{kine}",750,0,3000,750,0,3000);
+	TH2D *hQinvResolution = new TH2D("hQinvResolution","q_{inv} discrepancy between ideal and recunstructed proton pairs;qinv_{reco};qinv_{kine}",750,0,3000,750,0,3000);
 	TH2D *hQoutResolution = new TH2D("hQoutResolution","q_{out} discrepancy between ideal and recunstructed proton pairs;q_{out}^{reco};q_{out}^{kine}",64,0,500,64,0,500);
 	TH2D *hQsideResolution = new TH2D("hQsideResolution","q_{side} discrepancy between ideal and recunstructed proton pairs;q_{side}^{reco};q_{side}^{kine}",64,0,500,64,0,500);
 	TH2D *hQlongResolution = new TH2D("hQlongResolution","q_{long} discrepancy between ideal and recunstructed proton pairs;q_{long}^{reco};q_{long}^{kine}",64,0,500,64,0,500);
@@ -230,7 +234,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TCutG* betamom_2sig_p_rpc_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_RPC_2.0");
 
 	std::vector<TH1D*> ktDistGood,rapDistGood,ktDistBad,rapDistBad;
-	std::vector<TH2D*> hKtRapGood, hKtRapBad, hQinvResolution;
+	std::vector<TH2D*> hKtRapGood, hKtRapBad;
 	constexpr std::array<const char *,7> centString{"overflow","0-10 %","10-20 %","20-30 %","30-40 %","40-50 %","50-60 %"};
 	for (const int i : {0,1,2,3,4})
 	{
@@ -240,7 +244,6 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		rapDistBad.push_back(new TH1D(TString::Format("rapDist_cent%d_bad",i),TString::Format("pair rapidity distribution of rejected pairs for %s centrality",centString.at(i)),1000,-2,2));
 		hKtRapGood.push_back(new TH2D(TString::Format("hKtRapGoodCent%d",i),"k_{T} vs y_{c.m} of accepted proton pairs;k_{T} [MeV/c];y_{c.m.}",1000,0,2500,1000,-2,2));
 		hKtRapBad.push_back(new TH2D(TString::Format("hKtRapBadCent%d",i),"k_{T} vs y_{c.m} of rejected proton pairs;k_{T} [MeV/c];y_{c.m.}",1000,0,2500,1000,-2,2));
-		hQinvResolution.push_back(new TH2D(TString::Format("hQinvResolutionCent%d",i),"q_{inv} discrepancy between ideal and recunstructed proton pairs;qinv_{reco};qinv_{kine}",750,0,3000,750,0,3000));
 	}
 
 	// create objects for particle selection
@@ -290,6 +293,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     HParticleMetaMatcher* matcher = new HParticleMetaMatcher();
     matcher->setDebug();
 	matcher->setUseEMC(kFALSE);
+	matcher->setRunWireManager(false);
 	if (isCustomDst)
 		matcher->setUseSeg(kTRUE);
     masterTaskSet->add(matcher);
@@ -468,10 +472,11 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		for (Int_t track = 0; track < nTracks; track++) 
 		{
 			particle_cand = HCategoryManager::getObject(particle_cand, particle_cand_cat, track);
-			matcher->getWireInfoDirect(particle_cand,fWireInfo);
 
-			// for Feb24 there is no ene loss correction (yet?)
-			particle_cand->setMomentum(enLossCorr.getCorrMom(protonPID,particle_cand->getMomentum(),particle_cand->getTheta()));
+			// I have a vague idea about how it should be done: set momentum and then call calc4vectorproperties before using
+			particle_cand->setMomentum(particle_cand->getCorrectedMomentumPID(protonPID));
+
+			matcher->getWireInfoDirect(particle_cand,fWireInfo);
 			
 			//--------------------------------------------------------------------------------
 			// Discarding all tracks that have been discarded by the track sorter and counting all / good tracks
@@ -486,14 +491,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			if constexpr (isSimulation)
 			{
-				// fTrack = std::make_shared<Selection::TrackCandidate>(
-				// 	particle_cand,
-				// 	static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
-				// 	HADES::MDC::CreateTrackLayers(fWireInfo),
-				// 	fEvent->GetID(),
-				// 	fEvent->GetReactionPlane(),
-				// 	track,
-				// 	protonPID);
+			// 	fTrack = std::make_shared<Selection::TrackCandidate>(
+			// 		particle_cand,
+			// 		static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
+			// 		HADES::MDC::CreateTrackLayers(fWireInfo),
+			// 		fEvent->GetID(),
+			// 		fEvent->GetReactionPlane(),
+			// 		track,
+			// 		protonPID);
 			}
 			else
 			{
@@ -563,6 +568,11 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 				hWiresMultiplicityGood->Fill(fTrack->GetSector(), layer, fTrack->GetWires(layer).size());
 			}
 
+			hXMom->Fill(fTrack->GetPx());
+			hYMom->Fill(fTrack->GetPy());
+			hZMom->Fill(fTrack->GetPz());
+			hEne->Fill(fTrack->GetEnergy());
+
 			fEvent->AddTrack(fTrack);
 
 			if (fTrack->GetSystem() == Selection::Detector::RPC)
@@ -612,7 +622,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 
 						if (isSimulation)
 						{
-							hQinvResolution.at(fEvent->GetCentrality())->Fill(elem->GetQinv(),elem->GetGeantKinePair()->GetQinv());
+							hQinvResolution->Fill(elem->GetQinv(),elem->GetGeantKinePair()->GetQinv());
 							float qOutReco,qOutKine,qSideReco,qSideKine,qLongReco,qLongKine;
 							std::tie(qOutReco,qSideReco,qLongReco) = elem->GetOSL();
 							std::tie(qOutKine,qSideKine,qLongKine) = elem->GetGeantKinePair()->GetOSL();
@@ -703,6 +713,10 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hYVertex->Write();
 	hZVertex->Write();
 
+	hXMom->Write();
+	hYMom->Write();
+	hZMom->Write();
+	hEne->Write();
 	hPtRap->Write();
 	hBetaMomRpc->Write();
 	hBetaMomTof->Write();
@@ -721,7 +735,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hMomResolution->Write();
 	hPhiResolution->Write();
 	hThetaResolution->Write();
-	//hQinvResolution->Write();
+	hQinvResolution->Write();
 	hQoutResolution->Write();
 	hQsideResolution->Write();
 	hQlongResolution->Write();
@@ -757,7 +771,6 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 		rapDistGood.at(i)->Write();
 		ktDistBad.at(i)->Write();
 		rapDistBad.at(i)->Write();
-		hQinvResolution.at(i)->Write();
 	}
 
     //--------------------------------------------------------------------------------

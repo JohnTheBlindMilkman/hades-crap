@@ -49,6 +49,28 @@
                 return (entriesNum > 0.) ? hDen->GetEntries() / entriesNum : 0.;
             }
 
+            std::vector<TH1D*> MergeHistograms(const std::vector<TH1D*> &inpHistos, const std::vector<std::vector<std::size_t> > &groups)
+            {
+                std::vector<TH1D*> otpHistos(groups.size(),nullptr);
+                
+                for (std::size_t i = 0; i < groups.size(); ++i)
+                {
+                    for (const auto &j : groups.at(i))
+                    {
+                        if (j == groups.at(i).front())
+                        {
+                            otpHistos.at(i) = inpHistos.at(j);
+                        }
+                        else
+                        {
+                            otpHistos.at(i)->Add(inpHistos.at(j));
+                        }
+                    }
+                }
+
+                return otpHistos;
+            }
+
         } // namespace CF
 
         namespace Generic
@@ -103,7 +125,6 @@
                     hout->SetBinError(i,vErr);
                 }
             }
-            
         } // namespace Generic
 
         namespace Drawing
@@ -171,6 +192,131 @@
                 bottom->Draw();
 
                 return newCanv;
+            }
+
+            /**
+             * @brief TCanvas partitioning function. Allows to divide a TCanvas for applications when we want to draw pads with the same X and Y axis, but only tle left most and bottom plots should have axis lablels ant ticks. Taken from https://root.cern/doc/v636/canvas2_8C.html
+             * 
+             * @param C TCanvas we want to divide
+             * @param Nx Number of divisions in the X axis
+             * @param Ny Number of divisions in the Y axis
+             * @param lMargin Left margin of the canvas
+             * @param rMargin Right margin of the canvas
+             * @param bMargin Bottom margin of the canvas
+             * @param tMargin Top margin of the canvas
+             */
+            void CanvasPartition(TCanvas *C, const Int_t Nx, const Int_t Ny, Float_t lMargin, Float_t rMargin, Float_t bMargin, Float_t tMargin)
+            {
+                if (!C)
+                    return;
+                
+                // Setup Pad layout:
+                Float_t vSpacing = 0.0;
+                Float_t vStep = (1. - bMargin - tMargin - (Ny - 1) * vSpacing) / Ny;
+                
+                Float_t hSpacing = 0.0;
+                Float_t hStep = (1. - lMargin - rMargin - (Nx - 1) * hSpacing) / Nx;
+                
+                Float_t vposd, vposu, vmard, vmaru, vfactor;
+                Float_t hposl, hposr, hmarl, hmarr, hfactor;
+                
+                for (Int_t i = 0; i < Nx; i++) {
+                
+                    if (i == 0) {
+                        hposl = 0.0;
+                        hposr = lMargin + hStep;
+                        hfactor = hposr - hposl;
+                        hmarl = lMargin / hfactor;
+                        hmarr = 0.0;
+                    } else if (i == Nx - 1) {
+                        hposl = hposr + hSpacing;
+                        hposr = hposl + hStep + rMargin;
+                        hfactor = hposr - hposl;
+                        hmarl = 0.0;
+                        hmarr = rMargin / (hposr - hposl);
+                    } else {
+                        hposl = hposr + hSpacing;
+                        hposr = hposl + hStep;
+                        hfactor = hposr - hposl;
+                        hmarl = 0.0;
+                        hmarr = 0.0;
+                    }
+                
+                    for (Int_t j = 0; j < Ny; j++) {
+                
+                        if (j == 0) {
+                            vposd = 0.0;
+                            vposu = bMargin + vStep;
+                            vfactor = vposu - vposd;
+                            vmard = bMargin / vfactor;
+                            vmaru = 0.0;
+                        } else if (j == Ny - 1) {
+                            vposd = vposu + vSpacing;
+                            vposu = vposd + vStep + tMargin;
+                            vfactor = vposu - vposd;
+                            vmard = 0.0;
+                            vmaru = tMargin / (vposu - vposd);
+                        } else {
+                            vposd = vposu + vSpacing;
+                            vposu = vposd + vStep;
+                            vfactor = vposu - vposd;
+                            vmard = 0.0;
+                            vmaru = 0.0;
+                        }
+                
+                        C->cd(0);
+                
+                        auto name = TString::Format("pad_%d_%d", i, j);
+                        auto pad = (TPad *)C->FindObject(name.Data());
+                        if (pad)
+                            delete pad;
+                        pad = new TPad(name.Data(), "", hposl, vposd, hposr, vposu);
+                        pad->SetLeftMargin(hmarl);
+                        pad->SetRightMargin(hmarr);
+                        pad->SetBottomMargin(vmard);
+                        pad->SetTopMargin(vmaru);
+                
+                        pad->SetFrameBorderMode(0);
+                        pad->SetBorderMode(0);
+                        pad->SetBorderSize(0);
+                
+                        pad->Draw();
+                    }
+                }
+            }
+            
+            /**
+             * @brief Helper function for placing graphics objects in the same position on X axis, regardless of the pad width. Taken from https://root.cern/doc/v636/canvas2_8C.html
+             * 
+             * @param x X coordinate we want
+             * @return X coordinate for currently active pad needed to match x
+             */
+            double XtoPad(double x)
+            {
+                double xl, yl, xu, yu;
+                gPad->GetPadPar(xl, yl, xu, yu);
+                double pw = xu - xl;
+                double lm = gPad->GetLeftMargin();
+                double rm = gPad->GetRightMargin();
+                double fw = pw - pw * lm - pw * rm;
+                return (x * fw + pw * lm) / pw;
+            }
+            
+            /**
+             * @brief Helper function for placing graphics objects in the same position on Y axis, regardless of the pad height. Taken from https://root.cern/doc/v636/canvas2_8C.html
+             * 
+             * @param y Y coordinate we want
+             * @return Y coordinate for currently active pad needed to match y
+             */
+            double YtoPad(double y)
+            {
+                double xl, yl, xu, yu;
+                gPad->GetPadPar(xl, yl, xu, yu);
+                double ph = yu - yl;
+                double tm = gPad->GetTopMargin();
+                double bm = gPad->GetBottomMargin();
+                double fh = ph - ph * bm - ph * tm;
+                return (y * fh + bm * ph) / ph;
             }
         } // namespace Drawing
         

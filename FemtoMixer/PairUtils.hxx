@@ -31,11 +31,9 @@
                     return val;
                 }
 
-                static constexpr std::size_t m_ktIntervals = 14, m_rapIntervals = 7, m_psiIntervals = 8;
-                // static constexpr std::array<float, m_ktIntervals + 1> m_ktArr = {0,200,400,600,800,1000,1200,1400,1600,1800,2000};
-                // static constexpr std::array<float, m_rapIntervals + 1> m_rapArr = {0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99,1.09,1.19,1.29,1.39};
-                static constexpr std::array<float, m_ktIntervals + 1> m_ktArr = {0,255,382.5,482.5,575,657.5,737.5,815,895,980,1070,1172.5,1300,1490,std::numeric_limits<float>::max()};
-                static constexpr std::array<float, m_rapIntervals + 1> m_rapArr = {0.,0.372,0.48,0.568,0.656,0.748,0.868,std::numeric_limits<float>::max()};
+                static constexpr std::size_t m_ktIntervals = 12, m_rapIntervals = 9, m_psiIntervals = 8;
+                static constexpr std::array<float, m_ktIntervals + 1> m_ktArr = {300,450,600,750,900,1050,1200,1350,1500,1650,1800,1950,2100};
+                static constexpr std::array<float, m_rapIntervals + 1> m_rapArr = {0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99};
                 static constexpr std::array<float,m_psiIntervals + 1> m_epArr{-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 
             public:
@@ -104,7 +102,14 @@
                     auto rapIndices = GetRapIndexSequence();
                     std::array<std::pair<std::size_t,TString>,m_rapIntervals> rapIndecesAndIntervals;
                     std::transform(rapIndices.begin(),rapIndices.end(),rapIndecesAndIntervals.begin(),
-                        [newRapArr](std::size_t i){return std::make_pair(i,TString::Format("(%f,%f)",newRapArr.at(i - 1), newRapArr.at(i)));}
+                        [this,newRapArr](std::size_t i)
+                        {
+                            TString lowEdge = RemoveTrailingZeros(TString(std::to_string(newRapArr.at(i - 1))));
+                            TString highEdge = RemoveTrailingZeros(TString(std::to_string(newRapArr.at(i))));
+                            if (highEdge == RemoveTrailingZeros(TString(std::to_string(std::numeric_limits<float>::max()))))
+                                highEdge = "#infty";
+                            return std::make_pair(i,TString::Format("(%s,%s)", lowEdge.Data(), highEdge.Data()));
+                        }
                     );
 
                     return rapIndecesAndIntervals;
@@ -133,7 +138,7 @@
 
                     if (pair->AreTracksFromTheSameSector())
                     {
-                        return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.5,3) ||
+                        return pair->RejectPairByCloseHits<Behaviour::OneUnder>(0.75,3) ||
                             pair->GetBothLayers() < 20 ||
                             pair->GetSharedMetaCells() > 0;
                     }

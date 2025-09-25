@@ -31,6 +31,22 @@ namespace Selection
             float X, Y, Z;
             std::vector<std::shared_ptr<TrackCandidate> > trackList;
 
+            template <std::size_t N>
+            auto GetClosestZindex(const std::array<std::pair<double,double>,N> &array) const noexcept
+            {
+                std::pair<double,double> current = {std::numeric_limits<double>::max(),0};
+                std::size_t index = 0;
+
+                // Mahalanobis distance to the closest peak
+                for (const auto &[mean,stdev] : array)
+                {   
+                    current = std::min(current,{std::abs(mean - Z) / stdev,index},
+                        [](const std::pair<double,double> &elem1,const std::pair<double,double> &elem2){return elem1.first < elem2.first;});
+                    ++index;
+                }
+                return current.second;
+            }
+
         public:
             /**
              * @brief Construct a new Event Candidate object
@@ -83,25 +99,21 @@ namespace Selection
                     throw std::runtime_error("nSigmaZ >2 overlaps between neighbouring plates, please choose smaller value.\n If the specified value was intentional, please evaluate youe life choices...");
 
                 // if this event's centrality is not in the centrality index list, reject
-                if (std::find(centIndex.begin(),centIndex.end(),Centrality) == centIndex.end())
+                if (std::find(centIndex.begin(), centIndex.end(), Centrality) == centIndex.end())
                     return false;
 
-                if ((X < (HADES::Target::GetXTargetPosition<T>().first - nSigmaX*HADES::Target::GetXTargetPosition<T>().second)) || 
-                    (X > (HADES::Target::GetXTargetPosition<T>().first + nSigmaX*HADES::Target::GetXTargetPosition<T>().second)))
+                if ((X < (HADES::Target::GetXTargetPosition<T>().first - nSigmaX * HADES::Target::GetXTargetPosition<T>().second)) || 
+                    (X > (HADES::Target::GetXTargetPosition<T>().first + nSigmaX * HADES::Target::GetXTargetPosition<T>().second)))
                     return false;
-                if ((Y < (HADES::Target::GetYTargetPosition<T>().first - nSigmaY*HADES::Target::GetYTargetPosition<T>().second)) || 
-                    (Y > (HADES::Target::GetYTargetPosition<T>().first + nSigmaY*HADES::Target::GetYTargetPosition<T>().second)))
+                if ((Y < (HADES::Target::GetYTargetPosition<T>().first - nSigmaY * HADES::Target::GetYTargetPosition<T>().second)) || 
+                    (Y > (HADES::Target::GetYTargetPosition<T>().first + nSigmaY * HADES::Target::GetYTargetPosition<T>().second)))
                     return false;
 
-                std::size_t plateNo = 0;
-                for(const auto &plate : HADES::Target::GetZPlatePositions<T>())
+                TargetPlate = GetClosestZindex(HADES::Target::GetZPlatePositions<T>());
+                const auto plate = HADES::Target::GetZPlatePositions<T>().at(TargetPlate);
+                if ((Z >= (plate.first - nSigmaZ * plate.second)) && (Z <= (plate.first + nSigmaZ * plate.second)))
                 {
-                    if ((Z >= (plate.first - nSigmaZ*plate.second)) && (Z <= (plate.first + nSigmaZ*plate.second)))
-                    {
-                        TargetPlate = plateNo;
-                        return true;
-                    }
-                    plateNo++;
+                    return true;
                 }
 
                 return false;

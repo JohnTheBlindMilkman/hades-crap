@@ -23,6 +23,8 @@
             {
                 template <Setup T> struct type{};
 
+                static constexpr std::array<std::pair<double,double>,15> zPlatesAu12{{{-54.7598,0.755846},{-51.6971,0.783591},{-47.7996,0.763387},{-44.5473,0.769386},{-40.569,0.781312},{-37.2151,0.762538},{-33.2948,0.76901},{-30.3726,0.742618},{-26.648,0.748409},{-22.5492,0.738462},{-18.9649,0.747727},{-15.5259,0.749724},{-11.8726,0.740386},{-8.45083,0.742672},{-4.58076,0.712394}}};
+
                 static constexpr std::size_t NPlates(type<Setup::Apr12>) noexcept
                 {
                     return 15;
@@ -32,9 +34,9 @@
                     return 15;
                 }
 
-                static constexpr std::array<std::pair<double,double>,15> ZPlates(type<Setup::Apr12>) noexcept
+                constexpr std::array<std::pair<double,double>,15> ZPlates(type<Setup::Apr12>) noexcept
                 {
-                    return {{{-54.7598,0.755846},{-51.6971,0.783591},{-47.7996,0.763387},{-44.5473,0.769386},{-40.569,0.781312},{-37.2151,0.762538},{-33.2948,0.76901},{-30.3726,0.742618},{-26.648,0.748409},{-22.5492,0.738462},{-18.9649,0.747727},{-15.5259,0.749724},{-11.8726,0.740386},{-8.45083,0.742672},{-4.58076,0.712394}}};
+                    return zPlatesAu12;
                 }
                 static constexpr std::array<std::pair<double,double>,15> ZPlates(type<Setup::Feb24Au>) noexcept
                 {
@@ -78,7 +80,7 @@
              * @return std::array of pairs (first value: mean, second vaule: std. dev.)
              */
             template <Setup T>
-            static constexpr std::array<std::pair<double,double>,GetNumberOfPlates<T>() > GetZPlatePositions() noexcept
+            constexpr std::array<std::pair<double,double>,GetNumberOfPlates<T>() > GetZPlatePositions() noexcept
             {
                 return Detail::ZPlates(Detail::type<T>{});
             }

@@ -92,7 +92,7 @@ void compareHists()
     outFile->cd();
     c->Write(); */
 
-    const TString fileName1 = "../output/1Dcorr_0_10_cent_Purity.root";
+    const TString fileName1 = "../output/1Dcorr_0_10_cent_Purity_MomRes_old.root";
     const TString fileName2 = "../output/1Dcorr_0_10_cent_Purity_MomRes.root";
     /* const TString fileName3 = "../output/1Dcorr_0_10_cent_Integ_tmp2.root";
     const TString fileName4 = "../output/1Dcorr_0_10_cent_Integ_tmp3.root";
@@ -101,8 +101,8 @@ void compareHists()
     const std::vector<TString> histNames = {"hQinvRatInteg","hQinvRatInteg"};
     const std::vector<TString> titleNames = 
     {
-        "Uncorrected",
-        "Corrected for momentum smearing"
+        "Mom. Res. Correction with p",
+        "Mom. Res. Correction with 1/p"
     };
 
     TFile *inpFile1 = TFile::Open(fileName1);
