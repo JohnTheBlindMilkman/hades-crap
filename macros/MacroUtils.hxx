@@ -311,37 +311,44 @@
              * @param rMargin Right margin of the canvas
              * @param bMargin Bottom margin of the canvas
              * @param tMargin Top margin of the canvas
+             * @param hSpacing Horizontal spacing between the pads
+             * @param vSpacing Vertical spacing between the pads
              */
-            void CanvasPartition(TCanvas *C, const Int_t Nx, const Int_t Ny, Float_t lMargin, Float_t rMargin, Float_t bMargin, Float_t tMargin)
+            template <std::size_t Nx, std::size_t Ny>
+            std::array<std::array<std::unique_ptr<TPad>,Ny>,Nx> CanvasPartition(TCanvas *C, double lMargin = 0.15, double rMargin = 0.05, double bMargin = 0.15, double tMargin = 0.05, double hSpacing = 0., double vSpacing = 0.)
             {
-                if (!C)
-                    return;
-                
+                std::array<std::array<std::unique_ptr<TPad>,Ny>,Nx> pads;
+
+                if (C == nullptr)
+                    return pads;
+
                 // Setup Pad layout:
-                Float_t vSpacing = 0.0;
-                Float_t vStep = (1. - bMargin - tMargin - (Ny - 1) * vSpacing) / Ny;
+                const double vStep = (1. - bMargin - tMargin - (Ny - 1) * vSpacing) / Ny;
+                const double hStep = (1. - lMargin - rMargin - (Nx - 1) * hSpacing) / Nx;
                 
-                Float_t hSpacing = 0.0;
-                Float_t hStep = (1. - lMargin - rMargin - (Nx - 1) * hSpacing) / Nx;
+                double vposd, vposu, vmard, vmaru, vfactor;
+                double hposl, hposr, hmarl, hmarr, hfactor;
                 
-                Float_t vposd, vposu, vmard, vmaru, vfactor;
-                Float_t hposl, hposr, hmarl, hmarr, hfactor;
-                
-                for (Int_t i = 0; i < Nx; i++) {
-                
-                    if (i == 0) {
+                for (std::size_t i = 0; i < Nx; i++) 
+                {
+                    if (i == 0) 
+                    {
                         hposl = 0.0;
                         hposr = lMargin + hStep;
                         hfactor = hposr - hposl;
                         hmarl = lMargin / hfactor;
                         hmarr = 0.0;
-                    } else if (i == Nx - 1) {
+                    } 
+                    else if (i == Nx - 1) 
+                    {
                         hposl = hposr + hSpacing;
                         hposr = hposl + hStep + rMargin;
                         hfactor = hposr - hposl;
                         hmarl = 0.0;
                         hmarr = rMargin / (hposr - hposl);
-                    } else {
+                    } 
+                    else 
+                    {
                         hposl = hposr + hSpacing;
                         hposr = hposl + hStep;
                         hfactor = hposr - hposl;
@@ -349,23 +356,28 @@
                         hmarr = 0.0;
                     }
                 
-                    for (Int_t j = 0; j < Ny; j++) {
-                
-                        if (j == 0) {
+                    for (std::size_t j = 0; j < Ny; j++) 
+                    {
+                        if (j == 0)
+                        {
+                            vposu = 1.;
+                            vposd = vposu - vStep - tMargin;
+                            vfactor = vposu - vposd;
+                            vmard = 0.0;
+                            vmaru = tMargin / vfactor;
+                        } 
+                        else if (j == Ny - 1)
+                        {
+                            vposu = vposd - vSpacing;
                             vposd = 0.0;
-                            vposu = bMargin + vStep;
                             vfactor = vposu - vposd;
                             vmard = bMargin / vfactor;
                             vmaru = 0.0;
-                        } else if (j == Ny - 1) {
-                            vposd = vposu + vSpacing;
-                            vposu = vposd + vStep + tMargin;
-                            vfactor = vposu - vposd;
-                            vmard = 0.0;
-                            vmaru = tMargin / (vposu - vposd);
-                        } else {
-                            vposd = vposu + vSpacing;
-                            vposu = vposd + vStep;
+                        } 
+                        else
+                        {
+                            vposu = vposd - vSpacing;
+                            vposd = vposu - vStep;
                             vfactor = vposu - vposd;
                             vmard = 0.0;
                             vmaru = 0.0;
@@ -373,23 +385,25 @@
                 
                         C->cd(0);
                 
-                        auto name = TString::Format("pad_%d_%d", i, j);
-                        auto pad = (TPad *)C->FindObject(name.Data());
-                        if (pad)
-                            delete pad;
-                        pad = new TPad(name.Data(), "", hposl, vposd, hposr, vposu);
-                        pad->SetLeftMargin(hmarl);
-                        pad->SetRightMargin(hmarr);
-                        pad->SetBottomMargin(vmard);
-                        pad->SetTopMargin(vmaru);
+                        auto name = TString::Format("%s_pad_%ld_%ld", C->GetName(), i, j);
+                        // pads[i][j] = (TPad *)C->FindObject(name.Data());
+                        // if (pads[i][j] != nullptr)
+                        //     delete pads[i][j];
+                        pads[i][j] = std::make_unique<TPad>(name.Data(), "", hposl, vposd, hposr, vposu);
+                        pads[i][j]->SetLeftMargin(hmarl);
+                        pads[i][j]->SetRightMargin(hmarr);
+                        pads[i][j]->SetBottomMargin(vmard);
+                        pads[i][j]->SetTopMargin(vmaru);
                 
-                        pad->SetFrameBorderMode(0);
-                        pad->SetBorderMode(0);
-                        pad->SetBorderSize(0);
+                        // pad->SetFrameBorderMode(0);
+                        // pad->SetBorderMode(0);
+                        // pad->SetBorderSize(0);
                 
-                        pad->Draw();
+                        // pad->Draw();
                     }
                 }
+
+                return pads;
             }
             
             /**
