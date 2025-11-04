@@ -10,8 +10,8 @@ void femtoMerge1D()
     const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_25_09_24.root";
     const TString SignNameBase = "hQinvSign_";
     const TString BckgNameBase = "hQinvBckg_";
-    constexpr auto ktIndexing = Mixing::PairGrouping{}.GetKtIndexSequence();
-    constexpr auto rapIndexing = Mixing::PairGrouping{}.GetRapIndexSequence();
+    constexpr auto ktIndexing = Mixing::PairGrouping{}.GetKtIndexSequence1D();
+    constexpr auto rapIndexing = Mixing::PairGrouping{}.GetRapIndexSequence1D();
 
     std::array<std::array<TH1D*,rapIndexing.size()>,ktIndexing.size()> hSign, hBckg;
     std::array<TH1D*,ktIndexing.size()> hSignKt, hBckgKt;

@@ -32,13 +32,13 @@ int CalcBinDistance(TH2D *hist, double recoX, double recoY, double kineX, double
 	return std::abs(binxReco - binxKine) + std::abs(binyReco - binyKine);
 }
 
-int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
+int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{false};
+	constexpr bool isSimulation{true};
 	constexpr int protonPID{14};
 
 	//--------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCand*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
+    HParticleCandSim*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -228,6 +228,39 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hDPhiDThetaBckgGood = new TH2D("hDPhiDThetaBckgGood","Backgound of angular distribution of proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
 	TH2D *hDPhiDThetaSignBad = new TH2D("hDPhiDThetaSignBad","Signal of angular distribution of accepted proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
 	TH2D *hDPhiDThetaBckgBad = new TH2D("hDPhiDThetaBckgBad","Backgound of angular distribution of rejected proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
+
+	TH2D *hQoutSLGood = new TH2D("hQoutSLGood","q_{out} vs Splitting Level for signal of accepted p-p CF;q_{out} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQoutSLBad = new TH2D("hQoutSLBad","q_{out} vs Splitting Level for signal of rejected p-p CF;q_{out} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQoutSWGood = new TH2D("hQoutSWGood","q_{out} vs Shared Wires for signal of accepted p-p CF;q_{out} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQoutSWBad = new TH2D("hQoutSWBad","q_{out} vs Shared Wires for signal of rejected p-p CF;q_{out} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQoutBLGood = new TH2D("hQoutBLGood","q_{out} vs Shared layers for signal of accepted p-p CF;q_{out} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQoutBLBad = new TH2D("hQoutBLBad","q_{out} vs Shared layers for signal of rejected p-p CF;q_{out} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQoutMWDGood = new TH2D("hQoutMWDGood","q_{out} vs Minimal Wire DIstance for signal of accepted p-p CF;q_{out} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQoutMWDBad = new TH2D("hQoutMWDBad","q_{out} vs Minimal Wire DIstance for signal of rejected p-p CF;q_{out} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQoutSMCGood = new TH2D("hQoutSMCGood","q_{out} vs Shared Meta Cells for signal of accepted p-p CF;q_{out} [MeV/c];SMC",250,0,3000,4,0,4);
+	TH2D *hQoutSMCBad = new TH2D("hQoutSMCBad","q_{out} vs Shared Meta Cells for signal of rejected p-p CF;q_{out} [MeV/c];SMC",250,0,3000,4,0,4);
+
+	TH2D *hQsideSLGood = new TH2D("hQsideSLGood","q_{side} vs Splitting Level for signal of accepted p-p CF;q_{side} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQsideSLBad = new TH2D("hQsideSLBad","q_{side} vs Splitting Level for signal of rejected p-p CF;q_{side} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQsideSWGood = new TH2D("hQsideSWGood","q_{side} vs Shared Wires for signal of accepted p-p CF;q_{side} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQsideSWBad = new TH2D("hQsideSWBad","q_{side} vs Shared Wires for signal of rejected p-p CF;q_{side} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQsideBLGood = new TH2D("hQsideBLGood","q_{side} vs Shared layers for signal of accepted p-p CF;q_{side} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQsideBLBad = new TH2D("hQsideBLBad","q_{side} vs Shared layers for signal of rejected p-p CF;q_{side} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQsideMWDGood = new TH2D("hQsideMWDGood","q_{side} vs Minimal Wire DIstance for signal of accepted p-p CF;q_{side} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQsideMWDBad = new TH2D("hQsideMWDBad","q_{side} vs Minimal Wire DIstance for signal of rejected p-p CF;q_{side} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQsideSMCGood = new TH2D("hQsideSMCGood","q_{side} vs Shared Meta Cells for signal of accepted p-p CF;q_{side} [MeV/c];SMC",250,0,3000,4,0,4);
+	TH2D *hQsideSMCBad = new TH2D("hQsideSMCBad","q_{side} vs Shared Meta Cells for signal of rejected p-p CF;q_{side} [MeV/c];SMC",250,0,3000,4,0,4);
+
+	TH2D *hQlongSLGood = new TH2D("hQlongSLGood","q_{long} vs Splitting Level for signal of accepted p-p CF;q_{long} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQlongSLBad = new TH2D("hQlongSLBad","q_{long} vs Splitting Level for signal of rejected p-p CF;q_{long} [MeV/c];SL",250,0,3000,101,-2,2);
+	TH2D *hQlongSWGood = new TH2D("hQlongSWGood","q_{long} vs Shared Wires for signal of accepted p-p CF;q_{long} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQlongSWBad = new TH2D("hQlongSWBad","q_{long} vs Shared Wires for signal of rejected p-p CF;q_{long} [MeV/c];SW",250,0,3000,24,0,24);
+	TH2D *hQlongBLGood = new TH2D("hQlongBLGood","q_{long} vs Shared layers for signal of accepted p-p CF;q_{long} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQlongBLBad = new TH2D("hQlongBLBad","q_{long} vs Shared layers for signal of rejected p-p CF;q_{long} [MeV/c];BL",250,0,3000,24,0,24);
+	TH2D *hQlongMWDGood = new TH2D("hQlongMWDGood","q_{long} vs Minimal Wire DIstance for signal of accepted p-p CF;q_{long} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQlongMWDBad = new TH2D("hQlongMWDBad","q_{long} vs Minimal Wire DIstance for signal of rejected p-p CF;q_{long} [MeV/c];MWD",250,0,3000,100,0,100);
+	TH2D *hQlongSMCGood = new TH2D("hQlongSMCGood","q_{long} vs Shared Meta Cells for signal of accepted p-p CF;q_{long} [MeV/c];SMC",250,0,3000,4,0,4);
+	TH2D *hQlongSMCBad = new TH2D("hQlongSMCBad","q_{long} vs Shared Meta Cells for signal of rejected p-p CF;q_{long} [MeV/c];SMC",250,0,3000,4,0,4);
 
 	TFile *cutfile_betamom_pionCmom = new TFile("/lustre/hades/user/tscheib/apr12/ID_Cuts/BetaMomIDCuts_PionsProtons_gen8_DATA_RK400_PionConstMom.root");
 	TCutG* betamom_2sig_p_tof_pionCmom = cutfile_betamom_pionCmom->Get<TCutG>("BetaCutProton_TOF_2.0");
@@ -491,14 +524,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			if constexpr (isSimulation)
 			{
-			// 	fTrack = std::make_shared<Selection::TrackCandidate>(
-			// 		particle_cand,
-			// 		static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
-			// 		HADES::MDC::CreateTrackLayers(fWireInfo),
-			// 		fEvent->GetID(),
-			// 		fEvent->GetReactionPlane(),
-			// 		track,
-			// 		protonPID);
+				fTrack = std::make_shared<Selection::TrackCandidate>(
+					particle_cand,
+					static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
+					HADES::MDC::CreateTrackLayers(fWireInfo),
+					fEvent->GetID(),
+					fEvent->GetReactionPlane(),
+					track,
+					protonPID);
 			}
 			else
 			{
@@ -607,28 +640,53 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			{
 				for (const auto &elem : pair.second)
 				{
+					float qOut,qSide,qLong,qInv;
+					qInv = elem->GetQinv();
+					std::tie(qOut,qSide,qLong) = elem->GetOSL();
+
 					hCounter->Fill(cNumAllPairs);
 					if (pair.first != "bad") // if not rejected
 					{
 						if (elem->AreTracksFromTheSameSector()) // those observables only make sense when we are in the same sector
 						{
-							hQinvSLGood->Fill(elem->GetQinv(),elem->GetSplittingLevel());
-							hQinvSWGood->Fill(elem->GetQinv(),elem->GetSharedWires());
-							hQinvBLGood->Fill(elem->GetQinv(),elem->GetBothLayers());
+							hQinvSLGood->Fill(qInv,elem->GetSplittingLevel());
+							hQoutSLGood->Fill(qOut,elem->GetSplittingLevel());
+							hQsideSLGood->Fill(qSide,elem->GetSplittingLevel());
+							hQlongSLGood->Fill(qLong,elem->GetSplittingLevel());
+
+							hQinvSWGood->Fill(qInv,elem->GetSharedWires());
+							hQoutSWGood->Fill(qOut,elem->GetSharedWires());
+							hQsideSWGood->Fill(qSide,elem->GetSharedWires());
+							hQlongSWGood->Fill(qLong,elem->GetSharedWires());
+
+							hQinvBLGood->Fill(qInv,elem->GetBothLayers());
+							hQoutBLGood->Fill(qOut,elem->GetBothLayers());
+							hQsideBLGood->Fill(qSide,elem->GetBothLayers());
+							hQlongBLGood->Fill(qLong,elem->GetBothLayers());
+
 							if (elem->GetMinWireDistance().has_value) 
-								hQinvMWDGood->Fill(elem->GetQinv(),elem->GetMinWireDistance().value);
-							hQinvSMCGood->Fill(elem->GetQinv(),elem->GetSharedMetaCells());
+							{
+								hQinvMWDGood->Fill(qInv,elem->GetMinWireDistance().value);
+								hQoutMWDGood->Fill(qOut,elem->GetMinWireDistance().value);
+								hQsideMWDGood->Fill(qSide,elem->GetMinWireDistance().value);
+								hQlongMWDGood->Fill(qLong,elem->GetMinWireDistance().value);
+							}
+
+							hQinvSMCGood->Fill(qInv,elem->GetSharedMetaCells());
+							hQoutSMCGood->Fill(qOut,elem->GetSharedMetaCells());
+							hQsideSMCGood->Fill(qSide,elem->GetSharedMetaCells());
+							hQlongSMCGood->Fill(qLong,elem->GetSharedMetaCells());
 						}
 
 						if (isSimulation)
 						{
-							hQinvResolution->Fill(elem->GetQinv(),elem->GetGeantKinePair()->GetQinv());
-							float qOutReco,qOutKine,qSideReco,qSideKine,qLongReco,qLongKine;
-							std::tie(qOutReco,qSideReco,qLongReco) = elem->GetOSL();
+							hQinvResolution->Fill(qInv,elem->GetGeantKinePair()->GetQinv());
+							float qOutKine,qSideKine,qLongKine;
 							std::tie(qOutKine,qSideKine,qLongKine) = elem->GetGeantKinePair()->GetOSL();
-							hQoutResolution->Fill(qOutReco,qOutKine);
-							hQsideResolution->Fill(qSideReco,qSideKine);
-							hQlongResolution->Fill(qLongReco,qLongKine);
+
+							hQoutResolution->Fill(qOut,qOutKine);
+							hQsideResolution->Fill(qSide,qSideKine);
+							hQlongResolution->Fill(qLong,qLongKine);
 						}
 
 						hKtRapGood.at(fEvent->GetCentrality())->Fill(elem->GetKt(),elem->GetRapidity() - fBeamRapidity);
@@ -645,12 +703,33 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 					{
 						if (elem->AreTracksFromTheSameSector())
 						{
-							hQinvSLBad->Fill(elem->GetQinv(),elem->GetSplittingLevel());
-							hQinvSWBad->Fill(elem->GetQinv(),elem->GetSharedWires());
-							hQinvBLBad->Fill(elem->GetQinv(),elem->GetBothLayers());
+							hQinvSLBad->Fill(qInv,elem->GetSplittingLevel());
+							hQoutSLBad->Fill(qOut,elem->GetSplittingLevel());
+							hQsideSLBad->Fill(qSide,elem->GetSplittingLevel());
+							hQlongSLBad->Fill(qLong,elem->GetSplittingLevel());
+
+							hQinvSWBad->Fill(qInv,elem->GetSharedWires());
+							hQoutSWBad->Fill(qOut,elem->GetSharedWires());
+							hQsideSWBad->Fill(qSide,elem->GetSharedWires());
+							hQlongSWBad->Fill(qLong,elem->GetSharedWires());
+
+							hQinvBLBad->Fill(qInv,elem->GetBothLayers());
+							hQoutBLBad->Fill(qOut,elem->GetBothLayers());
+							hQsideBLBad->Fill(qSide,elem->GetBothLayers());
+							hQlongBLBad->Fill(qLong,elem->GetBothLayers());
+
 							if (elem->GetMinWireDistance().has_value) 
-								hQinvMWDBad->Fill(elem->GetQinv(),elem->GetMinWireDistance().value);
-							hQinvSMCBad->Fill(elem->GetQinv(),elem->GetSharedMetaCells());
+							{
+								hQinvMWDBad->Fill(qInv,elem->GetMinWireDistance().value);
+								hQoutMWDBad->Fill(qOut,elem->GetMinWireDistance().value);
+								hQsideMWDBad->Fill(qSide,elem->GetMinWireDistance().value);
+								hQlongMWDBad->Fill(qLong,elem->GetMinWireDistance().value);
+							}
+
+							hQinvSMCBad->Fill(qInv,elem->GetSharedMetaCells());
+							hQoutSMCBad->Fill(qOut,elem->GetSharedMetaCells());
+							hQsideSMCBad->Fill(qSide,elem->GetSharedMetaCells());
+							hQlongSMCBad->Fill(qLong,elem->GetSharedMetaCells());
 						}
 
 						hKtRapBad.at(fEvent->GetCentrality())->Fill(elem->GetKt(),elem->GetRapidity() - fBeamRapidity);
@@ -757,6 +836,40 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hQinvBLBad->Write();
 	hQinvMWDBad->Write();
 	hQinvSMCBad->Write();
+
+	hQoutSLGood->Write();
+	hQoutSWGood->Write();
+	hQoutBLGood->Write();
+	hQoutMWDGood->Write();
+	hQoutSMCGood->Write();
+	hQoutSLBad->Write();
+	hQoutSWBad->Write();
+	hQoutBLBad->Write();
+	hQoutMWDBad->Write();
+	hQoutSMCBad->Write();
+
+	hQsideSLGood->Write();
+	hQsideSWGood->Write();
+	hQsideBLGood->Write();
+	hQsideMWDGood->Write();
+	hQsideSMCGood->Write();
+	hQsideSLBad->Write();
+	hQsideSWBad->Write();
+	hQsideBLBad->Write();
+	hQsideMWDBad->Write();
+	hQsideSMCBad->Write();
+
+	hQlongSLGood->Write();
+	hQlongSWGood->Write();
+	hQlongBLGood->Write();
+	hQlongMWDGood->Write();
+	hQlongSMCGood->Write();
+	hQlongSLBad->Write();
+	hQlongSWBad->Write();
+	hQlongBLBad->Write();
+	hQlongMWDBad->Write();
+	hQlongSMCBad->Write();
+
 	hWiresMultiplicityGood->Write();
 	hDPhiDThetaSignGood->Write();
 	hDPhiDThetaBckgGood->Write();

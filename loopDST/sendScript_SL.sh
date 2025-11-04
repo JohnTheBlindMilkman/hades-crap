@@ -46,8 +46,8 @@ par4=${outputdir}                                              # optional par4 :
 par5=-1                                                        # optional par5 : number of events
 par6="no"                                                      # optional par6
 par7="no"                                                      # optional par7   "single" to run comma separated list as single files in jobscript
-partition="main"                                               # partition: main: max 8h, grid: max 3d, long and high_mem: max 7d 
-resources="--mem=4G --time=0-8:00:00"                          # main and long: max 4GB per cpu, high_mem: max 6GB per cpu
+partition="high_mem"                                               # partition: main: max 8h, grid: max 3d, long and high_mem: max 7d 
+resources="--mem=6G --time=0-8:00:00"                          # main and long: max 4GB per cpu, high_mem: max 6GB per cpu
 email="k.jedrzej@gsi.de"                                       # e-mail adress for notyfilng when the jobs have finished
 
 jobarrayFile="loop_day_${day}_jobarray.dat"

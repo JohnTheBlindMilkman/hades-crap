@@ -3,17 +3,28 @@
 
     #include "TH1.h"
     #include "TH2.h"
+    #include "TH3.h"
     #include "TCanvas.h"
     #include "TString.h"
     #include "TPavesText.h"
     #include "TMath.h"
 
+    #include <numeric>
+
     namespace JJUtils
     {
         namespace CF
         {
+            namespace Detail
+            {
+                template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
+                double CalculateAverage(const std::vector<T> &data)
+                {
+                    return (data.size() > 0) ? std::accumulate(data.begin(),data.end(),0) / data.size() : 0.;
+                }
+            }
             /**
-             * @brief Returns a value which can be used to normalise the correlation function at given range to unity.
+             * @brief Calculate a value which can be used to normalise a 1D correlation function at given range to unity.
              * 
              * @param hist correlation function which you want to normalise
              * @param xMin lower edge of the normalisation range
@@ -22,19 +33,68 @@
              */
             double GetNormByRange(const TH1 *hist, double xMin, double xMax)
             {
-                int nBins = 0;
-                double val = 0., xVal;
-                for (int i = 1; i < hist->GetNbinsX(); i++)
+                const int firstBin = hist->GetXaxis()->FindBin(xMin);
+                const int lastBin = hist->GetXaxis()->FindBin(xMax);
+
+                std::vector<double> valsInRange;
+                valsInRange.reserve(lastBin - firstBin + 1);
+
+                for (int i = firstBin; i <= lastBin; i++)
                 {
-                    xVal = hist->GetBinCenter(i);
-                    if (xVal >= xMin && xVal <= xMax)
-                    {
-                        val += hist->GetBinContent(i);
-                        nBins++;
-                    } 
+                    valsInRange.push_back(hist->GetBinContent(i));
                 }
 
-                return (nBins > 0) ? val / nBins : 0.;
+                return Detail::CalculateAverage(valsInRange);
+            }
+            /**
+             * @brief Calculate a value which can be used to normalise a 2D correlation function at given range to unity.
+             * 
+             * @param hist correlation function which you want to normalise
+             * @param xMin lower edge of the normalisation range on X axis
+             * @param xMax upper edge of the normalisation range on X axis
+             * @param yMin lower edge of the normalisation range on Y axis
+             * @param yMax upper edge of the normalisation range on Y axis
+             * @return norm for the histogram or 0 if no bins were found 
+             */
+            double GetNormByRange(const TH2 *hist, double xMin, double xMax, double yMin, double yMax)
+            {
+                const int firstBinX = hist->GetXaxis()->FindBin(xMin);
+                const int lastBinX = hist->GetXaxis()->FindBin(xMax);
+                const int firstBinY = hist->GetYaxis()->FindBin(yMin);
+                const int lastBinY = hist->GetYaxis()->FindBin(yMax);
+
+                std::vector<double> valsInRange;
+                valsInRange.reserve((lastBinX - firstBinX + 1) * (lastBinY - firstBinY + 1));
+
+                for (int i = firstBinX; i <= lastBinX; i++)
+                    for (int j = firstBinY; j <= lastBinY; j++)
+                    {
+                        valsInRange.push_back(hist->GetBinContent(i,j));
+                    }
+
+                return Detail::CalculateAverage(valsInRange);
+            }
+
+            double GetNormByRange(const TH3 *hist, double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
+            {
+                const int firstBinX = hist->GetXaxis()->FindBin(xMin);
+                const int lastBinX = hist->GetXaxis()->FindBin(xMax);
+                const int firstBinY = hist->GetYaxis()->FindBin(yMin);
+                const int lastBinY = hist->GetYaxis()->FindBin(yMax);
+                const int firstBinZ = hist->GetZaxis()->FindBin(zMin);
+                const int lastBinZ = hist->GetZaxis()->FindBin(zMax);
+
+                std::vector<double> valsInRange;
+                valsInRange.reserve((lastBinX - firstBinX + 1) * (lastBinY - firstBinY + 1) * (lastBinZ - firstBinZ + 1));
+
+                for (int i = firstBinX; i <= lastBinX; i++)
+                    for (int j = firstBinY; j <= lastBinY; j++)
+                        for (int k = firstBinZ; k <= lastBinZ; k++)
+                        {
+                            valsInRange.push_back(hist->GetBinContent(i,j,k));
+                        }
+
+                return Detail::CalculateAverage(valsInRange);
             }
 
             /**
@@ -50,6 +110,13 @@
                 return (entriesNum > 0.) ? hDen->GetEntries() / entriesNum : 0.;
             }
 
+            /**
+             * @brief Performs TH1::Add() on a collection of histograms according to a user-defined pattern
+             * 
+             * @param inpHistos a collection of histogrmas which are ment to be grouped
+             * @param groups grouping pattern, e.g. if inpHistos has 6 histograms, then pattern of {{0,1},{2,3},{4,5}} will add 1st to 2nd, 3rd to 4th, and 5th to the 6th histogram
+             * @return a collection of merged histograms
+             */
             std::vector<TH1D*> MergeHistograms(const std::vector<TH1D*> &inpHistos, const std::vector<std::vector<std::size_t> > &groups)
             {
                 std::vector<TH1D*> otpHistos(groups.size(),nullptr);
@@ -100,6 +167,45 @@
                     
                     (TMath::IsNaN(vErr)) ? hout->SetBinError(i,0) : hout->SetBinError(i,vErr);
                 }
+            }
+
+            /**
+             * @brief Set the errors of hout to include full correlation between the numerator and denominator for any distribution such that hout = hNum / hDen. Yes, hNum and hDen both should be const but for some reason the method TH1::FindBin is not const...
+             * 
+             * @param hout 
+             * @param hNum 
+             * @param hDen 
+             */
+            void SetErrorsDivide(TH3 *hout, const TH3 *hNum, TH3 *hDen)
+            {
+                const int iterMaxX = hout->GetNbinsX();
+                const int iterMaxY = hout->GetNbinsY();
+                const int iterMaxZ = hout->GetNbinsZ();
+                double vErr = 0, vNum = 0, vDen = 0, eNum = 0, eDen = 0;
+                for (int i = 1; i <= iterMaxX; i++)
+                    for (int j = 1; j <= iterMaxY; j++)
+                        for (int k = 1; k <= iterMaxZ; k++)
+                        {
+                            vErr = 0;
+                            vNum = hNum->GetBinContent(i,j,k);
+                            eNum = hNum->GetBinError(i,j,k);
+                            vDen = hDen->GetBinContent(
+                                hDen->GetXaxis()->FindBin(hNum->GetXaxis()->GetBinCenter(i)),
+                                hDen->GetYaxis()->FindBin(hNum->GetYaxis()->GetBinCenter(j)),
+                                hDen->GetZaxis()->FindBin(hNum->GetZaxis()->GetBinCenter(j))
+                            );
+                            eDen = hDen->GetBinError(
+                                hDen->GetXaxis()->FindBin(hNum->GetXaxis()->GetBinCenter(i)),
+                                hDen->GetYaxis()->FindBin(hNum->GetYaxis()->GetBinCenter(j)),
+                                hDen->GetZaxis()->FindBin(hNum->GetZaxis()->GetBinCenter(j))
+                            );
+
+                            // propagation of uncertainty for a function num/den with inclusion of the correlation between the constituents
+                            vErr = std::sqrt((eNum*eNum)/(vDen*vDen) + ((vNum*vNum)*(eDen*eDen))/(vDen*vDen*vDen*vDen) - (2*vNum*eNum*eDen)/(vDen*vDen*vDen));
+                            
+                            (TMath::IsNaN(vErr)) ? hout->SetBinError(i,j,k,0) : hout->SetBinError(i,j,k,vErr);
+                        }
+                        
             }
 
             /**

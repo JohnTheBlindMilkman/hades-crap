@@ -1,59 +1,157 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TH3D.h"
+#include "TGraph2DErrors.h"
 #include "TFile.h"
 #include "TCanvas.h"
 #include "TLine.h"
 #include "TStyle.h"
 #include "TString.h"
 #include "TPaveText.h"
+
 #include "../Externals/Palettes.hxx"
+#include "MacroUtils.hxx"
 
-double getNorm(const TH1D *hInp, double xMin, double xMax)
+#include <iostream>
+
+enum class Projection{Out,Side,Long,OutSide,SideLong,OutLong};
+
+struct Proj1D
 {
-    int nBins = 0;
-    double val = 0., xVal;
-    for (int i = 1; i < hInp->GetNbinsX(); i++)
+    Projection proj;
+    std::string arg;
+    std::string name;
+    std::size_t num;
+};
+
+std::string Get1DProjName(Projection proj)
+{
+    switch (proj)
     {
-        xVal = hInp->GetBinCenter(i);
-        if (xVal >= xMin && xVal <= xMax)
-        {
-            val += hInp->GetBinContent(i);
-            nBins++;
-        } 
+        case Projection::Out:
+            return "out";
+        case Projection::Side:
+            return "side";
+        case Projection::Long:
+            return "long";
+    
+        default:
+            return "";
     }
-    if(nBins > 0)
-        return val/nBins;
-    else    
-        return 0.;
 }
 
-double getNorm(const TH2D *hInp, double xMin, double xMax, double yMin, double yMax)
+std::pair<std::string,std::string> Get2DProjName(Projection proj)
 {
-    const int binsX = hInp->GetNbinsX();
-    const int binxY = hInp->GetNbinsY();
-    int div = 0;
-    double sum = 0., xVal, yVal;
-    for (int i = 1; i <= binsX; ++i)
-        for (int j = 1; j < binxY; ++j)
+    switch (proj)
+    {
+        case Projection::OutSide:
+            return {"out","side"};
+        case Projection::SideLong:
+            return {"side","long"};
+        case Projection::OutLong:
+            return {"out","long"};
+    
+        default:
+            return {};
+    }
+}
+
+void SetAxesRange(TH3D *data, Projection proj, int nBins)
+{
+    switch (proj)
+    {
+        case Projection::Out:
+            data->GetXaxis()->SetRange(1,data->GetNbinsX());
+            data->GetYaxis()->SetRange(1,nBins);
+            data->GetZaxis()->SetRange(1,nBins);
+            break;
+        case Projection::Side:
+            data->GetXaxis()->SetRange(1,nBins);
+            data->GetYaxis()->SetRange(1,data->GetNbinsY());
+            data->GetZaxis()->SetRange(1,nBins);
+            break;
+        case Projection::Long:
+            data->GetXaxis()->SetRange(1,nBins);
+            data->GetYaxis()->SetRange(1,nBins);
+            data->GetZaxis()->SetRange(1,data->GetNbinsZ());
+            break;
+        case Projection::OutSide:
+            data->GetXaxis()->SetRange(1,data->GetNbinsX());
+            data->GetYaxis()->SetRange(1,data->GetNbinsY());
+            data->GetZaxis()->SetRange(1,nBins);
+            break;
+        case Projection::SideLong:
+            data->GetXaxis()->SetRange(1,nBins);
+            data->GetYaxis()->SetRange(1,data->GetNbinsY());
+            data->GetZaxis()->SetRange(1,data->GetNbinsZ());
+            break;
+        case Projection::OutLong:
+            data->GetXaxis()->SetRange(1,data->GetNbinsX());
+            data->GetYaxis()->SetRange(1,nBins);
+            data->GetZaxis()->SetRange(1,data->GetNbinsZ());
+            break;
+        
+        default:
+            break;
+    }
+}
+
+TGraph2DErrors* ConvertToGraph(const TH2D *hist)
+{
+    const int nBinsX = hist->GetNbinsX();
+    const int nBinxY = hist->GetNbinsY();
+    const std::size_t nBinxTot = nBinsX * nBinxY;
+    std::vector<double> xVals(nBinxTot,0.), yVals(nBinxTot,0.), zVals(nBinxTot,0.), xErrs(nBinxTot,0.), yErrs(nBinxTot,0.), zErrs(nBinxTot,0.);
+
+    std::size_t index = 0;
+    for (int binX = 1; binX <= nBinsX; ++binX)
+        for (int binY = 1; binY <= nBinxY; ++binY)
         {
-            xVal = hInp->GetXaxis()->GetBinCenter(i);
-            yVal = hInp->GetYaxis()->GetBinCenter(j);
-            if (xVal >= xMin && xVal <= xMax && yVal >= yMin && yVal <= yMax)
-            {
-                sum += hInp->GetBinContent(i,j);
-                ++div;
-            } 
+            xVals[index] = hist->GetXaxis()->GetBinCenter(binX);
+            yVals[index] = hist->GetYaxis()->GetBinCenter(binY);
+            zVals[index] = hist->GetBinContent(binX,binY);
+            zErrs[index] = hist->GetBinError(binX,binY);
+            ++index;
         }
-    if(div > 0)
-        return sum/div;
-    else    
-        return 0.;
+
+    auto graph = new TGraph2DErrors(nBinxTot,xVals.data(),yVals.data(),zVals.data(),zErrs.data(),yErrs.data(),zErrs.data());
+    graph->SetName(TString::Format("%s_graph",hist->GetName()));
+    graph->SetTitle(hist->GetTitle());
+
+    return graph;
 }
 
-double getNorm(const TH3D *num, const TH3D *den)
+void prepareGraph(TH1D *hist, Color_t col)
 {
-    return den->GetEntries()/num->GetEntries();
+    hist->SetMarkerColor(col);
+    hist->SetMarkerStyle(20);
+    hist->SetLineColor(col);
+
+    hist->GetXaxis()->SetTitleOffset();
+    hist->GetXaxis()->SetTitleSize(0.06);
+    hist->GetXaxis()->SetLabelSize(0.06);
+    hist->GetXaxis()->SetNdivisions(506);
+    hist->GetYaxis()->SetTitleSize(0.06);
+    hist->GetYaxis()->SetLabelSize(0.06);
+    hist->GetYaxis()->SetNdivisions(506);
+}
+
+void prepareGraph(TH2D *hist, Color_t col)
+{
+    hist->SetMarkerColor(col);
+    hist->SetMarkerStyle(20);
+    hist->SetLineColor(col);
+
+    hist->GetXaxis()->SetTitleOffset();
+    hist->GetXaxis()->SetTitleSize(0.06);
+    hist->GetXaxis()->SetLabelSize(0.06);
+    hist->GetXaxis()->SetNdivisions(506);
+    hist->GetYaxis()->SetTitleSize(0.06);
+    hist->GetYaxis()->SetLabelSize(0.06);
+    hist->GetYaxis()->SetNdivisions(506);
+    hist->GetZaxis()->SetTitleSize(0.06);
+    hist->GetZaxis()->SetLabelSize(0.06);
+    hist->GetZaxis()->SetNdivisions(506);
 }
 
 void drawProton3DIntegrated()
@@ -61,11 +159,20 @@ void drawProton3DIntegrated()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_24_09_13_processed.root";
-    const TString outputFile = "../output/3Dcorr_0_10_cent_Integ_tmp3.root";
-    const std::vector<TString> sProj{"x","y","z"};
-    const std::vector<TString> sProjName{"out","side","long"};
-    const int rebin = 2;
+    const TString fileName = "../slurmOutput/apr12ana_all_25_11_04_processed.root";
+    const TString outputFile = "../output/3Dcorr_0_10_cent_Integ.root";
+    const std::vector<TString> sProjName = {"out","side","long"};
+    const std::array<Proj1D,3> oneDimProjections = {
+        Proj1D{Projection::Out,"x",";k^{*}_{out} [MeV/c];C(k^{*}_{out})",0},
+        Proj1D{Projection::Side,"y",";k^{*}_{side} [MeV/c];C(k^{*}_{side})",1},
+        Proj1D{Projection::Long,"z",";k^{*}_{long} [MeV/c];C(k^{*}_{long})",2}
+    };
+    const std::array<Proj1D,3> twoDimProjections = {
+        Proj1D{Projection::OutSide,"xy",";k^{*}_{side} [MeV/c];k^{*}_{out} [MeV/c];C(k^{*}_{out},k^{*}_{side})",0},
+        Proj1D{Projection::SideLong,"yz",";k^{*}_{long} [MeV/c];k^{*}_{side} [MeV/c];C(k^{*}_{side},k^{*}_{long})",1},
+        Proj1D{Projection::OutLong,"xz",";k^{*}_{long} [MeV/c];k^{*}_{out} [MeV/c];C(k^{*}_{out},k^{*}_{long})",2}
+    };
+    const int rebin = 1;
     const int wbin = 1; 
 
     float norm;
@@ -80,8 +187,10 @@ void drawProton3DIntegrated()
 
     TCanvas *canvInteg = new TCanvas("canvInteg","",1800,600);
     canvInteg->Divide(3,1);
+    JJColor::CreateSecondaryWutGradient();
+    std::array<TH1D*,oneDimProjections.size()> dataProj1D;
 
-    TPaveText *ptInfo = new TPaveText(.35,.7,.8,.95,"NB");
+    TPaveText *ptInfo = new TPaveText(.35,.7,.8,.95,"NB NDC");
     ptInfo->SetBorderSize(0);
     ptInfo->SetTextAlign(12);
     ptInfo->SetTextFont(102);
@@ -96,55 +205,36 @@ void drawProton3DIntegrated()
     TH3D *hRat3D = new TH3D(*hSign);
     hRat3D->Divide(hBckg);
     hRat3D->SetName("hQoslRatInteg");
-    //norm = getNorm(hSign,hBckg);
-    //hRat3D->Scale(norm);
     hRat3D->Write();
 
     if (hRat3D != nullptr)
     {
-        for (const int &i : {0,1,2})
+        for (const auto &[proj,arg,name,num] : oneDimProjections)
         {
             binc = hRat3D->GetXaxis()->FindFixBin(0.0);
             binmx = binc + wbin;
-            //binmn = binc - wbin ; // I don't have a central bin at 0...
-
-            hRat3D->GetXaxis()->SetRange(1, (i == 0) ? hSign->GetNbinsX() : binmx);
-            hRat3D->GetYaxis()->SetRange(1, (i == 1) ? hSign->GetNbinsY() : binmx);
-            hRat3D->GetZaxis()->SetRange(1, (i == 2) ? hSign->GetNbinsZ() : binmx);
-
-            TH1D *hRat = static_cast<TH1D*>(hRat3D->Project3D(sProj[i].Data()));
-            norm = getNorm(hRat,350,500);
-            hRat->Rebin(rebin);
+            SetAxesRange(hRat3D,proj,binmx);
+            dataProj1D[num] = static_cast<TH1D*>(hRat3D->Project3D(arg.c_str()));
+            dataProj1D[num]->SetTitle(name.c_str());
+            norm = JJUtils::CF::GetNormByRange(dataProj1D[num],350,500);
+            dataProj1D[num]->Rebin(rebin);
             norm *= rebin;
-            hRat->Scale(1./norm);
-            hRat->GetYaxis()->SetRangeUser(0.,1.9);
-            hRat->SetName(TString::Format("hQ%sRatInteg",sProjName[i].Data()));
-            hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];CF(q_{%s})",sProjName[i].Data(),sProjName[i].Data()));
-            hRat->GetXaxis()->SetTitleOffset(); // invoking this functione becasue the side direction title got wonky
-            hRat->GetXaxis()->SetTitleSize(0.06);
-            hRat->GetXaxis()->SetLabelSize(0.06);
-            hRat->GetXaxis()->SetNdivisions(506);
-            hRat->GetYaxis()->SetTitleSize(0.06);
-            hRat->GetYaxis()->SetLabelSize(0.06);
-            hRat->GetYaxis()->SetNdivisions(506);
-            hRat->SetMarkerStyle(20);
-            hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
-
-            hRat->Write();
-
+            dataProj1D[num]->Scale(1./norm);
+            prepareGraph(dataProj1D[num],JJColor::fWutAllColors[1]); // navy WUT
+            dataProj1D[num]->Write();
             TPaveText *pt = new TPaveText(0.3,0.4,0.7,0.6,"NB");
             pt->SetBorderSize(0);
             pt->SetFillStyle(1);
             pt->SetTextAlign(22);
             pt->SetTextFont(102);
-            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(i+1)%3].Data(),hRat->GetXaxis()->GetBinUpEdge(binmx)));
-            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(i+2)%3].Data(),hRat->GetXaxis()->GetBinUpEdge(binmx)));
+            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(num + 1) % 3].Data(),dataProj1D[num]->GetXaxis()->GetBinUpEdge(binmx)));
+            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(num + 2) % 3].Data(),dataProj1D[num]->GetXaxis()->GetBinUpEdge(binmx)));
 
-            canvInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
-            hRat->Draw("hist pe pmc plc");
+            canvInteg->cd(num + 1)->SetMargin(0.2,0.02,0.15,0.02);
+            dataProj1D[num]->Draw("p e");
             line->Draw("same");
             pt->Draw("same");
-            if (i == 0)
+            if (num == 0)
                 ptInfo->Draw("same");
         }
 
@@ -152,40 +242,25 @@ void drawProton3DIntegrated()
 
         TCanvas *canv2DInteg = new TCanvas("canv2DInteg","",1800,600);
         canv2DInteg->Divide(3,1);
-        //JJColor::CreatePrimaryWutGradient();
-        gStyle->SetPalette(kPastel);
-        for (const int &i : {0,1,2})
+        JJColor::CreatePrimaryWutGradient();
+        std::array<TH2D*,oneDimProjections.size()> dataProj2D;
+        for (const auto &[proj,arg,name,num] : twoDimProjections)
         {
             binc = hRat3D->GetXaxis()->FindFixBin(0.0);
             binmx = binc + wbin;
 
-            hRat3D->GetXaxis()->SetRange(1, (i == 0 || (i+1)%3 == 0) ? hRat3D->GetNbinsX() : binmx);
-            hRat3D->GetYaxis()->SetRange(1, (i == 1 || (i+1)%3 == 1) ? hRat3D->GetNbinsY() : binmx);
-            hRat3D->GetZaxis()->SetRange(1, (i == 2 || (i+1)%3 == 2) ? hRat3D->GetNbinsZ() : binmx);
-
-            TH2D *hRat = static_cast<TH2D*>(hRat3D->Project3D((sProj[i%3]+sProj[(i+1)%3]).Data()));
-            norm = getNorm(hRat,350,500,350,500);
-            hRat->Rebin2D(rebin,rebin);
+            SetAxesRange(hRat3D,proj,binmx);
+            dataProj2D[num] = static_cast<TH2D*>(hRat3D->Project3D(arg.c_str()));
+            dataProj2D[num]->SetTitle(name.c_str());
+            norm = JJUtils::CF::GetNormByRange(dataProj2D[num],350,500,350,500);
+            dataProj2D[num]->Rebin2D(rebin,rebin);
             norm *= rebin*rebin;
-            hRat->Scale(1./norm);
-            hRat->GetZaxis()->SetRangeUser(0.5,1.5);
-            hRat->SetName(TString::Format("hQ%s%sRatInteg",sProjName[i%3].Data(),sProjName[(i+1)%3].Data()));
-            hRat->SetTitle(TString::Format(";q_{%s} [MeV/c];q_{%s} [MeV/c];",sProjName[i].Data(),sProjName[(i+1)%3].Data()));
-            hRat->GetXaxis()->SetTitleOffset();
-            hRat->GetYaxis()->SetTitleOffset(1.8);
-            hRat->GetXaxis()->SetTitleSize(0.06);
-            hRat->GetXaxis()->SetLabelSize(0.06);
-            hRat->GetXaxis()->SetNdivisions(506);
-            hRat->GetYaxis()->SetTitleSize(0.06);
-            hRat->GetYaxis()->SetLabelSize(0.06);
-            hRat->GetYaxis()->SetNdivisions(506);
-            //hRat->SetMarkerStyle(20);
-            //hRat->SetMarkerColor(JJColor::fWutAllColors[1]); // navy WUT
+            dataProj2D[num]->Scale(1./norm);
+            prepareGraph(dataProj2D[num],JJColor::fWutMainColors[1]);
+            dataProj2D[num]->Write();
 
-            hRat->Write();
-
-            canv2DInteg->cd(i+1)->SetMargin(0.2,0.02,0.15,0.02);
-            hRat->Draw("colz");
+            canv2DInteg->cd(num + 1)->SetMargin(0.2,0.02,0.15,0.02);
+            dataProj2D[num]->Draw("colz");
         }
 
         canv2DInteg->Write();
