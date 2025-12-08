@@ -135,7 +135,7 @@ double CalcEntries(const TH2D *hist, double xMin, double yMin, double xMax, doub
 void calcEqualBins()
 {
     const TString cdfFilePath = "../output/pairDistCDFs.root";
-    const TString pdfFilePath = "../slurmOutput/apr12ana_all_25_07_25.root";
+    const TString pdfFilePath = "../slurmOutput/apr12ana_all_25_11_24.root";
     const TString cdfHistName = "hKtRapGoodCent1";
     const TString pdfHistName = "hKtRapGoodCent1";
     constexpr double entries = 2e9;

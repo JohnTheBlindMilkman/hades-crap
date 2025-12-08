@@ -56,12 +56,12 @@
                     return val;
                 }
 
-                static constexpr std::size_t m_ktIntervals1D = 12, m_rapIntervals1D = 9;
-                static constexpr std::array<float, m_ktIntervals1D + 1> m_ktArr1D = {300,450,600,750,900,1050,1200,1350,1500,1650,1800,1950,2100};
+                static constexpr std::size_t m_ktIntervals1D = 9, m_rapIntervals1D = 9;
+                static constexpr std::array<float, m_ktIntervals1D + 1> m_ktArr1D = {300,400,500,600,700,800,900,1000,1100,1200};
                 static constexpr std::array<float, m_rapIntervals1D + 1> m_rapArr1D = {0.09,0.19,0.29,0.39,0.49,0.59,0.69,0.79,0.89,0.99};
 
-                static constexpr std::size_t m_ktIntervals3D = 12, m_rapIntervals3D = 9, m_psiIntervals3D = 8;
-                static constexpr std::array<float, m_ktIntervals3D + 1> m_ktArr3D = {300,450,600,750,900,1050,1200,1350,1500,1650,1800,1950,2100};
+                static constexpr std::size_t m_ktIntervals3D = 9, m_rapIntervals3D = 9, m_psiIntervals3D = 8;
+                static constexpr std::array<float, m_ktIntervals3D + 1> m_ktArr3D = {300,400,500,600,700,800,900,1000,1100,1200};
                 static constexpr std::array<float, m_rapIntervals3D + 1> m_rapArr3D = {0.09,0.39,0.49,0.59,0.69,0.79,0.89,0.99};
                 static constexpr std::array<float,m_psiIntervals3D + 1> m_epArr3D = {-202.5,-157.5,-112.5,-67.5,-22.5,22.5,67.5,112.5,157.5};
 

@@ -32,13 +32,13 @@ int CalcBinDistance(TH2D *hist, double recoX, double recoY, double kineX, double
 	return std::abs(binxReco - binxKine) + std::abs(binyReco - binyKine);
 }
 
-int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = 10)
+int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Long64_t nDesEvents = -1, Int_t maxFiles = -1)
 {
 	gStyle->SetOptStat(0);
 	gROOT->SetBatch(kTRUE);
 
 	constexpr bool isCustomDst{false};
-	constexpr bool isSimulation{true};
+	constexpr bool isSimulation{false};
 	constexpr int protonPID{14};
 
 	//--------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
     //--------------------------------------------------------------------------------
     // Creating the placeholder variables to read data from categories and getting categories (They have to be booked!)
     //--------------------------------------------------------------------------------
-    HParticleCandSim*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
+    HParticleCand*    particle_cand;	// for simulation use HParticleCandSim*; for data HParticleCand*
     HEventHeader*     event_header;
     HParticleEvtInfo* particle_info;
 
@@ -228,6 +228,11 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	TH2D *hDPhiDThetaBckgGood = new TH2D("hDPhiDThetaBckgGood","Backgound of angular distribution of proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
 	TH2D *hDPhiDThetaSignBad = new TH2D("hDPhiDThetaSignBad","Signal of angular distribution of accepted proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
 	TH2D *hDPhiDThetaBckgBad = new TH2D("hDPhiDThetaBckgBad","Backgound of angular distribution of rejected proton pairs;#Delta #phi [deg];#Delta #theta [deg]",721,-360,360,181,-90,90);
+	TH2D *hWireDistancesLayer = new TH2D("hWireDistancesLayer","Distances between wires for each layer;Layer;d [a.u.]",24,0.5,24.5,100,-0.5,99.5);
+	for (const auto &i : ROOT::TSeqI(1,25,1))
+	{
+		hWireDistancesLayer->GetXaxis()->SetBinLabel(i,TString::Format("%d",i));
+	}
 
 	TH2D *hQoutSLGood = new TH2D("hQoutSLGood","q_{out} vs Splitting Level for signal of accepted p-p CF;q_{out} [MeV/c];SL",250,0,3000,101,-2,2);
 	TH2D *hQoutSLBad = new TH2D("hQoutSLBad","q_{out} vs Splitting Level for signal of rejected p-p CF;q_{out} [MeV/c];SL",250,0,3000,101,-2,2);
@@ -524,14 +529,14 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 			//--------------------------------------------------------------------------------
 			if constexpr (isSimulation)
 			{
-				fTrack = std::make_shared<Selection::TrackCandidate>(
-					particle_cand,
-					static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
-					HADES::MDC::CreateTrackLayers(fWireInfo),
-					fEvent->GetID(),
-					fEvent->GetReactionPlane(),
-					track,
-					protonPID);
+				// fTrack = std::make_shared<Selection::TrackCandidate>(
+				// 	particle_cand,
+				// 	static_cast<HGeantKine*>(kine_cand_cat->getObject(particle_cand->getGeantTrack() - 1)),
+				// 	HADES::MDC::CreateTrackLayers(fWireInfo),
+				// 	fEvent->GetID(),
+				// 	fEvent->GetReactionPlane(),
+				// 	track,
+				// 	protonPID);
 			}
 			else
 			{
@@ -641,8 +646,8 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 				for (const auto &elem : pair.second)
 				{
 					float qOut,qSide,qLong,qInv;
-					qInv = elem->GetQinv();
-					std::tie(qOut,qSide,qLong) = elem->GetOSL();
+					qInv = elem->GetQinvLcms();
+					std::tie(qOut,qSide,qLong) = elem->GetOSLLcms();
 
 					hCounter->Fill(cNumAllPairs);
 					if (pair.first != "bad") // if not rejected
@@ -676,13 +681,23 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 							hQoutSMCGood->Fill(qOut,elem->GetSharedMetaCells());
 							hQsideSMCGood->Fill(qSide,elem->GetSharedMetaCells());
 							hQlongSMCGood->Fill(qLong,elem->GetSharedMetaCells());
+
+							auto distances = elem->GetAllLayerDistances();
+							int layerIndex = 0;
+							for (const auto &layer : distances)
+							{
+								if (layer.has_value)
+								{
+									hWireDistancesLayer->Fill(++layerIndex,layer.value);
+								}
+							}
 						}
 
 						if (isSimulation)
 						{
-							hQinvResolution->Fill(qInv,elem->GetGeantKinePair()->GetQinv());
+							hQinvResolution->Fill(qInv,elem->GetGeantKinePair()->GetQinvLcms());
 							float qOutKine,qSideKine,qLongKine;
-							std::tie(qOutKine,qSideKine,qLongKine) = elem->GetGeantKinePair()->GetOSL();
+							std::tie(qOutKine,qSideKine,qLongKine) = elem->GetGeantKinePair()->GetOSLPrf();
 
 							hQoutResolution->Fill(qOut,qOutKine);
 							hQsideResolution->Fill(qSide,qSideKine);
@@ -730,6 +745,16 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 							hQoutSMCBad->Fill(qOut,elem->GetSharedMetaCells());
 							hQsideSMCBad->Fill(qSide,elem->GetSharedMetaCells());
 							hQlongSMCBad->Fill(qLong,elem->GetSharedMetaCells());
+
+							auto distances = elem->GetAllLayerDistances();
+							int layerIndex = 0;
+							for (const auto &layer : distances)
+							{
+								if (layer.has_value)
+								{
+									hWireDistancesLayer->Fill(++layerIndex,layer.value);
+								}
+							}
 						}
 
 						hKtRapBad.at(fEvent->GetCentrality())->Fill(elem->GetKt(),elem->GetRapidity() - fBeamRapidity);
@@ -875,6 +900,7 @@ int newQaAnalysis(TString inputlist = "", TString outfile = "qaOutFile.root", Lo
 	hDPhiDThetaBckgGood->Write();
 	hDPhiDThetaSignBad->Write();
 	hDPhiDThetaBckgBad->Write();
+	hWireDistancesLayer->Write();
 
 	for (const int i : {0,1,2,3,4})
 	{

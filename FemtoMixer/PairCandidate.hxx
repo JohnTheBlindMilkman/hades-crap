@@ -26,7 +26,8 @@
                     BothLayers(HADES::MDC::CalculateBothLayers(pairLayers)), 
                     SharedMetaCells(CalcSharedMetaCells(trck1,trck2)), 
                     MinWireDistance(*std::min_element(wireDistances.begin(),wireDistances.end())), 
-                    QInv(0.), QOut(0.), QSide(0.), QLong(0.), Kt(0.), 
+                    QInvLcms(0.), QOutLcms(0.), QSideLcms(0.), QLongLcms(0.), QInvPrf(0.), QOutPrf(0.), QSidePrf(0.), QLongPrf(0.), 
+                    Kt(0.5 * (trck1->GetPt() + trck2->GetPt())), 
                     Rapidity((trck1->GetRapidity() + trck2->GetRapidity()) / 2.), 
                     AzimuthalAngle(ConstrainAngle(trck1->GetPhi() + trck2->GetPhi()) / 2.), 
                     OpeningAngle(CalcOpeningAngle(trck1,trck2)), 
@@ -35,7 +36,8 @@
                     SplittingLevel(HADES::MDC::CalcluateSplittingLevel(pairLayers)), 
                     areSameSector(trck1->GetSector() == trck2->GetSector())
                 {
-                    CFKinematics(trck1,trck2);
+                    CFKinematicsPRF(trck1,trck2);                    
+                    CFKinematicsLCMS(trck1,trck2);
                 }
                 /**
                  * @brief Perform pair selection based on the fraction of neighbouring wires with certain distance from each other. Allows for a modifiable behaviour of selection
@@ -161,22 +163,40 @@
                     return SharedMetaCells;
                 }
                 /**
-                 * @brief Get the Qinv
+                 * @brief Get the Qinv in the LCMS ref. frame
                  * 
                  * @return float 
                  */
-                float GetQinv() const noexcept
+                float GetQinvLcms() const noexcept
                 {
-                    return QInv;
+                    return QInvLcms;
                 }
                 /**
-                 * @brief Get the Qout, Qside, and Qlong components
+                 * @brief Get the Qinv in the PRF ref. frame
+                 * 
+                 * @return float 
+                 */
+                float GetQinvPrf() const noexcept
+                {
+                    return QInvPrf;
+                }
+                /**
+                 * @brief Get the Qout, Qside, and Qlong components in the LCMS ref. frame
                  * 
                  * @return std::tuple<float,float,float> 
                  */
-                std::tuple<float,float,float> GetOSL() const noexcept
+                std::tuple<float,float,float> GetOSLLcms() const noexcept
                 {
-                    return std::make_tuple(QOut,QSide,QLong);
+                    return std::make_tuple(QOutLcms,QSideLcms,QLongLcms);
+                }
+                /**
+                 * @brief Get the Qout, Qside, and Qlong components in the PRF ref. frame
+                 * 
+                 * @return std::tuple<float,float,float> 
+                 */
+                std::tuple<float,float,float> GetOSLPrf() const noexcept
+                {
+                    return std::make_tuple(QOutPrf,QSidePrf,QLongPrf);
                 }
                 /**
                  * @brief Get the Geant Kine Pair object
@@ -204,8 +224,8 @@
                 HADES::MDC::WireDistances wireDistances;
                 unsigned SharedWires, BothLayers, SharedMetaCells;
                 HADES::MDC::OptionalDistance<unsigned> MinWireDistance;
-                float QInv, QOut, QSide, QLong, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
-                bool areSameSector;
+                float QInvLcms, QOutLcms, QSideLcms, QLongLcms, QInvPrf, QOutPrf, QSidePrf, QLongPrf, Kt, Rapidity, AzimuthalAngle, OpeningAngle, DeltaPhi, DeltaTheta, SplittingLevel;
+                bool areSameSector, isPrfCalculated, isLcmsCalculated;
                 template <Behaviour T> struct type {}; // helper struct
 
                 /**
@@ -214,7 +234,7 @@
                  * @param part1 
                  * @param part2 
                  */
-                void CFKinematics(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2)
+                void CFKinematicsLCMS(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2)
                 {
                     // adapted from https://github.com/DanielWielanek/HAL/blob/main/analysis/femto/base/FemtoPairKinematics.cxx
                     double tPx = part1->Px + part2->Px;
@@ -224,7 +244,7 @@
                     double tPt = tPx * tPx + tPy * tPy;
                     double tMt = tE * tE - tPz * tPz;  // mCVK;
                     tMt = std::sqrt(tMt);
-                    Kt = std::sqrt(tPt);
+                    tPt = std::sqrt(tPt);
                     double tBeta  = tPz / tE;
                     double tGamma = tE / tMt;
 
@@ -237,17 +257,51 @@
 
                     // Rotate in transverse plane
 
-                    double particle1lcms_px = (part1->Px * tPx + part1->Py * tPy) / Kt;
-                    double particle1lcms_py = (-part1->Px * tPy + part1->Py * tPx) / Kt;
+                    double particle1lcms_px = (part1->Px * tPx + part1->Py * tPy) / tPt;
+                    double particle1lcms_py = (-part1->Px * tPy + part1->Py * tPx) / tPt;
 
-                    double particle2lcms_px = (part2->Px * tPx + part2->Py * tPy) / Kt;
-                    double particle2lcms_py = (-part2->Px * tPy + part2->Py * tPx) / Kt;
+                    double particle2lcms_px = (part2->Px * tPx + part2->Py * tPy) / tPt;
+                    double particle2lcms_py = (-part2->Px * tPy + part2->Py * tPx) / tPt;
 
-                    QOut = std::abs(particle1lcms_px - particle2lcms_px);
-                    QSide = std::abs(particle1lcms_py - particle2lcms_py);
-                    QLong = std::abs(particle1lcms_pz - particle2lcms_pz);
+                    QOutLcms = std::abs(particle1lcms_px - particle2lcms_px);
+                    QSideLcms = std::abs(particle1lcms_py - particle2lcms_py);
+                    QLongLcms = std::abs(particle1lcms_pz - particle2lcms_pz);
                     double mDE = particle1lcms_e - particle2lcms_e;
-                    QInv = std::sqrt(std::abs(QOut * QOut + QSide * QSide + QLong * QLong - mDE * mDE));
+                    QInvLcms = std::sqrt(std::abs(QOutLcms * QOutLcms + QSideLcms * QSideLcms + QLongLcms * QLongLcms - mDE * mDE));
+                }
+                /**
+                 * @brief Calculates the pair variables in their centre of mass system (here: PRF)
+                 * 
+                 * @param part1 
+                 * @param part2 
+                 */
+                void CFKinematicsPRF(const std::shared_ptr<TrackCandidate> &part1, const std::shared_ptr<TrackCandidate> &part2)
+                {
+                    // adapted from https://github.com/DanielWielanek/HAL/blob/main/analysis/femto/base/FemtoPairKinematics.cxx
+                    double tPx = part1->Px + part2->Px;
+                    double tPy = part1->Py + part2->Py;
+                    double tPz = part1->Pz + part2->Pz;
+                    double tE = part1->Energy + part2->Energy;
+                    double tPt = tPx * tPx + tPy * tPy;
+                    double tMt = tE * tE - tPz * tPz;  // mCVK;
+                    double tM = TMath::Sqrt(tMt - tPt);
+                    tMt = TMath::Sqrt(tMt);
+                    tPt = std::sqrt(tPt);
+
+                    // Boost to LCMS
+                    double tBeta  = tPz / tE;
+                    double tGamma = tE / tMt;
+                    QLongPrf = std::abs(tGamma * (part1->Pz - tBeta * part1->Energy));
+                    double tE1L = tGamma * (part1->Energy - tBeta * part1->Pz);
+
+                    // Rotate in transverse plane
+                    QOutPrf = (part1->Px * tPx + part1->Py * tPy) / tPt;
+                    QSidePrf = std::abs((-part1->Px * tPy + part1->Py * tPx) / tPt);
+
+                    // Boost to pair cms
+                    QOutPrf = std::abs(tMt / tM * (QOutPrf - tPt / tMt * tE1L));
+
+                    QInvPrf = TMath::Sqrt(QSidePrf * QSidePrf + QOutPrf * QOutPrf + QLongPrf * QLongPrf);
                 }
                 /**
                  * @brief Calculates the opening angle in deg between the two tracks (reimplemented from TLorenzVector)

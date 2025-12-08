@@ -7,7 +7,7 @@
 
 void femtoMerge3D()
 {
-    const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_25_11_04.root";
+    const TString fileName = "/u/kjedrzej/hades-crap/slurmOutput/apr12ana_all_25_11_21.root";
     const TString SignNameBase = "hQoslSign_";
     const TString BckgNameBase = "hQoslBckg_";
     constexpr auto ktIndexing = Mixing::PairGrouping{}.GetKtIndexSequence3D();

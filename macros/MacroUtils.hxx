@@ -20,7 +20,7 @@
                 template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
                 double CalculateAverage(const std::vector<T> &data)
                 {
-                    return (data.size() > 0) ? std::accumulate(data.begin(),data.end(),0) / data.size() : 0.;
+                    return (data.size() > 0) ? std::accumulate(data.begin(),data.end(),T(0)) / data.size() : 0.;
                 }
             }
             /**

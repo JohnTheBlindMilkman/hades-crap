@@ -1,7 +1,7 @@
 /**
  * @file Target.hxx
  * @author Jędrzej Kołaś (jedrzej.kolas.dokt@pw.edu.pl)
- * @brief Namespace containing information about HADES target setup for each run
+ * @brief Namespace containing information about HADES target setup for each run. The values were obtained by me, thay are not official and should be taken with a (small) grain of salt
  * @version 0.1.0
  * @date 2025-05-13
  * 

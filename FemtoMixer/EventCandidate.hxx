@@ -63,8 +63,9 @@ namespace Selection
              * @param cent event centrality class (use HParticleEvtChara::getCentralityClass)
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
-            EventCandidate(const std::string &evtId, float vertx, float verty, float vertz, int cent, float EP)
-            : EventId(evtId),Centrality(cent),TargetPlate(-1),ChargedTracks(0),ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),X(vertx),Y(verty),Z(vertz) {}
+            EventCandidate(const std::string &evtId, float vertx, float verty, float vertz, int cent, float EP) :
+            EventId(evtId), Centrality(cent), TargetPlate(-1), ChargedTracks(0), ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),
+            X(vertx), Y(verty), Z(vertz) {}
             /**
              * @brief Construct a new Event Candidate object
              * 
@@ -73,8 +74,8 @@ namespace Selection
              * @param cent event centrality class (use HParticleEvtChara::getCentralityClass)
              * @param EP reaction plane angle (use HParticleEvtChara::getEventPlane)
              */
-            EventCandidate(HEventHeader* evtHeader, const HParticleEvtInfo* evtInfo,  int cent, float EP)
-                : EventId(std::to_string(evtHeader->getEventRunNumber()) + std::to_string(evtHeader->getEventSeqNumber())),
+            EventCandidate(HEventHeader* evtHeader, const HParticleEvtInfo* evtInfo,  int cent, float EP) :
+                EventId(std::to_string(evtHeader->getEventRunNumber()) + std::to_string(evtHeader->getEventSeqNumber())),
                 Centrality(cent), TargetPlate(-1),
                 ChargedTracks(evtInfo->getSumRpcMultHitCut() + evtInfo->getSumTofMultCut()),
                 ReactionPlaneAngle((EP < 0) ? 0 : TMath::RadToDeg() * EP),
@@ -95,9 +96,6 @@ namespace Selection
             template <HADES::Target::Setup T>
             bool SelectEvent(const std::vector<int> centIndex = {1}, const float nSigmaX = 1, const float nSigmaY = 1, const float nSigmaZ = 1)
             {
-                if (nSigmaZ > 2)
-                    throw std::runtime_error("nSigmaZ >2 overlaps between neighbouring plates, please choose smaller value.\n If the specified value was intentional, please evaluate youe life choices...");
-
                 // if this event's centrality is not in the centrality index list, reject
                 if (std::find(centIndex.begin(), centIndex.end(), Centrality) == centIndex.end())
                     return false;

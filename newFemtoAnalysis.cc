@@ -179,6 +179,7 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
     Mixing::JJFemtoMixer<Selection::EventCandidate,Selection::TrackCandidate,Selection::PairCandidate> mixer;
 	mixer.SetMaxBufferSize((isSimulation) ? 200 : 50); // ana=50, sim=200
+	mixer.FixBuffer(true);
 	mixer.SetEventHashingFunction(Mixing::EventGrouping{}.MakeEventGroupingFunction());
 	mixer.SetPairHashingFunction(Mixing::PairGrouping{}.MakePairGroupingFunction1D());
 	mixer.SetPairCuttingFunction(Mixing::PairRejection{}.MakePairRejectionFunction());
@@ -343,8 +344,6 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 			continue;
 		if (EventPlaneA < 0 || EventPlaneB < 0)
 			continue;
-		
-		fEvent = std::make_shared<Selection::EventCandidate>(event_header,particle_info,centClassIndex,EventPlane);
 
 		//--------------------------------------------------------------------------------
 		// Discarding bad events with multiple criteria and counting amount of all / good events
@@ -367,6 +366,8 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 		// Put your analyses on event level here
 		//================================================================================================================================================================
 		
+		fEvent = std::make_shared<Selection::EventCandidate>(event_header,particle_info,centClassIndex,EventPlane);
+
 		if (! fEvent->SelectEvent<HADES::Target::Setup::Apr12>({1},2,2,2))
 			continue;
 
@@ -471,17 +472,17 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					if (fMapFoHistograms.find(signalEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
-							TH1D(/* TString::Format("hQinvSign_%s",signalEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-							TH1D(/* TString::Format("hQinvBckg_%s",signalEntry.first.data()),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-							TH3D(TString::Format("hQoslSign_%s",signalEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,0,500,125,0,500,125,0,500),
-							TH3D(TString::Format("hQoslBckg_%s",signalEntry.first.data()),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,0,500,125,0,500,125,0,500)
+							TH1D(TString::Format("hQinvSign_%s",signalEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+							TH1D(TString::Format("hQinvBckg_%s",signalEntry.first.data()),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+							TH3D(/* TString::Format("hQoslSign_%s",signalEntry.first.data()),"Signal of Protons 0-10%% centrality;k^{*}_{out} [MeV/c];k^{*}_{side} [MeV/c];k^{*}_{long} [MeV/c];CF(k^{*}_{out},k^{*}_{side},k^{*}_{long})",126,0,252,126,0,252,126,0,252 */),
+							TH3D(/* TString::Format("hQoslBckg_%s",signalEntry.first.data()),"Background of Protons 0-10%% centrality;k^{*}_{out} [MeV/c];k^{*}_{side} [MeV/c];k^{*}_{long} [MeV/c];CF(k^{*}_{out},k^{*}_{side},k^{*}_{long})",126,0,252,126,0,252,126,0,252 */)
 						};
 						fMapFoHistograms.emplace(signalEntry.first,std::move(histos));
 					}
-					// fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry->GetQinv());
-					float qout,qside,qlong;
-					std::tie(qout,qside,qlong) = entry->GetOSL();
-					fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong);
+					fMapFoHistograms.at(signalEntry.first).hQinvSign.Fill(entry->GetQinvLcms());
+					// float qout,qside,qlong;
+					// std::tie(qout,qside,qlong) = entry->GetOSLPrf();
+					// fMapFoHistograms.at(signalEntry.first).hQoslSign.Fill(qout,qside,qlong);
 
 					if (signalEntry.first != "bad" && signalEntry.first != "0")
 						hCounter->Fill(cNumSelectedPairs);
@@ -495,17 +496,17 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 					if (fMapFoHistograms.find(backgroundEntry.first) == fMapFoHistograms.end())
 					{
 						HistogramCollection histos{
-						TH1D(/* TString::Format("hQinvSign_%s",backgroundEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-						TH1D(/* TString::Format("hQinvBckg_%s",backgroundEntry.first.data()),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000 */),
-						TH3D(TString::Format("hQoslSign_%s",backgroundEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,0,500,125,0,500,125,0,500),
-						TH3D(TString::Format("hQoslBckg_%s",backgroundEntry.first.data()),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];q_{side} [MeV/c];q_{long} [MeV/c];CF(q_{inv})",125,0,500,125,0,500,125,0,500)
+							TH1D(TString::Format("hQinvSign_%s",backgroundEntry.first.data()),"Signal of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+							TH1D(TString::Format("hQinvBckg_%s",backgroundEntry.first.data()),"Backgound of Protons 0-10%% centrality;q_{inv} [MeV/c];CF(q_{inv})",750,0,3000),
+							TH3D(/* TString::Format("hQoslSign_%s",backgroundEntry.first.data()),"Signal of Protons 0-10%% centrality;k^{*}_{out} [MeV/c];k^{*}_{side} [MeV/c];k^{*}_{long} [MeV/c];CF(k^{*}_{out},k^{*}_{side},k^{*}_{long})",126,0,252,126,0,252,126,0,252 */),
+							TH3D(/* TString::Format("hQoslBckg_%s",backgroundEntry.first.data()),"Background of Protons 0-10%% centrality;q_{out} [MeV/c];k^{*}_{out} [MeV/c];k^{*}_{side} [MeV/c];k^{*}_{long} [MeV/c];CF(k^{*}_{out},k^{*}_{side},k^{*}_{long})",126,0,252,126,0,252,126,0,252 */)
 						};
 						fMapFoHistograms.emplace(backgroundEntry.first,std::move(histos));
 					}
-					// fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry->GetQinv());
-					float qout,qside,qlong;
-					std::tie(qout,qside,qlong) = entry->GetOSL();
-					fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(qout,qside,qlong);
+					fMapFoHistograms.at(backgroundEntry.first).hQinvBckg.Fill(entry->GetQinvLcms());
+					// float qout,qside,qlong;
+					// std::tie(qout,qside,qlong) = entry->GetOSLPrf();
+					// fMapFoHistograms.at(backgroundEntry.first).hQoslBckg.Fill(qout,qside,qlong);
 				}
 			}
 			
@@ -545,10 +546,10 @@ int newFemtoAnalysis(TString inputlist = "", TString outfile = "femtoOutFile.roo
 
 	for (auto &histos : fMapFoHistograms)
 	{
-		// histos.second.hQinvSign.Write();
-		// histos.second.hQinvBckg.Write();
-		histos.second.hQoslSign.Write();
-		histos.second.hQoslBckg.Write();
+		histos.second.hQinvSign.Write();
+		histos.second.hQinvBckg.Write();
+		// histos.second.hQoslSign.Write();
+		// histos.second.hQoslBckg.Write();
 	}
 
 	hPhiTheta->Write();

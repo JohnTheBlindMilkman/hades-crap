@@ -59,8 +59,8 @@ TH3D* ConvertXaxisUnits(TH3D *hInp)
 void fromHADEStoHAL()
 {
     const TString inpFilePath = "../output/1Dcorr_30_40_cent_Purity_MomRes.root";
-    const auto ktArr = Mixing::PairGrouping{}.GetKtIndexSequence();
-    const auto yArr = Mixing::PairGrouping{}.GetRapIndexSequence();
+    const auto ktArr = Mixing::PairGrouping{}.GetKtIndexSequence1D();
+    const auto yArr = Mixing::PairGrouping{}.GetRapIndexSequence1D();
     //const std::vector<TString> sProjName{"out","side","long"};
 
     std::vector<TH1D*> histArray;

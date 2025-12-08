@@ -25,8 +25,6 @@
          */
         class EventGrouping
         {
-            private:
-
             public:
                 /**
                  * @brief Calculates and returns group ID to which the EventCandidate object is assigned to
@@ -36,8 +34,7 @@
                  */
                 [[nodiscard]] std::string GetEventIndex(const std::shared_ptr<Selection::EventCandidate> &evt) const noexcept
                 {
-                    return JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetNCharged()/10),2) + 
-                		JJUtils::to_fixed_size_string(static_cast<std::size_t>(evt->GetPlate()),2);
+                    return JJUtils::to_fixed_size_string(evt->GetNCharged()/10,2) + JJUtils::to_fixed_size_string(evt->GetPlate(),2);
                 }
                 /**
                  * @brief Creates a wrapper for GetEventIndex

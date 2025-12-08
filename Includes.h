@@ -29,6 +29,7 @@
 #include "TLegend.h"
 #include "TLine.h"
 #include "TLatex.h"
+#include "ROOT/TSeq.hxx"
 
 #include "hloop.h"
 #include "hcategorymanager.h"

@@ -53,10 +53,10 @@ void prepareGraph(TH1D* hist, int col)
 
 void drawProton1DMultiDiff()
 {
-    const TString fileName = "../slurmOutput/apr12ana_all_25_09_24_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_25_12_03_processed.root";
     const TString outputFile = "../output/1Dcorr_30_40_cent.root";
-    const auto ktArr = Mixing::PairGrouping{}.GetKtIndexIntervalPairs();
-    const auto yArr = Mixing::PairGrouping{}.GetRapIndexIntervalPairs();
+    const auto ktArr = Mixing::PairGrouping{}.GetKtIndexIntervalPairs1D();
+    const auto yArr = Mixing::PairGrouping{}.GetRapIndexIntervalPairs1D();
     const int rebin = 1;
     constexpr int minX = 0, maxX = 300;
 

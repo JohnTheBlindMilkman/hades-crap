@@ -64,13 +64,13 @@ TH2D* CalcCDF(const TH2D *hist)
 
 void generateCdfs()
 {
-    const TString filePath = "../slurmOutput/apr12ana_all_25_07_25.root";
+    const TString filePath = "../slurmOutput/apr12ana_all_25_11_24.root";
     const TString ktRapName = "hKtRapGoodCent";
     const TString ktCentNameBase = "ktDist_cent";
     const TString rapCentNameBase = "rapDist_cent";
     const TString nameEnd = "_good";
     const std::vector<int> centralities = {1,2,3,4};
-    constexpr double entries = 6e8;
+    constexpr double entries = 2e9;
 
     std::vector<TH1D*> ktCdfs, rapCdfs;
     std::vector<TH2D*> ktRapCdfs;

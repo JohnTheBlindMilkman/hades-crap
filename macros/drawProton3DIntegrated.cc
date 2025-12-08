@@ -159,26 +159,25 @@ void drawProton3DIntegrated()
     gStyle->SetOptStat(0);
     JJColor::CreatePrimaryWutGradient();
 
-    const TString fileName = "../slurmOutput/apr12ana_all_25_11_04_processed.root";
+    const TString fileName = "../slurmOutput/apr12ana_all_25_11_21_processed.root";
     const TString outputFile = "../output/3Dcorr_0_10_cent_Integ.root";
     const std::vector<TString> sProjName = {"out","side","long"};
     const std::array<Proj1D,3> oneDimProjections = {
-        Proj1D{Projection::Out,"x",";k^{*}_{out} [MeV/c];C(k^{*}_{out})",0},
-        Proj1D{Projection::Side,"y",";k^{*}_{side} [MeV/c];C(k^{*}_{side})",1},
-        Proj1D{Projection::Long,"z",";k^{*}_{long} [MeV/c];C(k^{*}_{long})",2}
+        Proj1D{Projection::Out,"x",";q_{out} [MeV/c];C(q_{out})",0},
+        Proj1D{Projection::Side,"y",";q_{side} [MeV/c];C(q_{side})",1},
+        Proj1D{Projection::Long,"z",";q_{long} [MeV/c];C(q_{long})",2}
     };
     const std::array<Proj1D,3> twoDimProjections = {
-        Proj1D{Projection::OutSide,"xy",";k^{*}_{side} [MeV/c];k^{*}_{out} [MeV/c];C(k^{*}_{out},k^{*}_{side})",0},
-        Proj1D{Projection::SideLong,"yz",";k^{*}_{long} [MeV/c];k^{*}_{side} [MeV/c];C(k^{*}_{side},k^{*}_{long})",1},
-        Proj1D{Projection::OutLong,"xz",";k^{*}_{long} [MeV/c];k^{*}_{out} [MeV/c];C(k^{*}_{out},k^{*}_{long})",2}
+        Proj1D{Projection::OutSide,"xy",";q_{side} [MeV/c];q_{out} [MeV/c];C(q_{out},q_{side})",0},
+        Proj1D{Projection::SideLong,"yz",";q_{long} [MeV/c];q_{side} [MeV/c];C(q_{side},q_{long})",1},
+        Proj1D{Projection::OutLong,"xz",";q_{long} [MeV/c];q_{out} [MeV/c];C(q_{out},q_{long})",2}
     };
-    const int rebin = 1;
-    const int wbin = 1; 
+    const int rebin = 2;
+    const int nBins = 1; 
 
     float norm;
-    int binc, binmn, binmx;
 
-    TLine *line = new TLine(-500,1,500,1);
+    TLine *line = new TLine(0,1,500,1);
     line->SetLineStyle(kDashed);
     line->SetLineColor(kGray);
 
@@ -197,8 +196,8 @@ void drawProton3DIntegrated()
     ptInfo->SetFillStyle(1); // transparemt background
     ptInfo->AddText("proton - proton");
     ptInfo->AddText("0-10%");
-    ptInfo->AddText("y_{c.m.} #in (-0.75,0.75)");
-    ptInfo->AddText("k_{T} #in (150,1650) [MeV/c]");
+    ptInfo->AddText("y_{lab}^{1,2} #in (0.09,0.99)");
+    ptInfo->AddText("k_{T} #in (300,2100) [MeV/c]");
 
     TH3D *hSign = inpFile->Get<TH3D>("hQoslSignInteg");
     TH3D *hBckg = inpFile->Get<TH3D>("hQoslBckgInteg");
@@ -211,24 +210,23 @@ void drawProton3DIntegrated()
     {
         for (const auto &[proj,arg,name,num] : oneDimProjections)
         {
-            binc = hRat3D->GetXaxis()->FindFixBin(0.0);
-            binmx = binc + wbin;
-            SetAxesRange(hRat3D,proj,binmx);
+            SetAxesRange(hRat3D,proj,nBins);
             dataProj1D[num] = static_cast<TH1D*>(hRat3D->Project3D(arg.c_str()));
             dataProj1D[num]->SetTitle(name.c_str());
-            norm = JJUtils::CF::GetNormByRange(dataProj1D[num],350,500);
+            norm = JJUtils::CF::GetNormByRange(dataProj1D[num],174,240);
             dataProj1D[num]->Rebin(rebin);
             norm *= rebin;
             dataProj1D[num]->Scale(1./norm);
             prepareGraph(dataProj1D[num],JJColor::fWutAllColors[1]); // navy WUT
+            dataProj1D[num]->GetYaxis()->SetRangeUser(0.8,1.4);
             dataProj1D[num]->Write();
-            TPaveText *pt = new TPaveText(0.3,0.4,0.7,0.6,"NB");
+            TPaveText *pt = new TPaveText(0.3,0.19,0.7,0.27,"NB NDC");
             pt->SetBorderSize(0);
             pt->SetFillStyle(1);
             pt->SetTextAlign(22);
             pt->SetTextFont(102);
-            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(num + 1) % 3].Data(),dataProj1D[num]->GetXaxis()->GetBinUpEdge(binmx)));
-            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(num + 2) % 3].Data(),dataProj1D[num]->GetXaxis()->GetBinUpEdge(binmx)));
+            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(num + 1) % 3].Data(),dataProj1D[num]->GetXaxis()->GetBinUpEdge(nBins)));
+            pt->AddText(TString::Format("q_{%s} #in (0,%.2f) [MeV/c]",sProjName[(num + 2) % 3].Data(),dataProj1D[num]->GetXaxis()->GetBinUpEdge(nBins)));
 
             canvInteg->cd(num + 1)->SetMargin(0.2,0.02,0.15,0.02);
             dataProj1D[num]->Draw("p e");
@@ -242,21 +240,19 @@ void drawProton3DIntegrated()
 
         TCanvas *canv2DInteg = new TCanvas("canv2DInteg","",1800,600);
         canv2DInteg->Divide(3,1);
-        JJColor::CreatePrimaryWutGradient();
+        JJColor::CreateSecondaryWutGradient();
         std::array<TH2D*,oneDimProjections.size()> dataProj2D;
         for (const auto &[proj,arg,name,num] : twoDimProjections)
         {
-            binc = hRat3D->GetXaxis()->FindFixBin(0.0);
-            binmx = binc + wbin;
-
-            SetAxesRange(hRat3D,proj,binmx);
+            SetAxesRange(hRat3D,proj,nBins);
             dataProj2D[num] = static_cast<TH2D*>(hRat3D->Project3D(arg.c_str()));
             dataProj2D[num]->SetTitle(name.c_str());
-            norm = JJUtils::CF::GetNormByRange(dataProj2D[num],350,500,350,500);
+            norm = JJUtils::CF::GetNormByRange(dataProj2D[num],174,240,174,240);
             dataProj2D[num]->Rebin2D(rebin,rebin);
             norm *= rebin*rebin;
             dataProj2D[num]->Scale(1./norm);
             prepareGraph(dataProj2D[num],JJColor::fWutMainColors[1]);
+            dataProj1D[num]->GetZaxis()->SetRangeUser(0.8,1.4);
             dataProj2D[num]->Write();
 
             canv2DInteg->cd(num + 1)->SetMargin(0.2,0.02,0.15,0.02);
